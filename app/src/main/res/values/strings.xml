@@ -2,4 +2,11 @@
     <string name="app_name">ShareNShop</string>
     <string name="email">Email</string>
     <string name="password">Password</string>
+    <string name="new_user">New User?</string>
+    <string name="sign_in">Sign In</string>
+    <string name="sign_up_using_email">Sign Up using Email</string>
+    <string name="continue_with_google">Continue with Google</string>
+
+
+    <string name="empty_email_error">Provide an email address!</string>
 </resources>
