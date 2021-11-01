@@ -9,4 +9,19 @@
 
 
     <string name="empty_email_error">Provide an email address!</string>
+    <string name="failed_auth_error">Unable to establish your identity :(</string>
+
+    <string name="home">Home</string>
+    <string name="new_post">New Post</string>
+    <string name="account">Account</string>
+    <string name="theme">Theme</string>
+    <string name="light_theme">Light Theme</string>
+    <string name="dark_theme">Dark Theme</string>
+    <string name="system_default">System Default</string>
+    <string name="language">Language</string>
+    <string name="english">English</string>
+    <string name="hindi">हिन्दी</string>
+    <string name="my_profile">My Profile</string>
+    <string name="posts_history">Posts History</string>
+    <string name="logout">Logout</string>
 </resources>

@@ -4,14 +4,10 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResult;
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
 
@@ -20,12 +16,9 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.AuthCredential;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
@@ -50,7 +43,7 @@ public class LoginActivity extends AppCompatActivity {
                 .requestEmail()
                 .build();
         mSignInClient = GoogleSignIn.getClient(this, gso);
-        addButtonActions();
+        addListeners();
     }
 
     @Override
@@ -59,12 +52,11 @@ public class LoginActivity extends AppCompatActivity {
 
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null) {
-            startActivity(new Intent(this, ProfileActivity.class));
-            finish();
+            handleSuccessfulAuthentication();
         }
     }
 
-    private void addButtonActions() {
+    private void addListeners() {
         TextInputLayout emailAddress = binding.emailAddress;
         Objects.requireNonNull(emailAddress.getEditText()).addTextChangedListener(new TextWatcher() {
             @Override
@@ -104,8 +96,8 @@ public class LoginActivity extends AppCompatActivity {
                         // Authenticating Google user with firebase
                         // Next Phase in 'firebaseAuthWithGoogle' method
                         firebaseAuthWithGoogle(account.getIdToken());
-                    } catch (ApiException e) {
-                        Log.w("GoogleSignIn", "Google sign in failed :(");
+                    } catch (ApiException apiException) {
+                        handleFailedAuthentication(apiException);
                     }
                 }
         );
@@ -120,12 +112,16 @@ public class LoginActivity extends AppCompatActivity {
     private void firebaseAuthWithGoogle(String idToken) {
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
         mAuth.signInWithCredential(credential)
-            .addOnSuccessListener(this, authResult -> {
-                // Called on successful firebase authentication
-                startActivity(new Intent(this, ProfileActivity.class));
-                finish();
-            })
-            .addOnFailureListener(this, e ->
-                Toast.makeText(this, "Authentication failed :(", Toast.LENGTH_SHORT).show());
+            .addOnSuccessListener(this, authResult -> handleSuccessfulAuthentication())
+            .addOnFailureListener(this, this::handleFailedAuthentication);
+    }
+
+    private void handleSuccessfulAuthentication() {
+        startActivity(new Intent(this, MainActivity.class));
+        finish();
+    }
+
+    private void handleFailedAuthentication(Exception exception) {
+        Toast.makeText(this, getString(R.string.failed_auth_error), Toast.LENGTH_SHORT).show();
     }
 }
