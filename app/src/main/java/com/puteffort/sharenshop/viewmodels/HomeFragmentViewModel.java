@@ -33,7 +33,6 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     if (!queryDocumentSnapshots.isEmpty()) {
                         originalPosts.addAll(queryDocumentSnapshots.toObjects(PostInfo.class));
-                        System.err.println(originalPosts);
                         postsInfo.addAll(originalPosts);
                         postsInfoLiveData.setValue(postsInfo);
                     }
