@@ -5,7 +5,7 @@ public class PostInfo {
     private String ownerID;
     private String id;
     private int days, months, years, peopleRequired;
-    private float amount;
+    private int amount;
     private boolean accomplished;
     private long lastActivity;
 
@@ -21,7 +21,7 @@ public class PostInfo {
         this.months = Integer.parseInt(months);
         this.years = Integer.parseInt(years);
         this.peopleRequired = Integer.parseInt(peopleRequired);
-        this.amount = Float.parseFloat(amount);
+        this.amount = Integer.parseInt(amount);
         this.accomplished = false;
     }
 
@@ -73,11 +73,11 @@ public class PostInfo {
         this.peopleRequired = peopleRequired;
     }
 
-    public float getAmount() {
+    public int getAmount() {
         return amount;
     }
 
-    public void setAmount(float amount) {
+    public void setAmount(int amount) {
         this.amount = amount;
     }
 

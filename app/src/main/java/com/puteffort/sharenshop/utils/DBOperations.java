@@ -29,7 +29,7 @@ public class DBOperations {
                 .addOnFailureListener(exception -> setResultValue(result, false));
     }
 
-    private static FirebaseFirestore getDB() {
+    public static FirebaseFirestore getDB() {
         if (db == null) db = FirebaseFirestore.getInstance();
         return db;
     }

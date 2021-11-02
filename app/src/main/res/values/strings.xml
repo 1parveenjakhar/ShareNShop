@@ -45,4 +45,8 @@
     <string name="new_post_people_error">Please mention people requirement!</string>
     <string name="new_post_post_successful">Posted Successfully :)</string>
     <string name="new_post_post_failure">Unable to post at this moment :(</string>
+    <string name="x_people">X People</string>
+    <string name="time">Time</string>
+    <string name="rs_xyz">Rs. XYZ</string>
+    <string name="picture_of_post_owner">Picture of post owner</string>
 </resources>
