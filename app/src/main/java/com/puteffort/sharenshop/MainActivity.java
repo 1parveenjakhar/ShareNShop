@@ -1,59 +1,28 @@
 package com.puteffort.sharenshop;
 
-import androidx.annotation.NonNull;
+import android.os.Bundle;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
-import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
-import android.annotation.SuppressLint;
-import android.os.Bundle;
-import android.provider.ContactsContract;
-import android.view.MenuItem;
-import android.widget.Toast;
-
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.navigation.NavigationBarView;
 import com.puteffort.sharenshop.databinding.ActivityMainBinding;
-import com.puteffort.sharenshop.fragments.AccountFragment;
-import com.puteffort.sharenshop.fragments.HomeFragment;
-import com.puteffort.sharenshop.fragments.NewPostFragment;
+import com.puteffort.sharenshop.viewmodels.MainActivityViewModel;
 
-public class MainActivity extends AppCompatActivity implements NavigationBarView.OnItemSelectedListener {
+public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
-    private Fragment homeFragment, newPostFragment, accountFragment;
-
+    private MainActivityViewModel model;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+        model = new ViewModelProvider(this).get(MainActivityViewModel.class);
 
-        homeFragment = new HomeFragment();
-        newPostFragment = new NewPostFragment();
-        accountFragment = new AccountFragment();
-
-        binding.bottomNav.setOnItemSelectedListener(this);
-        binding.bottomNav.setSelectedItemId(R.id.homeMenuItem);
-    }
-
-    @SuppressLint("NonConstantResourceId")
-    @Override
-    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        Fragment fragment;
-        switch (item.getItemId()) {
-            case R.id.homeMenuItem: fragment = homeFragment; break;
-            case R.id.newPostMenuItem: fragment = newPostFragment; break;
-            case R.id.accountMenuItem: fragment = accountFragment; break;
-            default: fragment = null;
-        }
-
-        if (fragment != null) {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragmentContainer, fragment)
-                    .commit();
-            return true;
-        }
-
-        return false;
+        binding.bottomNav.setOnItemSelectedListener(model);
+        model.getCurrentFragment().observe(this, fragment -> getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .commit());
     }
 }

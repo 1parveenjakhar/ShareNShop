@@ -1,6 +1,8 @@
 package com.puteffort.sharenshop;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -9,6 +11,7 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.databinding.DataBindingUtil;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -22,6 +25,7 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.puteffort.sharenshop.utils.StaticData;
 import com.puteffort.sharenshop.databinding.ActivityLoginBinding;
 
 import java.util.Objects;
@@ -34,26 +38,37 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setThemeAndLanguage();
+
         binding = DataBindingUtil.setContentView(this, R.layout.activity_login);
-
         mAuth = FirebaseAuth.getInstance();
-        GoogleSignInOptions gso = new GoogleSignInOptions
-                .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(getString(R.string.default_web_client_id))
-                .requestEmail()
-                .build();
-        mSignInClient = GoogleSignIn.getClient(this, gso);
-        addListeners();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null) {
             handleSuccessfulAuthentication();
+        } else {
+            GoogleSignInOptions gso = new GoogleSignInOptions
+                    .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestIdToken(getString(R.string.default_web_client_id))
+                    .requestEmail()
+                    .build();
+            mSignInClient = GoogleSignIn.getClient(this, gso);
+            addListeners();
         }
+
+    }
+
+    private void setThemeAndLanguage() {
+        SharedPreferences sharedPrefs = getSharedPreferences(getString(R.string.app_name), Context.MODE_PRIVATE);
+
+        // Theme change
+        int themeVal = sharedPrefs.getInt(getString(R.string.theme), AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        if (themeVal != AppCompatDelegate.getDefaultNightMode()) {
+            AppCompatDelegate.setDefaultNightMode(themeVal);
+        }
+
+        // Language change
+        String language = sharedPrefs.getString(getString(R.string.language), "en");
+        StaticData.changeLocale(language, this);
     }
 
     private void addListeners() {
