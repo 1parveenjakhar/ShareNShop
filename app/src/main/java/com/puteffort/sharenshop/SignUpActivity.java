@@ -1,10 +1,5 @@
 package com.puteffort.sharenshop;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.databinding.DataBindingUtil;
-
-import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -12,13 +7,12 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.AuthResult;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.databinding.DataBindingUtil;
+
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
-
 import com.puteffort.sharenshop.databinding.ActivitySignUpBinding;
 
 import java.util.Objects;
@@ -35,6 +29,7 @@ public class SignUpActivity extends AppCompatActivity {
         setContentView(R.layout.activity_sign_up);
         mAuth = FirebaseAuth.getInstance();
         binding = DataBindingUtil.setContentView(this, R.layout.activity_sign_up);
+        binding.progressBar.setVisibility(View.INVISIBLE);
 
         addListeners();
     }
@@ -46,19 +41,17 @@ public class SignUpActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 //Read input fields
-                String userName = Objects.requireNonNull(binding.userName.getEditText().getText().toString());
-                String emailId = Objects.requireNonNull(binding.signUpEmail.getEditText().getText().toString());
-                String password = Objects.requireNonNull(binding.signUpPassword.getEditText().getText().toString());
-                String confirmPassword = Objects.requireNonNull(binding.signUpConfirmPassword.getEditText().getText().toString());
+                String userName = Objects.requireNonNull(binding.userName.getEditText()).getText().toString();
+                String emailId = Objects.requireNonNull(binding.signUpEmail.getEditText()).getText().toString();
+                String password = Objects.requireNonNull(binding.signUpPassword.getEditText()).getText().toString();
+                String confirmPassword = Objects.requireNonNull(binding.signUpConfirmPassword.getEditText()).getText().toString();
 
-                boolean areValidFields = validateFields(userName,emailId,password,confirmPassword);
-                if(areValidFields == false){
-                    return;
+                boolean areFieldsValid = validateFields(userName,emailId,password,confirmPassword);
+                if (areFieldsValid) {
+                    //User entered correct data - register the user now;
+                    binding.progressBar.setVisibility(View.VISIBLE);
+                    registerUser(userName, emailId, password);
                 }
-
-                //User entered correct data - register the user now;
-                FirebaseUser user = registerUser(userName, emailId, password);
-                updateUI(user);
             }
 
             private boolean validateFields(String userName, String emailId, String password, String confirmPassword) {
@@ -81,7 +74,7 @@ public class SignUpActivity extends AppCompatActivity {
 
     private void addInputFieldListeners() {
         //Validating username on the go!
-        binding.userName.getEditText().addTextChangedListener(new TextWatcher() {
+        Objects.requireNonNull(binding.userName.getEditText()).addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 //Left blank intentionally...
@@ -95,16 +88,16 @@ public class SignUpActivity extends AppCompatActivity {
             @Override
             public void afterTextChanged(Editable s) {
                 String userNameRegex = "[a-zA-Z\\s]+";
-                if(s.toString().trim().matches(userNameRegex)==false || s.toString().trim().isEmpty()){
+                if (!s.toString().trim().matches(userNameRegex) || s.toString().trim().isEmpty()) {
                     binding.userName.setError("Name should not be empty or containing numbers or special chars");
-                }else{
+                } else {
                     binding.userName.setError(null);//may create issue
                 }
             }
         });
 
         //Email on the go!
-        binding.signUpEmail.getEditText().addTextChangedListener(new TextWatcher() {
+        Objects.requireNonNull(binding.signUpEmail.getEditText()).addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 //Left blank intentionally...
@@ -117,16 +110,16 @@ public class SignUpActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                if(LoginActivity.emailValidator(s.toString().trim())==false){
+                if (!LoginActivity.emailValidator(s.toString().trim())) {
                     binding.signUpEmail.setError("Invalid email!");
-                }else{
+                } else {
                     binding.signUpEmail.setError(null);
                 }
             }
         });
 
         //Password
-        binding.signUpPassword.getEditText().addTextChangedListener(new TextWatcher() {
+        Objects.requireNonNull(binding.signUpPassword.getEditText()).addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
                 //Left blank intentionally...
@@ -134,9 +127,9 @@ public class SignUpActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if(s.toString().length()<6){
+                if (s.toString().length()<6) {
                     binding.signUpPassword.setError("Password should be at-least 6 characters long!");
-                }else{
+                } else {
                     binding.signUpPassword.setError(null);
                 }
             }
@@ -148,32 +141,26 @@ public class SignUpActivity extends AppCompatActivity {
         });
     }
 
-    private FirebaseUser registerUser(String userName, String email, String password) {
+    private void registerUser(String userName, String email, String password) {
         mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            // Sign in success, update UI with the signed-in user's information
-                            //Log.d(TAG, "createUserWithEmail:success");
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        // Sign in success, update UI with the signed-in user's information
 
-                            //FirebaseUser user = mAuth.getCurrentUser();
-                            //User-registered....updating firebase user-name
-                            Toast.makeText(SignUpActivity.this, "Authentication successful!.",
-                                    Toast.LENGTH_LONG).show();
-                            updateUserName(userName);
 
-                        } else {
-                            // If sign in fails, display a message to the user.
-                            //Log.w(TAG, "createUserWithEmail:failure", task.getException());
-                            Toast.makeText(SignUpActivity.this, task.getException().getMessage(),
-                                    Toast.LENGTH_SHORT).show();
-                        }
+                        //FirebaseUser user = mAuth.getCurrentUser();
+                        //User-registered....updating firebase user-name
+                        Toast.makeText(SignUpActivity.this, "Authentication successful!.",
+                                Toast.LENGTH_LONG).show();
+                        updateUserName(userName);
+
+                    } else {
+                        // If sign in fails, display a message to the user.
+                        //Log.w(TAG, "createUserWithEmail:failure", task.getException());
+                        Toast.makeText(SignUpActivity.this, task.getException().getMessage(),
+                                Toast.LENGTH_SHORT).show();
                     }
                 });
-
-        FirebaseUser user = mAuth.getCurrentUser();
-        return user;
     }
 
     private void updateUserName(String userName) {
@@ -185,21 +172,15 @@ public class SignUpActivity extends AppCompatActivity {
                 .build();
 
         user.updateProfile(profileUpdates)
-                .addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        if (task.isSuccessful()) {
-                            Log.d(TAG, "User name updated.");
-                        }
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d(TAG, "User name updated.");
+
+                        // Its time to say good bye to this activity
+                        binding.progressBar.setVisibility(View.INVISIBLE);
+                        finish();
                     }
                 });
-    }
-
-    private void updateUI(FirebaseUser user) {
-        // TODO: 03-11-2021 ("Successful account creation toast not showing up?!"); 
-        Toast.makeText(this,"Account created. Please login," + user.getDisplayName().toString(),Toast.LENGTH_LONG).show();
-        Intent intent = new Intent(this,LoginActivity.class);
-        startActivity(intent);
     }
 }
 
