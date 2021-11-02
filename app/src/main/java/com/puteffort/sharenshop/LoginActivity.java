@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -101,8 +102,13 @@ public class LoginActivity extends AppCompatActivity {
         });
 
 
-        binding.emailSignUpButton.setOnClickListener(view ->
-                startActivity(new Intent(this, SignUpActivity.class)));
+        binding.emailSignUpButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(LoginActivity.this, SignUpActivity.class);
+                startActivity(intent);
+            }
+        });
 
 
         ActivityResultLauncher<Intent> launcher = registerForActivityResult(
@@ -141,12 +147,23 @@ public class LoginActivity extends AppCompatActivity {
                             // Sign in success, update UI with the signed-in user's information
                             //Log.d(TAG, "signInWithEmail:success");
                             FirebaseUser user = mAuth.getCurrentUser();
+
+                            //Check if the user has verified the email or not
+                            boolean emailVerified = user.isEmailVerified();
+
+                            if(emailVerified==false){
+                                TextInputLayout editEmailAddress = Objects.requireNonNull(binding.emailAddress);
+                                editEmailAddress.setError(getString(R.string.email_not_verified));
+                                user.sendEmailVerification();
+                                return;
+                            }
+                            //Email is verified log-in;
                             updateUI(user);
                         } else {
                             // If sign in fails, display a message to the user.
                             //Log.w(TAG, "signInWithEmail:failure", task.getException());
-                            Toast.makeText(LoginActivity.this, "Authentication failed.",
-                                    Toast.LENGTH_SHORT).show();
+                            Toast.makeText(LoginActivity.this, task.getException().getMessage(),
+                                    Toast.LENGTH_LONG).show();
                             updateUI(null);
                         }
                     }
@@ -158,15 +175,16 @@ public class LoginActivity extends AppCompatActivity {
         //Therefore, function parameter can be ignored
 
         if(user!=null){
-            // TODO: 02-11-2021 ("Open Dashboard Activity")
+
             Toast.makeText(LoginActivity.this, "Authentication Successful. Welcome " +
                             user.getEmail() +"!"
                     ,
                     Toast.LENGTH_SHORT).show();
+            // TODO: 02-11-2021 ("Open Dashboard Activity here!")
         }
     }
 
-    private boolean emailValidator(String emailId) {
+    public static boolean emailValidator(String emailId) {
         //Validating email ID using Regex
         final Pattern VALID_EMAIL_ADDRESS_REGEX =
                 Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);

@@ -28,4 +28,8 @@
     <string name="my_profile">My Profile</string>
     <string name="posts_history">Posts History</string>
     <string name="logout">Logout</string>
+    <string name="name">Name</string>
+    <string name="sign_up">Sign up</string>
+    <string name="confirm_password">Retype Password</string>
+    <string name="email_not_verified">You need to verify your email first. Check your mail for the verification link!</string>
 </resources>
