@@ -4,12 +4,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.databinding.DataBindingUtil;
@@ -19,9 +18,11 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
@@ -29,6 +30,8 @@ import com.puteffort.sharenshop.utils.StaticData;
 import com.puteffort.sharenshop.databinding.ActivityLoginBinding;
 
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class LoginActivity extends AppCompatActivity {
     private ActivityLoginBinding binding;
@@ -72,31 +75,31 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void addListeners() {
-        TextInputLayout emailAddress = binding.emailAddress;
-        Objects.requireNonNull(emailAddress.getEditText()).addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+        TextInputLayout editEmailAddress = Objects.requireNonNull(binding.emailAddress);
+        //TextInputLayout editPassword = Objects.requireNonNull(binding.password);
 
-            @Override
-            public void afterTextChanged(Editable s) {
-                emailAddress.setError(s.toString().trim().isEmpty()
-                        ? getString(R.string.empty_email_error) : null);
-            }
-        });
-
-
+        //Sign-in button
         binding.signInButton.setOnClickListener(view -> {
-            String email = Objects.requireNonNull(binding.emailAddress.getEditText()).getText().toString();
-            if (email.trim().isEmpty()) {
-                emailAddress.setError(getString(R.string.empty_email_error));
-                emailAddress.requestFocus();
+            //Read email & password
+            String emailId = Objects.requireNonNull(binding.emailAddress.getEditText()).getText().toString();
+            String password = Objects.requireNonNull(binding.password.getEditText()).getText().toString();
+
+            //Validate emailId using regex
+            boolean isValidEmail = emailValidator(emailId);
+
+            //If email format is invalid
+            if(isValidEmail == false){
+                editEmailAddress.setError(getString(R.string.empty_email_error));
+                editEmailAddress.requestFocus();
                 return;
             }
+
             // TODO("Authenticate user with provided email and password")
+            //Email format is valid - Auth using firebase
+            authUsingEmailPassword(emailId, password);
         });
+
 
         binding.emailSignUpButton.setOnClickListener(view ->
                 startActivity(new Intent(this, SignUpActivity.class)));
@@ -116,12 +119,60 @@ public class LoginActivity extends AppCompatActivity {
                     }
                 }
         );
+
+        //Google-button
         binding.googleSignUpButton.setOnClickListener(view -> {
             // Launching Google Select Account Intent
             // Next Phase in 'launcher' lambda
             Intent signInIntent = mSignInClient.getSignInIntent();
+            Toast.makeText(this,"Login Successful", Toast.LENGTH_SHORT).show();
             launcher.launch(signInIntent);
         });
+
+    }
+
+    private void authUsingEmailPassword(String email, String password) {
+        //Authenticate given email and password on signIn button click
+        mAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+                            //Log.d(TAG, "signInWithEmail:success");
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            updateUI(user);
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            //Log.w(TAG, "signInWithEmail:failure", task.getException());
+                            Toast.makeText(LoginActivity.this, "Authentication failed.",
+                                    Toast.LENGTH_SHORT).show();
+                            updateUI(null);
+                        }
+                    }
+                });
+    }
+
+    private void updateUI(FirebaseUser user) {
+        //FirebaseAuth is a singleton class, you can get instance of firebase auth anywhere from the app.
+        //Therefore, function parameter can be ignored
+
+        if(user!=null){
+            // TODO: 02-11-2021 ("Open Dashboard Activity")
+            Toast.makeText(LoginActivity.this, "Authentication Successful. Welcome " +
+                            user.getEmail() +"!"
+                    ,
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private boolean emailValidator(String emailId) {
+        //Validating email ID using Regex
+        final Pattern VALID_EMAIL_ADDRESS_REGEX =
+                Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
+
+        Matcher matcher = VALID_EMAIL_ADDRESS_REGEX.matcher(emailId);
+        return matcher.find();
     }
 
     private void firebaseAuthWithGoogle(String idToken) {

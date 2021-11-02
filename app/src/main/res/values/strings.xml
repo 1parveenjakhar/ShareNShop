@@ -12,7 +12,7 @@
     <string name="continue_with_google">Continue with Google</string>
 
 
-    <string name="empty_email_error">Provide an email address!</string>
+    <string name="empty_email_error">Provide a valid email address!</string>
     <string name="failed_auth_error">Unable to establish your identity :(</string>
 
     <string name="themeHeading">Theme</string>
