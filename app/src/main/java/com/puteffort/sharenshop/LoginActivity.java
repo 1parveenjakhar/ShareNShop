@@ -26,7 +26,6 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.puteffort.sharenshop.databinding.ActivityLoginBinding;
-
 import java.util.Objects;
 
 public class LoginActivity extends AppCompatActivity {
@@ -37,9 +36,10 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setThemeAndLanguage();
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_login);
+        setThemeAndLanguage();
+
         mAuth = FirebaseAuth.getInstance();
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null) {
@@ -53,21 +53,31 @@ public class LoginActivity extends AppCompatActivity {
             mSignInClient = GoogleSignIn.getClient(this, gso);
             addListeners();
         }
+    }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
     }
 
     private void setThemeAndLanguage() {
         SharedPreferences sharedPrefs = getSharedPreferences(getString(R.string.app_name), Context.MODE_PRIVATE);
 
         // Theme change
-        int themeVal = sharedPrefs.getInt(getString(R.string.theme), AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        int themeVal = sharedPrefs.getInt(getString(R.string.shared_pref_theme), AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
         if (themeVal != AppCompatDelegate.getDefaultNightMode()) {
             AppCompatDelegate.setDefaultNightMode(themeVal);
         }
 
-        // Language change
-        String language = sharedPrefs.getString(getString(R.string.language), "en");
-        // TODO("change language")
+        // TODO(Language change)
+//        String language = sharedPrefs.getString(getString(R.string.shared_pref_language), "en");
+//        System.out.println("System - " + StaticData.getCurrentLocale(this).getLanguage());
+//        System.out.println("Shared - " + sharedPrefs.getString(getString(R.string.shared_pref_language), "default"));
+//        if (!language.equals(StaticData.getCurrentLocale(this).getLanguage())) {
+//            System.out.println("Hello, setting language -> " + language);
+//            StaticData.changeLanguage(language, this.getBaseContext());
+//            this.recreate();
+//        }
     }
 
     private void addListeners() {

@@ -19,8 +19,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.puteffort.sharenshop.LoginActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentAccountBinding;
-
-import java.util.Locale;
+import com.puteffort.sharenshop.utils.StaticData;
 
 public class AccountFragment extends Fragment {
     private FragmentAccountBinding binding;
@@ -59,7 +58,7 @@ public class AccountFragment extends Fragment {
         }
         themeButton.setChecked(true);
 
-        String language = Locale.getDefault().getLanguage();
+        String language = StaticData.getCurrentLocale(requireContext()).getLanguage();
         switch (language) {
             case "en":
                 langButton = binding.englishLanguage;
@@ -92,7 +91,7 @@ public class AccountFragment extends Fragment {
                 default: themeVal = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
             }
             AppCompatDelegate.setDefaultNightMode(themeVal);
-            sharedPrefs.edit().clear().putInt(getString(R.string.theme), themeVal).apply();
+            sharedPrefs.edit().clear().putInt(getString(R.string.shared_pref_theme), themeVal).apply();
         });
 
         binding.languageOptions.setOnCheckedChangeListener((group, checkedId) -> {
@@ -103,8 +102,10 @@ public class AccountFragment extends Fragment {
                 default: languageVal = "";
             }
             if (!languageVal.isEmpty()) {
-                // TODO("Change app language")
-                sharedPrefs.edit().clear().putString(getString(R.string.language), languageVal).apply();
+                // TODO()
+//                StaticData.changeLanguage(languageVal, requireActivity().getBaseContext());
+//                sharedPrefs.edit().clear().putString(getString(R.string.shared_pref_language), languageVal).apply();
+//                requireActivity().recreate();
             }
         });
     }
