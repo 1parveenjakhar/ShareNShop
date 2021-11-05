@@ -20,20 +20,24 @@ import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.utils.StaticData;
 
 import java.util.List;
+import java.util.Set;
 
 public class PostsListRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final Context context;
     private final List<PostInfo> postsInfo;
+    private final Set<String> wishListedPosts;
     private ItemClickListener mClickListener;
     private final FirebaseFirestore db;
 
     public interface ItemClickListener {
         void onItemClick(View view, int position);
+        void changeFavourite(int position, boolean isFavourite);
     }
 
-    public PostsListRecyclerViewAdapter(Context context, List<PostInfo> postsInfo) {
+    public PostsListRecyclerViewAdapter(Context context, List<PostInfo> postsInfo, Set<String> wishListedPosts) {
         this.context = context;
         this.postsInfo = postsInfo;
+        this.wishListedPosts = wishListedPosts;
         db = FirebaseFirestore.getInstance();
     }
 
@@ -70,6 +74,10 @@ public class PostsListRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerV
                     }
                 }
             });
+
+        postHolder.isFavourite = wishListedPosts.contains(post.getId());
+        int icon = postHolder.isFavourite ? R.drawable.filled_star_icon : R.drawable.unfilled_star_icon;
+        postHolder.favorite.setImageResource(icon);
     }
 
     @Override
@@ -79,7 +87,8 @@ public class PostsListRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerV
 
     class PostHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         TextView title, amount, time, people;
-        ImageView image;
+        ImageView image, favorite;
+        boolean isFavourite = false;
 
         public PostHolder(@NonNull View itemView) {
             super(itemView);
@@ -90,6 +99,14 @@ public class PostsListRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerV
             time = itemView.findViewById(R.id.postTime);
             people = itemView.findViewById(R.id.postPeople);
             image = itemView.findViewById(R.id.imageView);
+            favorite = itemView.findViewById(R.id.favouriteIcon);
+
+            favorite.setOnClickListener(view -> {
+                if (mClickListener != null) {
+                    isFavourite = !isFavourite;
+                    mClickListener.changeFavourite(getAdapterPosition(), isFavourite);
+                }
+            });
         }
 
         @Override

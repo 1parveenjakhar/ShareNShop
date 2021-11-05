@@ -49,7 +49,8 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
 
         binding.postsRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.postsRecyclerView.setHasFixedSize(true);
-        recyclerViewAdapter = new PostsListRecyclerViewAdapter(requireContext(), model.getPostsLiveData().getValue());
+        recyclerViewAdapter = new PostsListRecyclerViewAdapter(requireContext(),
+                model.getPosts().getValue(), model.getWishListedPosts().getValue());
         recyclerViewAdapter.setClickListener(this);
         binding.postsRecyclerView.setAdapter(recyclerViewAdapter);
     }
@@ -59,7 +60,9 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
         model.getDataAdded().observe(requireActivity(), index -> recyclerViewAdapter.notifyItemInserted(index));
         model.getDataChanged().observe(requireActivity(), index -> recyclerViewAdapter.notifyItemChanged(index));
         model.getDataRemoved().observe(requireActivity(), index -> recyclerViewAdapter.notifyItemRemoved(index));
-        model.getPostsLiveData().observe(requireActivity(), posts -> recyclerViewAdapter.notifyDataSetChanged());
+
+        model.getPosts().observe(requireActivity(), posts -> recyclerViewAdapter.notifyDataSetChanged());
+        model.getWishListedPosts().observe(requireActivity(), wishListedPosts -> recyclerViewAdapter.notifyDataSetChanged());
 
         model.getToastMessage().observe(requireActivity(), toastID -> UITasks.showToast(requireContext(), requireContext().getString(toastID)));
 
@@ -69,7 +72,12 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
     @Override
     public void onItemClick(View view, int position) {
         // Handling a particular post click.
-        PostInfo post = Objects.requireNonNull(model.getPostsLiveData().getValue()).get(position);
+        PostInfo post = Objects.requireNonNull(model.getPosts().getValue()).get(position);
         ((MainActivity)requireActivity()).changeFragment(new PostFragment(post));
+    }
+
+    @Override
+    public void changeFavourite(int position, boolean isFavourite) {
+        model.changePostFavourite(position, isFavourite);
     }
 }
