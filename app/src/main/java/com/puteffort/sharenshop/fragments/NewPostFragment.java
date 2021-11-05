@@ -2,6 +2,7 @@ package com.puteffort.sharenshop.fragments;
 
 import static com.puteffort.sharenshop.utils.DBOperations.POST_DETAIL_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
+import static com.puteffort.sharenshop.utils.DBOperations.USER_ACTIVITY;
 import static com.puteffort.sharenshop.utils.DBOperations.getUniqueID;
 import static com.puteffort.sharenshop.utils.UITasks.showToast;
 
@@ -16,6 +17,7 @@ import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
@@ -23,6 +25,7 @@ import com.puteffort.sharenshop.databinding.FragmentNewPostBinding;
 import com.puteffort.sharenshop.models.PostDetailInfo;
 import com.puteffort.sharenshop.models.PostInfo;
 
+import java.util.Collections;
 import java.util.Objects;
 
 // Does not require a ViewModel
@@ -30,6 +33,7 @@ import java.util.Objects;
 public class NewPostFragment extends Fragment {
     private FragmentNewPostBinding binding;
     private FirebaseFirestore db;
+    private FirebaseAuth auth;
 
     public NewPostFragment() {
         // Required empty public constructor
@@ -69,26 +73,43 @@ public class NewPostFragment extends Fragment {
         } else if (TextUtils.isEmpty(people)) {
             showToast(requireContext(), getString(R.string.new_post_people_error));
         } else {
-            String userID = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
+            String userID = Objects.requireNonNull(FirebaseAuth.getInstance()).getUid();
             createNewPost(new PostInfo(title, userID, days, months, years, people, amount),
-                    new PostDetailInfo(description, userID));
+                    new PostDetailInfo(description, userID), userID);
         }
     }
 
-    private void createNewPost(PostInfo postInfo, PostDetailInfo postDetailInfo) {
+    private void createNewPost(PostInfo postInfo, PostDetailInfo postDetailInfo, String userID) {
         binding.progressBar.setVisibility(View.VISIBLE);
 
-        if (db != null)
+        if (db == null)
             db = FirebaseFirestore.getInstance();
+        if (auth == null) {
+            auth = FirebaseAuth.getInstance();
+        }
 
         String id = getUniqueID(POST_INFO);
         postInfo.setId(id);
         postInfo.setLastActivity(System.currentTimeMillis());
         postDetailInfo.setId(id);
+
+        // Adding PostInfo
         db.collection(POST_INFO).document(id).set(postInfo)
-                .addOnSuccessListener(docRef -> db.collection(POST_DETAIL_INFO).document(id).set(postDetailInfo)
-                        .addOnSuccessListener(doc2Ref -> onPostSuccess())
-                        .addOnFailureListener(exception -> onPostFailure()))
+                .addOnSuccessListener(post -> {
+                    // Adding PostDetailInfo
+                    db.collection(POST_DETAIL_INFO).document(id)
+                            .set(postDetailInfo)
+                            .addOnSuccessListener(postDetail -> {
+                                // Adding post to users db
+                                db.collection(USER_ACTIVITY).document(userID)
+                                        .update(Collections.singletonMap("postsCreated", FieldValue.arrayUnion(id)));
+                                db.collection(USER_ACTIVITY).document(userID)
+                                        .update(Collections.singletonMap("postsInvolved", FieldValue.arrayUnion(id)))
+                                        .addOnSuccessListener(unused -> onPostSuccess())
+                                        .addOnFailureListener(unused -> onPostFailure());
+                            })
+                            .addOnFailureListener(exception -> onPostFailure());
+                    })
                 .addOnFailureListener(exception -> onPostFailure());
     }
 

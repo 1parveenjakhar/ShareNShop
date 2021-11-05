@@ -42,26 +42,20 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
     private void fetchPosts() {
         db.collection(DBOperations.POST_INFO).orderBy("lastActivity", Query.Direction.DESCENDING)
                 .addSnapshotListener((value, error) -> {
-                    System.out.println("Before Error ... " + error);
                     if (error == null && value != null) {
                         for (DocumentChange docChange: value.getDocumentChanges()) {
                             DocumentChange.Type type = docChange.getType();
                             PostInfo post = docChange.getDocument().toObject(PostInfo.class);
-                            System.out.println(post);
                             if (type == DocumentChange.Type.ADDED) {
                                 originalPosts.add(post);
                                 posts.add(post);
 
                                 dataAdded.setValue(posts.size()-1);
                             } else if (type == DocumentChange.Type.MODIFIED) {
-
-                                System.out.println("New post = " + post.getId() + ", old = " + originalPosts.get(0).getId());
                                 int index = originalPosts.indexOf(post);
-                                System.out.println("Modified with index = " + index);
                                 originalPosts.set(index, post);
 
                                 index = posts.indexOf(post);
-                                System.out.println("Modified with index = " + index);
                                 posts.set(index, post);
 
                                 dataChanged.setValue(index);

@@ -18,7 +18,6 @@ import androidx.fragment.app.Fragment;
 import com.google.firebase.auth.FirebaseAuth;
 import com.puteffort.sharenshop.LoginActivity;
 import com.puteffort.sharenshop.R;
-import com.puteffort.sharenshop.utils.StaticData;
 import com.puteffort.sharenshop.databinding.FragmentAccountBinding;
 
 import java.util.Locale;
@@ -104,7 +103,7 @@ public class AccountFragment extends Fragment {
                 default: languageVal = "";
             }
             if (!languageVal.isEmpty()) {
-                StaticData.changeLocale(languageVal, requireContext());
+                // TODO("Change app language")
                 sharedPrefs.edit().clear().putString(getString(R.string.language), languageVal).apply();
             }
         });

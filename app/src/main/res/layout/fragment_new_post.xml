@@ -96,7 +96,9 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="number" />
+                android:inputType="number"
+
+                android:text="@string/zero"/>
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -115,7 +117,9 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="number" />
+                android:inputType="number"
+
+                android:text="@string/zero"/>
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -135,7 +139,8 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="number" />
+                android:inputType="number"
+                android:text="@string/zero"/>
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -156,7 +161,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:inputType="text"
-                android:gravity="center" />
+                android:gravity="center"
+                android:scrollHorizontally="false"
+                android:singleLine="false"/>
 
         </com.google.android.material.textfield.TextInputLayout>
 

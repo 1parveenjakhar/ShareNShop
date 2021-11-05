@@ -25,7 +25,6 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
-import com.puteffort.sharenshop.utils.StaticData;
 import com.puteffort.sharenshop.databinding.ActivityLoginBinding;
 
 import java.util.Objects;
@@ -68,7 +67,7 @@ public class LoginActivity extends AppCompatActivity {
 
         // Language change
         String language = sharedPrefs.getString(getString(R.string.language), "en");
-        StaticData.changeLocale(language, this);
+        // TODO("change language")
     }
 
     private void addListeners() {

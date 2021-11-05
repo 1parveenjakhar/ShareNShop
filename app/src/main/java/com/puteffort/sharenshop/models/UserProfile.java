@@ -1,13 +1,14 @@
 package com.puteffort.sharenshop.models;
 
 public class UserProfile {
-    private String id, name, email, imageBitmapString;
+    private String id, name, email, imageURL;
+    private boolean isAuthLinked;
 
     public UserProfile() {}
-    public UserProfile(String name, String email, String imageBitmapString) {
+    public UserProfile(String name, String email, String imageURL) {
         this.name = name;
         this.email = email;
-        this.imageBitmapString = imageBitmapString;
+        this.imageURL = imageURL;
     }
 
     public String getId() {
@@ -34,11 +35,19 @@ public class UserProfile {
         this.email = email;
     }
 
-    public String getImageBitmapString() {
-        return imageBitmapString;
+    public String getImageURL() {
+        return imageURL;
     }
 
-    public void setImageBitmapString(String imageBitmapString) {
-        this.imageBitmapString = imageBitmapString;
+    public void setImageURL(String imageURL) {
+        this.imageURL = imageURL;
+    }
+
+    public boolean isAuthLinked() {
+        return isAuthLinked;
+    }
+
+    public void setAuthLinked(boolean authLinked) {
+        isAuthLinked = authLinked;
     }
 }

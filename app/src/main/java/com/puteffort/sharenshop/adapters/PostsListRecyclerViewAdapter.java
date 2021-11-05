@@ -4,10 +4,6 @@ import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,10 +13,10 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.models.PostInfo;
-import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.utils.StaticData;
 
 import java.util.List;
@@ -64,13 +60,14 @@ public class PostsListRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerV
         postHolder.time.setText(time.toString().trim());
 
         db.collection(USER_PROFILE).document(post.getOwnerID()).get()
-        .addOnSuccessListener(documentSnapshot -> {
-                UserProfile user = documentSnapshot.toObject(UserProfile.class);
-                if (user != null) {
-                    AsyncTask.execute(() -> {
-                        Bitmap bitmap = StaticData.getBitmapFromString(user.getImageBitmapString(), context);
-                        new Handler(Looper.getMainLooper()).post(() -> postHolder.image.setImageBitmap(bitmap));
-                    });
+        .addOnSuccessListener(docSnap -> {
+                if (docSnap != null) {
+                    try {
+                        Glide.with(context).load(docSnap.getString("imageURL")).
+                                circleCrop().into(postHolder.image);
+                    } catch (Exception e) {
+                        postHolder.image.setImageBitmap(StaticData.getDefaultImageBitmap(context));
+                    }
                 }
             });
     }
