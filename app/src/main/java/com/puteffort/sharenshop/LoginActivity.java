@@ -27,8 +27,12 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.utils.StaticData;
 import com.puteffort.sharenshop.databinding.ActivityLoginBinding;
+import com.puteffort.sharenshop.models.UserProfile;
 
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -38,6 +42,14 @@ public class LoginActivity extends AppCompatActivity {
     private ActivityLoginBinding binding;
     private FirebaseAuth mAuth;
     private GoogleSignInClient mSignInClient;
+    private int SIGN_IN_USING_EMAIL = 0;
+    private int SIGN_IN_USING_GOOGLE = 1;
+    private String TAG = this.getClass().getSimpleName();
+    private boolean isAuthLinked;
+
+    //Cloud firestore constants
+    private final String USER_PROFILE = "UserProfile"; //collection type
+    private final String isAuthLinkedField = "isAuthLinked"; // field
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -158,31 +170,18 @@ public class LoginActivity extends AppCompatActivity {
                                 return;
                             }
                             //Email is verified log-in;
-                            updateUI(user);
+                            handleSuccessfulAuthentication(SIGN_IN_USING_EMAIL);
                         } else {
                             // If sign in fails, display a message to the user.
                             //Log.w(TAG, "signInWithEmail:failure", task.getException());
                             Toast.makeText(LoginActivity.this, task.getException().getMessage(),
                                     Toast.LENGTH_LONG).show();
-                            updateUI(null);
+                            handleSuccessfulAuthentication(SIGN_IN_USING_EMAIL);
                         }
                     }
                 });
     }
 
-    private void updateUI(FirebaseUser user) {
-        //FirebaseAuth is a singleton class, you can get instance of firebase auth anywhere from the app.
-        //Therefore, function parameter can be ignored
-
-        if(user!=null){
-
-            Toast.makeText(LoginActivity.this, "Authentication Successful. Welcome " +
-                            user.getEmail() +"!"
-                    ,
-                    Toast.LENGTH_SHORT).show();
-            // TODO: 02-11-2021 ("Open Dashboard Activity here!")
-        }
-    }
 
     public static boolean emailValidator(String emailId) {
         //Validating email ID using Regex
@@ -196,8 +195,55 @@ public class LoginActivity extends AppCompatActivity {
     private void firebaseAuthWithGoogle(String idToken) {
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
         mAuth.signInWithCredential(credential)
-            .addOnSuccessListener(this, authResult -> handleSuccessfulAuthentication())
+            .addOnSuccessListener(this, authResult -> handleSuccessfulAuthentication(SIGN_IN_USING_GOOGLE))
             .addOnFailureListener(this, this::handleFailedAuthentication);
+    }
+
+    private void handleSuccessfulAuthentication(int signInMethod) {
+
+        syncLoginMethods(signInMethod);
+        // TODO: 05-11-2021 ("Apply syncing logic here!")
+        startActivity(new Intent(this, MainActivity.class));
+        finish();
+    }
+
+    private void syncLoginMethods(int signInMethod) {
+        //Check if auth providers are already linked
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        boolean isAuthLinked = getAuthLinkedStatus(currentUser);
+
+        if(isAuthLinked){
+            return;
+        }
+
+        //Both auth providers are not linked
+        if(signInMethod == SIGN_IN_USING_EMAIL){
+            //ask for google sign-in
+        }else if(signInMethod == SIGN_IN_USING_GOOGLE){
+            //ask for email sign-in
+
+        }
+    }
+
+    private boolean getAuthLinkedStatus(FirebaseUser currentUser) {
+        //Fetching data from the firestore
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference userProfileRef = db.collection(USER_PROFILE).document(currentUser.getUid());
+
+        userProfileRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if(task.isSuccessful()){
+                    DocumentSnapshot document = task.getResult();
+                    if(document.exists()){
+                        UserProfile userProfile = document.toObject(UserProfile.class);
+                        //function local variable not working so took global
+                        isAuthLinked = userProfile.getAuthLinkedStatus();
+                    }
+                }
+            }
+        });
+        return isAuthLinked;
     }
 
     private void handleSuccessfulAuthentication() {
