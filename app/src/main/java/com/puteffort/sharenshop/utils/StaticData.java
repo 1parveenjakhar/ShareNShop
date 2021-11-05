@@ -5,6 +5,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.util.Base64;
 
 import com.puteffort.sharenshop.R;
@@ -13,7 +14,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Locale;
 
@@ -25,7 +25,7 @@ public class StaticData {
         if (defaultImageBitmap == null) {
             defaultImageBitmap = BitmapFactory.decodeResource(context.getResources(),
                     R.drawable.default_user_image);
-            defaultImageString = getStringFromBitmap(defaultImageBitmap);
+            AsyncTask.execute(() -> defaultImageString = getStringFromBitmap(defaultImageBitmap));
         }
         return defaultImageBitmap;
     }

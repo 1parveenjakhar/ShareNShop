@@ -4,13 +4,13 @@ import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
+import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.puteffort.sharenshop.databinding.ActivityMainBinding;
-import com.puteffort.sharenshop.fragments.NewPostFragment;
 import com.puteffort.sharenshop.viewmodels.MainActivityViewModel;
 
-public class MainActivity extends AppCompatActivity implements NewPostFragment.NewPostReset {
+public class MainActivity extends AppCompatActivity {
     private ActivityMainBinding binding;
     private MainActivityViewModel model;
 
@@ -27,8 +27,14 @@ public class MainActivity extends AppCompatActivity implements NewPostFragment.N
                 .commit());
     }
 
-    @Override
-    public void resetNewPostFragment() {
-        binding.bottomNav.setSelectedItemId(R.id.homeMenuItem);
+    public void changeFragment(int fragmentID) {
+        binding.bottomNav.setSelectedItemId(fragmentID);
+    }
+
+    public void changeFragment(Fragment fragment) {
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragmentContainer, fragment)
+                .addToBackStack(null)
+                .commit();
     }
 }

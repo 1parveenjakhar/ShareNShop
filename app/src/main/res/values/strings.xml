@@ -49,4 +49,6 @@
     <string name="time">Time</string>
     <string name="rs_xyz">Rs. XYZ</string>
     <string name="picture_of_post_owner">Picture of post owner</string>
+
+    <string name="db_fetch_error">Unable to fetch your data :(</string>
 </resources>

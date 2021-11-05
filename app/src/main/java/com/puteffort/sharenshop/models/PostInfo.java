@@ -1,5 +1,7 @@
 package com.puteffort.sharenshop.models;
 
+import androidx.annotation.NonNull;
+
 public class PostInfo {
     private String title;
     private String ownerID;
@@ -23,6 +25,19 @@ public class PostInfo {
         this.peopleRequired = Integer.parseInt(peopleRequired);
         this.amount = Integer.parseInt(amount);
         this.accomplished = false;
+    }
+
+    @Override
+    public boolean equals (Object post) {
+        return this.id.equals(((PostInfo)post).getId());
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "PostInfo{" +
+                "title='" + title + '\'' +
+                '}';
     }
 
     public String getTitle() {

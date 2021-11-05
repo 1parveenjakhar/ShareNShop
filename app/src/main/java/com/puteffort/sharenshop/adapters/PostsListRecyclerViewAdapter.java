@@ -4,6 +4,10 @@ import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,10 +17,10 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.models.UserProfile;
-import com.puteffort.sharenshop.utils.DBOperations;
 import com.puteffort.sharenshop.utils.StaticData;
 
 import java.util.List;
@@ -24,10 +28,17 @@ import java.util.List;
 public class PostsListRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final Context context;
     private final List<PostInfo> postsInfo;
+    private ItemClickListener mClickListener;
+    private final FirebaseFirestore db;
+
+    public interface ItemClickListener {
+        void onItemClick(View view, int position);
+    }
 
     public PostsListRecyclerViewAdapter(Context context, List<PostInfo> postsInfo) {
         this.context = context;
         this.postsInfo = postsInfo;
+        db = FirebaseFirestore.getInstance();
     }
 
     @NonNull
@@ -52,12 +63,15 @@ public class PostsListRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerV
         if (post.getDays() != 0) time.append(post.getDays()).append("D ");
         postHolder.time.setText(time.toString().trim());
 
-        DBOperations.getDB().collection(USER_PROFILE).document(post.getOwnerID()).get()
+        db.collection(USER_PROFILE).document(post.getOwnerID()).get()
         .addOnSuccessListener(documentSnapshot -> {
                 UserProfile user = documentSnapshot.toObject(UserProfile.class);
-                if (user != null)
-                    postHolder.image.setImageBitmap(
-                            StaticData.getBitmapFromString(user.getImageBitmapString(), context));
+                if (user != null) {
+                    AsyncTask.execute(() -> {
+                        Bitmap bitmap = StaticData.getBitmapFromString(user.getImageBitmapString(), context);
+                        new Handler(Looper.getMainLooper()).post(() -> postHolder.image.setImageBitmap(bitmap));
+                    });
+                }
             });
     }
 
@@ -66,12 +80,13 @@ public class PostsListRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerV
         return postsInfo.size();
     }
 
-    private static class PostHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    class PostHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         TextView title, amount, time, people;
         ImageView image;
 
         public PostHolder(@NonNull View itemView) {
             super(itemView);
+            itemView.setOnClickListener(this);
 
             title = itemView.findViewById(R.id.postTitle);
             amount = itemView.findViewById(R.id.postAmount);
@@ -80,10 +95,14 @@ public class PostsListRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerV
             image = itemView.findViewById(R.id.imageView);
         }
 
-
         @Override
-        public void onClick(View v) {
-            // TODO("Handle Item on click")
+        public void onClick(View view) {
+            if (mClickListener != null)
+                mClickListener.onItemClick(view, getAdapterPosition());
         }
+    }
+
+    public void setClickListener(ItemClickListener itemClickListener) {
+        this.mClickListener = itemClickListener;
     }
 }

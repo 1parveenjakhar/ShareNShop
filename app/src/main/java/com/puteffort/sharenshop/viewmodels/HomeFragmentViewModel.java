@@ -1,11 +1,14 @@
 package com.puteffort.sharenshop.viewmodels;
 
 import androidx.appcompat.widget.SearchView;
-
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.google.firebase.firestore.DocumentChange;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.utils.DBOperations;
 
@@ -13,28 +16,69 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQueryTextListener {
-    private final MutableLiveData<List<PostInfo>> postsInfoLiveData;
+    private final MutableLiveData<List<PostInfo>> postsLiveData;
     private final List<PostInfo> originalPosts;
-    private final List<PostInfo> postsInfo;
+    private final List<PostInfo> posts;
+    private final FirebaseFirestore db;
+    private final MutableLiveData<Integer> toastMessage = new MutableLiveData<>();
+
+    private final MutableLiveData<Boolean> dataUpdating = new MutableLiveData<>(true);
+
+    private final MutableLiveData<Integer> dataChanged, dataAdded, dataRemoved;
 
     public HomeFragmentViewModel() {
-        postsInfoLiveData = new MutableLiveData<>();
         originalPosts = new ArrayList<>();
-        postsInfo = new ArrayList<>();
-        getPostsInfoFromFirestore();
+        posts = new ArrayList<>();
+        postsLiveData = new MutableLiveData<>(posts);
+
+        dataAdded = new MutableLiveData<>();
+        dataRemoved = new MutableLiveData<>();
+        dataChanged = new MutableLiveData<>();
+
+        db = FirebaseFirestore.getInstance();
+        fetchPosts();
     }
 
-    public LiveData<List<PostInfo>> getPostsInfoLiveData() {
-        return postsInfoLiveData;
-    }
+    private void fetchPosts() {
+        db.collection(DBOperations.POST_INFO).orderBy("lastActivity", Query.Direction.DESCENDING)
+                .addSnapshotListener((value, error) -> {
+                    System.out.println("Before Error ... " + error);
+                    if (error == null && value != null) {
+                        for (DocumentChange docChange: value.getDocumentChanges()) {
+                            DocumentChange.Type type = docChange.getType();
+                            PostInfo post = docChange.getDocument().toObject(PostInfo.class);
+                            System.out.println(post);
+                            if (type == DocumentChange.Type.ADDED) {
+                                originalPosts.add(post);
+                                posts.add(post);
 
-    private void getPostsInfoFromFirestore() {
-        DBOperations.getDB().collection(DBOperations.POST_INFO).get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    if (!queryDocumentSnapshots.isEmpty()) {
-                        originalPosts.addAll(queryDocumentSnapshots.toObjects(PostInfo.class));
-                        postsInfo.addAll(originalPosts);
-                        postsInfoLiveData.setValue(postsInfo);
+                                dataAdded.setValue(posts.size()-1);
+                            } else if (type == DocumentChange.Type.MODIFIED) {
+
+                                System.out.println("New post = " + post.getId() + ", old = " + originalPosts.get(0).getId());
+                                int index = originalPosts.indexOf(post);
+                                System.out.println("Modified with index = " + index);
+                                originalPosts.set(index, post);
+
+                                index = posts.indexOf(post);
+                                System.out.println("Modified with index = " + index);
+                                posts.set(index, post);
+
+                                dataChanged.setValue(index);
+                            } else if (type == DocumentChange.Type.REMOVED) {
+                                originalPosts.remove(post);
+
+                                int index = posts.indexOf(post);
+                                posts.remove(index);
+
+                                dataRemoved.setValue(index);
+                            }
+                            dataUpdating.setValue(false);
+                        }
+                    } else {
+                        // Database Error
+                        toastMessage.setValue(R.string.db_fetch_error);
+                        dataUpdating.setValue(false);
                     }
                 });
     }
@@ -46,17 +90,42 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
 
     @Override
     public boolean onQueryTextChange(String newText) {
-        postsInfo.clear();
+        posts.clear();
         String query = newText.trim().toLowerCase();
         if (query.isEmpty()) {
-            postsInfo.addAll(originalPosts);
+            posts.addAll(originalPosts);
         } else {
             for (PostInfo post : originalPosts) {
                 if (post.getTitle().toLowerCase().contains(query))
-                    postsInfo.add(post);
+                    posts.add(post);
             }
         }
-        postsInfoLiveData.setValue(postsInfo);
+        postsLiveData.setValue(posts);
         return true;
+    }
+
+
+    public LiveData<Integer> getDataChanged() {
+        return dataChanged;
+    }
+
+    public LiveData<Integer> getDataAdded() {
+        return dataAdded;
+    }
+
+    public LiveData<Integer> getDataRemoved() {
+        return dataRemoved;
+    }
+
+    public LiveData<List<PostInfo>> getPostsLiveData() {
+        return postsLiveData;
+    }
+
+    public LiveData<Boolean> isDataUpdating() {
+        return dataUpdating;
+    }
+
+    public LiveData<Integer> getToastMessage() {
+        return toastMessage;
     }
 }

@@ -1,9 +1,9 @@
 package com.puteffort.sharenshop.fragments;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.widget.SearchView;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -13,12 +13,17 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.adapters.PostsListRecyclerViewAdapter;
 import com.puteffort.sharenshop.databinding.FragmentHomeBinding;
+import com.puteffort.sharenshop.models.PostInfo;
+import com.puteffort.sharenshop.utils.UITasks;
 import com.puteffort.sharenshop.viewmodels.HomeFragmentViewModel;
 
-public class HomeFragment extends Fragment {
+import java.util.Objects;
+
+public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapter.ItemClickListener {
     private FragmentHomeBinding binding;
     private HomeFragmentViewModel model;
     private PostsListRecyclerViewAdapter recyclerViewAdapter;
@@ -33,19 +38,38 @@ public class HomeFragment extends Fragment {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_home, container, false);
         model = new ViewModelProvider(requireActivity()).get(HomeFragmentViewModel.class);
 
-        binding.searchView.setOnQueryTextListener(model);
-        binding.postsRecyclerView.setHasFixedSize(true);
+        setUpComponents();
         addObservers();
 
         return binding.getRoot();
     }
 
+    private void setUpComponents() {
+        binding.searchView.setOnQueryTextListener(model);
+
+        binding.postsRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.postsRecyclerView.setHasFixedSize(true);
+        recyclerViewAdapter = new PostsListRecyclerViewAdapter(requireContext(), model.getPostsLiveData().getValue());
+        recyclerViewAdapter.setClickListener(this);
+        binding.postsRecyclerView.setAdapter(recyclerViewAdapter);
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
     private void addObservers() {
-        model.getPostsInfoLiveData().observe(requireActivity(), postsInfo -> {
-            binding.progressBar.setVisibility(View.INVISIBLE);
-            recyclerViewAdapter = new PostsListRecyclerViewAdapter(getContext(), postsInfo);
-            binding.postsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-            binding.postsRecyclerView.setAdapter(recyclerViewAdapter);
-        });
+        model.getDataAdded().observe(requireActivity(), index -> recyclerViewAdapter.notifyItemInserted(index));
+        model.getDataChanged().observe(requireActivity(), index -> recyclerViewAdapter.notifyItemChanged(index));
+        model.getDataRemoved().observe(requireActivity(), index -> recyclerViewAdapter.notifyItemRemoved(index));
+        model.getPostsLiveData().observe(requireActivity(), posts -> recyclerViewAdapter.notifyDataSetChanged());
+
+        model.getToastMessage().observe(requireActivity(), toastID -> UITasks.showToast(requireContext(), requireContext().getString(toastID)));
+
+        model.isDataUpdating().observe(requireActivity(), dataUpdating -> binding.progressBar.setVisibility(dataUpdating ? View.VISIBLE : View.INVISIBLE));
+    }
+
+    @Override
+    public void onItemClick(View view, int position) {
+        // Handling a particular post click.
+        PostInfo post = Objects.requireNonNull(model.getPostsLiveData().getValue()).get(position);
+        ((MainActivity)requireActivity()).changeFragment(new PostFragment(post));
     }
 }

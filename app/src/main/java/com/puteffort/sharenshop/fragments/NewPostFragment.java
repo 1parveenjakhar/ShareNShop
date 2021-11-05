@@ -1,5 +1,8 @@
 package com.puteffort.sharenshop.fragments;
 
+import static com.puteffort.sharenshop.utils.DBOperations.POST_DETAIL_INFO;
+import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
+import static com.puteffort.sharenshop.utils.DBOperations.getUniqueID;
 import static com.puteffort.sharenshop.utils.UITasks.showToast;
 
 import android.os.Bundle;
@@ -11,14 +14,14 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.MutableLiveData;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentNewPostBinding;
 import com.puteffort.sharenshop.models.PostDetailInfo;
 import com.puteffort.sharenshop.models.PostInfo;
-import com.puteffort.sharenshop.utils.DBOperations;
 
 import java.util.Objects;
 
@@ -26,10 +29,7 @@ import java.util.Objects;
 // A user can bear that much data loss
 public class NewPostFragment extends Fragment {
     private FragmentNewPostBinding binding;
-
-    public interface NewPostReset {
-        void resetNewPostFragment();
-    }
+    private FirebaseFirestore db;
 
     public NewPostFragment() {
         // Required empty public constructor
@@ -76,18 +76,29 @@ public class NewPostFragment extends Fragment {
     }
 
     private void createNewPost(PostInfo postInfo, PostDetailInfo postDetailInfo) {
-        MutableLiveData<Boolean> result = new MutableLiveData<>();
-        result.observe(this, successful -> {
-            if (successful) {
-                showToast(requireContext(), getString(R.string.new_post_post_successful));
-                binding.progressBar.setVisibility(View.INVISIBLE);
-                ((NewPostReset)requireActivity()).resetNewPostFragment();
-            } else {
-                showToast(requireContext(), getString(R.string.new_post_post_failure));
-            }
-        });
-
         binding.progressBar.setVisibility(View.VISIBLE);
-        DBOperations.addPost(postInfo, postDetailInfo, result);
+
+        if (db != null)
+            db = FirebaseFirestore.getInstance();
+
+        String id = getUniqueID(POST_INFO);
+        postInfo.setId(id);
+        postInfo.setLastActivity(System.currentTimeMillis());
+        postDetailInfo.setId(id);
+        db.collection(POST_INFO).document(id).set(postInfo)
+                .addOnSuccessListener(docRef -> db.collection(POST_DETAIL_INFO).document(id).set(postDetailInfo)
+                        .addOnSuccessListener(doc2Ref -> onPostSuccess())
+                        .addOnFailureListener(exception -> onPostFailure()))
+                .addOnFailureListener(exception -> onPostFailure());
+    }
+
+    private void onPostSuccess() {
+        showToast(requireContext(), getString(R.string.new_post_post_successful));
+        ((MainActivity)requireActivity()).changeFragment(R.id.homeMenuItem);
+    }
+
+    private void onPostFailure() {
+        binding.progressBar.setVisibility(View.INVISIBLE);
+        showToast(requireContext(), getString(R.string.new_post_post_failure));
     }
 }
