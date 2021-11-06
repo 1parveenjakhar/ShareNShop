@@ -5,7 +5,8 @@ import java.util.List;
 
 public class UserActivity {
     private String id;
-    private List<String> postsCreated, postsInvolved, postsWishListed;
+    private List<String> postsCreated, postsWishListed;
+    private List<PostStatus> postsInvolved;
 
     public UserActivity() {}
 
@@ -14,6 +15,11 @@ public class UserActivity {
         postsCreated = new ArrayList<>();
         postsInvolved = new ArrayList<>();
         postsWishListed = new ArrayList<>();
+    }
+
+    public UserActivity(String id, String postID) {
+        this(id);
+        postsInvolved.add(new PostStatus(postID));
     }
 
     public String getId() {
@@ -32,11 +38,11 @@ public class UserActivity {
         this.postsCreated = postsCreated;
     }
 
-    public List<String> getPostsInvolved() {
+    public List<PostStatus> getPostsInvolved() {
         return postsInvolved;
     }
 
-    public void setPostsInvolved(List<String> postsInvolved) {
+    public void setPostsInvolved(List<PostStatus> postsInvolved) {
         this.postsInvolved = postsInvolved;
     }
 
@@ -46,5 +52,12 @@ public class UserActivity {
 
     public void setPostsWishListed(List<String> postsWishListed) {
         this.postsWishListed = postsWishListed;
+    }
+
+    public void setValues(UserActivity userActivity) {
+        this.id = userActivity.getId();
+        this.postsCreated = userActivity.getPostsCreated();
+        this.postsInvolved = userActivity.getPostsInvolved();
+        this.postsWishListed = userActivity.getPostsWishListed();
     }
 }

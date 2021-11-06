@@ -26,6 +26,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.puteffort.sharenshop.databinding.ActivityLoginBinding;
+import com.puteffort.sharenshop.utils.DBOperations;
+
 import java.util.Objects;
 
 public class LoginActivity extends AppCompatActivity {
@@ -43,6 +45,7 @@ public class LoginActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null) {
+            DBOperations.getUserDetails();
             handleSuccessfulAuthentication();
         } else {
             GoogleSignInOptions gso = new GoogleSignInOptions

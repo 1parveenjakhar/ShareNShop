@@ -46,4 +46,5 @@
     <string name="years">वर्ष</string>
     <string name="describe_your_post">अपनी पोस्ट का वर्णन करें</string>
     <string name="post">पोस्ट</string>
+    <string name="post_status">Post Status</string>
 </resources>

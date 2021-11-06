@@ -13,7 +13,9 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="20dp">
+        android:paddingHorizontal="20dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="10dp">
 
         <ImageView
             android:id="@+id/imageView"
@@ -91,13 +93,30 @@
 
         </TextView>
 
-        <TextView
-            android:id="@+id/hrLine"
+        <Button
+            android:id="@+id/postStatusButton"
             android:layout_width="match_parent"
-            android:layout_height="2dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintTop_toBottomOf="@id/postTime"
+            android:background="@drawable/gradient_long_button_bg"
             android:layout_marginTop="15dp"
-            android:background="@color/design_default_color_primary"/>
+            android:text="@string/post_status"
+            app:backgroundTint="@null"/>
+
+        <ProgressBar
+            android:id="@+id/statusProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/postStatusButton"
+            app:layout_constraintBottom_toBottomOf="@id/postStatusButton"
+            app:layout_constraintStart_toStartOf="@id/postStatusButton"
+            app:layout_constraintEnd_toEndOf="@id/postStatusButton"
+            android:translationZ="5dp"
+            android:scaleX="0.7"
+            android:scaleY="0.7"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

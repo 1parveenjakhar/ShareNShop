@@ -2,6 +2,9 @@ package com.puteffort.sharenshop.fragments;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.databinding.DataBindingUtil;
@@ -9,15 +12,12 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-
 import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.adapters.PostsListRecyclerViewAdapter;
 import com.puteffort.sharenshop.databinding.FragmentHomeBinding;
 import com.puteffort.sharenshop.models.PostInfo;
+import com.puteffort.sharenshop.utils.DBOperations;
 import com.puteffort.sharenshop.utils.UITasks;
 import com.puteffort.sharenshop.viewmodels.HomeFragmentViewModel;
 
@@ -50,9 +50,12 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
         binding.postsRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.postsRecyclerView.setHasFixedSize(true);
         recyclerViewAdapter = new PostsListRecyclerViewAdapter(requireContext(),
-                model.getPosts().getValue(), model.getWishListedPosts().getValue());
+                model.getPosts().getValue(),
+                model.getWishListedPosts(),
+                model.getPostsStatus());
         recyclerViewAdapter.setClickListener(this);
         binding.postsRecyclerView.setAdapter(recyclerViewAdapter);
+        binding.swipeRefreshPostList.setOnRefreshListener(DBOperations::getUserDetails);
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -61,12 +64,21 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
         model.getDataChanged().observe(requireActivity(), index -> recyclerViewAdapter.notifyItemChanged(index));
         model.getDataRemoved().observe(requireActivity(), index -> recyclerViewAdapter.notifyItemRemoved(index));
 
-        model.getPosts().observe(requireActivity(), posts -> recyclerViewAdapter.notifyDataSetChanged());
-        model.getWishListedPosts().observe(requireActivity(), wishListedPosts -> recyclerViewAdapter.notifyDataSetChanged());
+        model.getPosts().observe(requireActivity(), unused -> recyclerViewAdapter.notifyDataSetChanged());
+        model.areUserDetailsChanged().observe(requireActivity(), detailsChanged -> {
+            if (detailsChanged) {
+                recyclerViewAdapter.notifyDataSetChanged();
+            }
+        });
 
         model.getToastMessage().observe(requireActivity(), toastID -> UITasks.showToast(requireContext(), requireContext().getString(toastID)));
 
         model.isDataUpdating().observe(requireActivity(), dataUpdating -> binding.progressBar.setVisibility(dataUpdating ? View.VISIBLE : View.INVISIBLE));
+
+        DBOperations.getUserActivity().observe(requireActivity(), userActivity -> {
+            binding.swipeRefreshPostList.setRefreshing(false);
+            model.changeUserDetails(userActivity);
+        });
     }
 
     @Override
@@ -79,5 +91,10 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
     @Override
     public void changeFavourite(int position, boolean isFavourite) {
         model.changePostFavourite(position, isFavourite);
+    }
+
+    @Override
+    public void changeStatus(int position, String status) {
+        model.changeStatus(position, status);
     }
 }

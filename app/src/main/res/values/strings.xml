@@ -63,4 +63,5 @@
     <string name="years">Years</string>
     <string name="describe_your_post">Describe your Post</string>
     <string name="post">Post</string>
+    <string name="post_status">Post Status</string>
 </resources>

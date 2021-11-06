@@ -2,11 +2,9 @@ package com.puteffort.sharenshop.utils;
 
 import android.content.Context;
 import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
-import android.util.DisplayMetrics;
 
 import com.puteffort.sharenshop.R;
 

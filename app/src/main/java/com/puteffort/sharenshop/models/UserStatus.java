@@ -4,7 +4,11 @@ public class UserStatus {
     private String userID, status;
 
     public UserStatus() {
+    }
 
+    public UserStatus(String userID) {
+        this.userID = userID;
+        this.status = "Added";
     }
 
     public UserStatus(String userID, String status) {

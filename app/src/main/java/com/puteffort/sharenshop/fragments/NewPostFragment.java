@@ -24,6 +24,7 @@ import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentNewPostBinding;
 import com.puteffort.sharenshop.models.PostDetailInfo;
 import com.puteffort.sharenshop.models.PostInfo;
+import com.puteffort.sharenshop.models.PostStatus;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -104,7 +105,7 @@ public class NewPostFragment extends Fragment {
                                 db.collection(USER_ACTIVITY).document(userID)
                                         .update(Collections.singletonMap("postsCreated", FieldValue.arrayUnion(id)));
                                 db.collection(USER_ACTIVITY).document(userID)
-                                        .update(Collections.singletonMap("postsInvolved", FieldValue.arrayUnion(id)))
+                                        .update(Collections.singletonMap("postsInvolved", FieldValue.arrayUnion(new PostStatus(id))))
                                         .addOnSuccessListener(unused -> onPostSuccess())
                                         .addOnFailureListener(unused -> onPostFailure());
                             })

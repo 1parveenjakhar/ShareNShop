@@ -50,4 +50,12 @@ public class UserProfile {
     public void setAuthLinked(boolean authLinked) {
         isAuthLinked = authLinked;
     }
+
+    public void setValues(UserProfile userProfile) {
+        this.id = userProfile.getId();
+        this.name = userProfile.getName();
+        this.email = userProfile.getEmail();
+        this.imageURL = userProfile.getImageURL();
+        this.isAuthLinked = userProfile.isAuthLinked();
+    }
 }
