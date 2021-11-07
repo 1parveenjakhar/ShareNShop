@@ -2,7 +2,7 @@
     <string name="app_name">ShareNShop</string>
 
 
-<!--    Strings irrespective of the language-->
+    <!--    Strings irrespective of the language-->
     <!--    Strings related to SharedPreferences-->
     <string name="shared_pref_theme">Theme</string>
     <string name="shared_pref_language">Language</string>
@@ -14,7 +14,7 @@
 
 
 
-<!--    Strings related to NewPostFragment-->
+    <!--    Strings related to NewPostFragment-->
     <string name="new_post_title_error">Please provide a title!</string>
     <string name="new_post_amount_error">Please add some amount!</string>
     <string name="new_post_days_error">Please mention no of days!</string>
@@ -34,7 +34,7 @@
 
 
 
-<!--    Strings related to views-->
+    <!--    Strings related to views-->
     <string name="email">Email</string>
     <string name="password">Password</string>
     <string name="new_user">New User?</string>
@@ -64,4 +64,10 @@
     <string name="describe_your_post">Describe your Post</string>
     <string name="post">Post</string>
     <string name="post_status">Post Status</string>
+
+
+    <string name="name">Name</string>
+    <string name="sign_up">Sign up</string>
+    <string name="confirm_password">Retype Password</string>
+    <string name="email_not_verified">You need to verify your email first. Check your mail for the verification link!</string>
 </resources>

@@ -2,13 +2,14 @@ package com.puteffort.sharenshop.models;
 
 public class UserProfile {
     private String id, name, email, imageURL;
-    private boolean isAuthLinked;
+    private boolean authLinked;
 
     public UserProfile() {}
-    public UserProfile(String name, String email, String imageURL) {
+    public UserProfile(String name, String email, String imageURL, String id) {
         this.name = name;
         this.email = email;
         this.imageURL = imageURL;
+        this.id = id;
     }
 
     public String getId() {
@@ -43,12 +44,12 @@ public class UserProfile {
         this.imageURL = imageURL;
     }
 
-    public boolean isAuthLinked() {
-        return isAuthLinked;
+    public boolean getAuthLinked() {
+        return authLinked;
     }
 
     public void setAuthLinked(boolean authLinked) {
-        isAuthLinked = authLinked;
+        this.authLinked = authLinked;
     }
 
     public void setValues(UserProfile userProfile) {
@@ -56,6 +57,6 @@ public class UserProfile {
         this.name = userProfile.getName();
         this.email = userProfile.getEmail();
         this.imageURL = userProfile.getImageURL();
-        this.isAuthLinked = userProfile.isAuthLinked();
+        this.authLinked = userProfile.getAuthLinked();
     }
 }
