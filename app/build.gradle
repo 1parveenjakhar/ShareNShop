@@ -48,6 +48,9 @@ dependencies {
 
     // Material components
     implementation 'com.google.android.material:material:1.4.0'
+
+    //Cloud Firestore
+    implementation 'com.google.firebase:firebase-firestore'
 }
 
 apply plugin: 'com.google.gms.google-services'

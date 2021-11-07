@@ -1,13 +1,32 @@
 package com.puteffort.sharenshop.models;
-import com.google.firebase.firestore.IgnoreExtraProperties;
 
-@IgnoreExtraProperties
 public class UserProfile {
-    private String email;
-    private String id;
-    private String imageBitmapString;
-    private boolean authLinkedStatus;
-    private String name;
+    private String id, name, email, imageURL;
+    private boolean authLinked;
+
+    public UserProfile() {}
+    public UserProfile(String name, String email, String imageURL, String id) {
+        this.name = name;
+        this.email = email;
+        this.imageURL = imageURL;
+        this.id = id;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public String getEmail() {
         return email;
@@ -17,27 +36,27 @@ public class UserProfile {
         this.email = email;
     }
 
-    public String getId() {
-        return id;
+    public String getImageURL() {
+        return imageURL;
     }
 
-    public String getImageBitmapString() {
-        return imageBitmapString;
+    public void setImageURL(String imageURL) {
+        this.imageURL = imageURL;
     }
 
-    public boolean getAuthLinkedStatus() {
-        return authLinkedStatus;
+    public boolean getAuthLinked() {
+        return authLinked;
     }
 
-    public void setAuthLinkedStatus(boolean authLinkedStatus) {
-        this.authLinkedStatus = authLinkedStatus;
+    public void setAuthLinked(boolean authLinked) {
+        authLinked = authLinked;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
+    public void setValues(UserProfile userProfile) {
+        this.id = userProfile.getId();
+        this.name = userProfile.getName();
+        this.email = userProfile.getEmail();
+        this.imageURL = userProfile.getImageURL();
+        this.authLinked = userProfile.getAuthLinked();
     }
 }

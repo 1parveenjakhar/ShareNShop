@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -27,9 +28,7 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
-import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.*;
 import com.puteffort.sharenshop.utils.StaticData;
 import com.puteffort.sharenshop.databinding.ActivityLoginBinding;
 import com.puteffort.sharenshop.models.UserProfile;
@@ -44,12 +43,15 @@ public class LoginActivity extends AppCompatActivity {
     private GoogleSignInClient mSignInClient;
     private int SIGN_IN_USING_EMAIL = 0;
     private int SIGN_IN_USING_GOOGLE = 1;
-    private String TAG = this.getClass().getSimpleName();
+    //private String TAG = this.getClass().getSimpleName();
+    private String TAG = "huehuehue";
     private boolean isAuthLinked;
+
+    private String IS_LINKING = "IS_LINKING";
 
     //Cloud firestore constants
     private final String USER_PROFILE = "UserProfile"; //collection type
-    private final String isAuthLinkedField = "isAuthLinked"; // field
+    private final String isAuthLinkedField = "authLinked"; // field
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,8 +62,10 @@ public class LoginActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null) {
+            Log.i(TAG,"User already logged-in. Starting Dashboard...");
             handleSuccessfulAuthentication();
         } else {
+            Log.i(TAG,"User NOT logged-in. Starting Authentication...");
             GoogleSignInOptions gso = new GoogleSignInOptions
                     .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                     .requestIdToken(getString(R.string.default_web_client_id))
@@ -94,6 +98,7 @@ public class LoginActivity extends AppCompatActivity {
 
         //Sign-in button
         binding.signInButton.setOnClickListener(view -> {
+            Log.i(TAG,"Sign-in button clicked!");
             //Read email & password
             String emailId = Objects.requireNonNull(binding.emailAddress.getEditText()).getText().toString();
             String password = Objects.requireNonNull(binding.password.getEditText()).getText().toString();
@@ -166,10 +171,13 @@ public class LoginActivity extends AppCompatActivity {
                             if(emailVerified==false){
                                 TextInputLayout editEmailAddress = Objects.requireNonNull(binding.emailAddress);
                                 editEmailAddress.setError(getString(R.string.email_not_verified));
+
+                                Log.i(TAG,"Email is not verified. Sending verification email...");
                                 user.sendEmailVerification();
                                 return;
                             }
                             //Email is verified log-in;
+                            Log.i(TAG,"Email is verified. Proceeding...");
                             handleSuccessfulAuthentication(SIGN_IN_USING_EMAIL);
                         } else {
                             // If sign in fails, display a message to the user.
@@ -195,16 +203,45 @@ public class LoginActivity extends AppCompatActivity {
     private void firebaseAuthWithGoogle(String idToken) {
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
         mAuth.signInWithCredential(credential)
-            .addOnSuccessListener(this, authResult -> handleSuccessfulAuthentication(SIGN_IN_USING_GOOGLE))
+            .addOnSuccessListener(this, authResult -> {
+                handleSuccessfulAuthentication(SIGN_IN_USING_GOOGLE);
+            })
             .addOnFailureListener(this, this::handleFailedAuthentication);
     }
 
     private void handleSuccessfulAuthentication(int signInMethod) {
-
+        Log.i(TAG,"Handling successful authentication...");
+        addNewUserProfileFirestore();
         syncLoginMethods(signInMethod);
-        // TODO: 05-11-2021 ("Apply syncing logic here!")
-        startActivity(new Intent(this, MainActivity.class));
-        finish();
+    }
+
+    private void addNewUserProfileFirestore() {
+
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference userProfileRef = db.collection(USER_PROFILE).document(firebaseUser.getUid());
+
+        //Checking user data is already added or not
+        userProfileRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                DocumentSnapshot userDocument = task.getResult();
+                if(userDocument.exists()){
+                    Log.i(TAG,"User already added. Not adding new one!");
+                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                    finish();
+                }else{
+                    //User not added add new user.
+                    String email = firebaseUser.getEmail().toString();
+                    String name = firebaseUser.getDisplayName().toString();
+                    String Uid = firebaseUser.getUid();
+
+                    UserProfile userProfile = new UserProfile(email,name,"",Uid);
+                    userProfileRef.set(userProfile);
+                    Log.i(TAG,"New User info added in profile...");
+                }
+            }
+        });
     }
 
     private void syncLoginMethods(int signInMethod) {
@@ -213,15 +250,23 @@ public class LoginActivity extends AppCompatActivity {
         boolean isAuthLinked = getAuthLinkedStatus(currentUser);
 
         if(isAuthLinked){
+            Log.i(TAG,"Auth already linked!");
+            Toast.makeText(this,"isAuthLinked = true!", Toast.LENGTH_LONG).show();
             return;
         }
 
         //Both auth providers are not linked
+        Log.i(TAG,"Auth NOT linked!");
         if(signInMethod == SIGN_IN_USING_EMAIL){
             //ask for google sign-in
         }else if(signInMethod == SIGN_IN_USING_GOOGLE){
             //ask for email sign-in
-
+            Intent intent = new Intent(LoginActivity.this, SignUpActivity.class);
+            final Boolean LINKING = true;
+            intent.putExtra(IS_LINKING,LINKING);
+            Log.i(TAG,"Logged using Google. Asking for Email & Password to sync....");
+            startActivity(intent);
+            finish();
         }
     }
 
@@ -238,11 +283,12 @@ public class LoginActivity extends AppCompatActivity {
                     if(document.exists()){
                         UserProfile userProfile = document.toObject(UserProfile.class);
                         //function local variable not working so took global
-                        isAuthLinked = userProfile.getAuthLinkedStatus();
+                        isAuthLinked = userProfile.getAuthLinked();
                     }
                 }
             }
         });
+
         return isAuthLinked;
     }
 
