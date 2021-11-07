@@ -47,4 +47,9 @@
     <string name="describe_your_post">अपनी पोस्ट का वर्णन करें</string>
     <string name="post">पोस्ट</string>
     <string name="post_status">Post Status</string>
+    <string name="favourite_post_icon">पसंदीदा पोस्ट निशान</string>
+    <string name="name">नाम</string>
+    <string name="sign_up">साइन अप</string>
+    <string name="confirm_password">पासवर्ड दोबारा डालें</string>
+    <string name="email_not_verified">आपको पहले अपना ईमेल सत्यापित करना होगा। सत्यापन लिंक के लिए अपना मेल देखें!</string>
 </resources>

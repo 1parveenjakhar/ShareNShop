@@ -28,7 +28,7 @@ public class DBOperations {
 
     static {
         statusMap = new HashMap<>();
-        statusMap.put("Interested ?", "Added");
+        statusMap.put("Interested ?", "Requested !");
         statusMap.put("Final Confirmation ?", "Accepted !");
     }
 
