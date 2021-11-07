@@ -22,9 +22,8 @@ public class MainActivityViewModel extends ViewModel implements NavigationBarVie
     private Fragment accountFragment;
 
     public MainActivityViewModel() {
-        currentFragment = new MutableLiveData<>();
         homeFragment = new HomeFragment();
-        currentFragment.setValue(homeFragment);
+        currentFragment = new MutableLiveData<>(homeFragment);
     }
 
     public LiveData<Fragment> getCurrentFragment() {
@@ -58,5 +57,9 @@ public class MainActivityViewModel extends ViewModel implements NavigationBarVie
         }
 
         return false;
+    }
+
+    public void addFragmentToBackStack(Fragment fragment) {
+        currentFragment.setValue(fragment);
     }
 }

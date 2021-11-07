@@ -1,6 +1,7 @@
 package com.puteffort.sharenshop.fragments;
 
 import android.annotation.SuppressLint;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -56,6 +57,7 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
         recyclerViewAdapter.setClickListener(this);
         binding.postsRecyclerView.setAdapter(recyclerViewAdapter);
         binding.swipeRefreshPostList.setOnRefreshListener(DBOperations::getUserDetails);
+        binding.swipeRefreshPostList.setRefreshing(true);
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -76,16 +78,17 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
         model.isDataUpdating().observe(requireActivity(), dataUpdating -> binding.progressBar.setVisibility(dataUpdating ? View.VISIBLE : View.INVISIBLE));
 
         DBOperations.getUserActivity().observe(requireActivity(), userActivity -> {
+            System.out.println("Live data change observed .......................");
             binding.swipeRefreshPostList.setRefreshing(false);
             model.changeUserDetails(userActivity);
         });
     }
 
     @Override
-    public void onItemClick(View view, int position) {
+    public void onItemClick(View view, int position, Drawable ownerImage) {
         // Handling a particular post click.
         PostInfo post = Objects.requireNonNull(model.getPosts().getValue()).get(position);
-        ((MainActivity)requireActivity()).changeFragment(new PostFragment(post));
+        ((MainActivity)requireActivity()).changeFragment(new PostFragment(post, ownerImage));
     }
 
     @Override

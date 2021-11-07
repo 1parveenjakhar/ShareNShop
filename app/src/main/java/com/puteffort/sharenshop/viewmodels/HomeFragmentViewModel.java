@@ -112,35 +112,39 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
 
     public void changeUserDetails(UserActivity userActivity) {
         if (userActivity == null) return;
+        System.out.println("User details changing ..................................................");
         wishListedPosts.clear();
         wishListedPosts.addAll(userActivity.getPostsWishListed());
         postsStatus.clear();
         for (PostStatus postStatus: userActivity.getPostsInvolved())
             postsStatus.put(postStatus.getPostID(), postStatus.getStatus());
 
+        System.out.println(wishListedPosts);
         userDetailsChanged.setValue(true);
     }
 
     public void changeStatus(int position, String status) {
         PostInfo post = posts.get(position);
-
+        String newStatus = statusMap.get(status);
         List<Task<Void>> taskList = new ArrayList<>();
-        if (!status.equals("Interested ?")) {
-            // In case status is "Interested ?", no need to remove old
-            // because does not exist in status array
 
+        if (status.equals("Interested ?")) {
+            // Adding this user to userInterested in Post
+            taskList.add(db.collection(POST_DETAIL_INFO).document(post.getId())
+                    .update(Collections.singletonMap("usersInterested", FieldValue.arrayUnion(userID))));
+        } else {
             // Deleting old status from post
             taskList.add(db.collection(POST_DETAIL_INFO).document(post.getId())
                     .update(Collections.singletonMap("usersAdded", FieldValue.arrayRemove(new UserStatus(userID, status)))));
             // Deleting old status from user
             taskList.add(db.collection(USER_ACTIVITY).document(userID)
                     .update(Collections.singletonMap("postsInvolved", FieldValue.arrayRemove(new PostStatus(post.getId(), status)))));
+
+            // Adding new status to post
+            taskList.add(db.collection(POST_DETAIL_INFO).document(post.getId())
+                    .update(Collections.singletonMap("usersAdded", FieldValue.arrayUnion(new UserStatus(userID, newStatus)))));
         }
 
-        String newStatus = statusMap.get(status);
-        // Adding new status to post
-        taskList.add(db.collection(POST_DETAIL_INFO).document(post.getId())
-                .update(Collections.singletonMap("usersAdded", FieldValue.arrayUnion(new UserStatus(userID, newStatus)))));
         // Adding new status to user
         taskList.add(db.collection(USER_ACTIVITY).document(userID)
                 .update(Collections.singletonMap("postsInvolved", FieldValue.arrayUnion(new PostStatus(post.getId(), newStatus)))));

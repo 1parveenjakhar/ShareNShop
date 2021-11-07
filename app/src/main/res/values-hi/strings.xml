@@ -52,4 +52,10 @@
     <string name="sign_up">साइन अप</string>
     <string name="confirm_password">पासवर्ड दोबारा डालें</string>
     <string name="email_not_verified">आपको पहले अपना ईमेल सत्यापित करना होगा। सत्यापन लिंक के लिए अपना मेल देखें!</string>
+    <string name="comments">Comments</string>
+    <string name="people_interested">रुचि रखने\nवाले लोग</string>
+    <string name="comment_goes_here">Comment goes here ..</string>
+    <string name="people_added">जुड़े\nहुए लोग</string>
+    <string name="description">विवरण</string>
+    <string name="none">कुछ नहीं</string>
 </resources>

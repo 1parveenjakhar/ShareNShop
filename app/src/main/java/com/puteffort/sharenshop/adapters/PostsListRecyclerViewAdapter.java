@@ -4,6 +4,7 @@ import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,7 +36,7 @@ public class PostsListRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerV
     private final FirebaseFirestore db;
 
     public interface ItemClickListener {
-        void onItemClick(View view, int position);
+        void onItemClick(View view, int position, Drawable ownerImage);
         void changeFavourite(int position, boolean isFavourite);
         void changeStatus(int position, String status);
     }
@@ -73,12 +74,9 @@ public class PostsListRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerV
         db.collection(USER_PROFILE).document(post.getOwnerID()).get()
         .addOnSuccessListener(docSnap -> {
                 if (docSnap != null) {
-                    try {
-                        Glide.with(context).load(docSnap.getString("imageURL")).
-                                circleCrop().into(postHolder.image);
-                    } catch (Exception e) {
-                        postHolder.image.setImageBitmap(StaticData.getDefaultImageBitmap(context));
-                    }
+                    Glide.with(context).load(docSnap.getString("imageURL"))
+                            .error(Glide.with(postHolder.image).load(R.drawable.default_person_icon))
+                            .circleCrop().into(postHolder.image);
                 }
             });
 
@@ -136,7 +134,7 @@ public class PostsListRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerV
         @Override
         public void onClick(View view) {
             if (mClickListener != null)
-                mClickListener.onItemClick(view, getAdapterPosition());
+                mClickListener.onItemClick(view, getAdapterPosition(), image.getDrawable());
         }
     }
 

@@ -11,15 +11,6 @@ import com.puteffort.sharenshop.R;
 import java.util.Locale;
 
 public class StaticData {
-    private static Bitmap defaultImageBitmap;
-
-    public static Bitmap getDefaultImageBitmap(Context context) {
-        if (defaultImageBitmap == null) {
-            defaultImageBitmap = BitmapFactory.decodeResource(context.getResources(),
-                    R.drawable.default_user_image);
-        }
-        return defaultImageBitmap;
-    }
 
     public static void changeLanguage(String language, Context context) {
         Locale locale = new Locale(language);

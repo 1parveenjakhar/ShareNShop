@@ -78,12 +78,6 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        DBOperations.getUserDetails();
-    }
-
     private void setThemeAndLanguage() {
         SharedPreferences sharedPrefs = getSharedPreferences(getString(R.string.app_name), Context.MODE_PRIVATE);
 

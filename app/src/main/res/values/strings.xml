@@ -13,7 +13,6 @@
     <string name="favourite_post_icon">Favourite post icon</string>
 
 
-
     <!--    Strings related to NewPostFragment-->
     <string name="new_post_title_error">Please provide a title!</string>
     <string name="new_post_amount_error">Please add some amount!</string>
@@ -31,7 +30,6 @@
     <string name="picture_of_post_owner">Picture of post owner</string>
 
     <string name="db_fetch_error">Unable to fetch your data :(</string>
-
 
 
     <!--    Strings related to views-->
@@ -70,4 +68,10 @@
     <string name="sign_up">Sign up</string>
     <string name="confirm_password">Retype Password</string>
     <string name="email_not_verified">You need to verify your email first. Check your mail for the verification link!</string>
+    <string name="comments">Comments</string>
+    <string name="people_interested">People\nInterested</string>
+    <string name="people_added">People\nAdded</string>
+    <string name="description">Description:</string>
+    <string name="none">None</string>
+    <string name="comment_goes_here">Comment goes here ..</string>
 </resources>
