@@ -74,4 +74,6 @@
     <string name="description">Description:</string>
     <string name="none">None</string>
     <string name="comment_goes_here">Comment goes here ..</string>
+    <string name="user_name">User name</string>
+    <string name="picture_of_user">Picture of user</string>
 </resources>

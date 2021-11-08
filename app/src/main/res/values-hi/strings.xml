@@ -58,4 +58,6 @@
     <string name="people_added">जुड़े\nहुए लोग</string>
     <string name="description">विवरण</string>
     <string name="none">कुछ नहीं</string>
+    <string name="user_name">User name</string>
+    <string name="picture_of_user">Picture of user</string>
 </resources>
