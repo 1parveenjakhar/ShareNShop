@@ -1,5 +1,77 @@
 <resources>
     <string name="app_name">ShareNShop</string>
+
+
+    <!--    Strings irrespective of the language-->
+    <!--    Strings related to SharedPreferences-->
+    <string name="shared_pref_theme">Theme</string>
+    <string name="shared_pref_language">Language</string>
+
+    <string name="english">English</string>
+    <string name="hindi">हिन्दी</string>
+    <string name="zero">0</string>
+    <string name="favourite_post_icon">Favourite post icon</string>
+
+
+    <!--    Strings related to NewPostFragment-->
+    <string name="new_post_title_error">Please provide a title!</string>
+    <string name="new_post_amount_error">Please add some amount!</string>
+    <string name="new_post_days_error">Please mention no of days!</string>
+    <string name="new_post_months_error">Please mention no of months!</string>
+    <string name="new_post_years_error">Please mention no of years!</string>
+    <string name="new_post_people_error">Please mention people requirement!</string>
+    <string name="new_post_post_successful">Posted Successfully :)</string>
+    <string name="new_post_post_failure">Unable to post at this moment :(</string>
+
+
+    <string name="x_people">X People</string>
+    <string name="time">Time</string>
+    <string name="rs_xyz">Rs. XYZ</string>
+    <string name="picture_of_post_owner">Picture of post owner</string>
+
+    <string name="db_fetch_error">Unable to fetch your data :(</string>
+
+
+    <!--    Strings related to views-->
     <string name="email">Email</string>
     <string name="password">Password</string>
+    <string name="new_user">New User?</string>
+    <string name="sign_in">Sign In</string>
+    <string name="sign_up_using_email">Sign Up using Email</string>
+    <string name="continue_with_google">Continue with Google</string>
+    <string name="empty_email_error">Provide an email address!</string>
+    <string name="failed_auth_error">Unable to establish your identity :(</string>
+
+    <string name="themeHeading">Theme</string>
+    <string name="languageHeading">Language</string>
+    <string name="home">Home</string>
+    <string name="new_post">New Post</string>
+    <string name="account">Account</string>
+    <string name="light_theme">Light Theme</string>
+    <string name="dark_theme">Dark Theme</string>
+    <string name="system_default">System Default</string>
+    <string name="my_profile">My Profile</string>
+    <string name="posts_history">Posts History</string>
+    <string name="logout">Logout</string>
+    <string name="post_title">Post Title</string>
+    <string name="amount_in_rs">Amount (in Rs.)</string>
+    <string name="people_required">People Required</string>
+    <string name="days">Days</string>
+    <string name="months">Months</string>
+    <string name="years">Years</string>
+    <string name="describe_your_post">Describe your Post</string>
+    <string name="post">Post</string>
+    <string name="post_status">Post Status</string>
+
+
+    <string name="name">Name</string>
+    <string name="sign_up">Sign up</string>
+    <string name="confirm_password">Retype Password</string>
+    <string name="email_not_verified">You need to verify your email first. Check your mail for the verification link!</string>
+    <string name="comments">Comments</string>
+    <string name="people_interested">People\nInterested</string>
+    <string name="people_added">People\nAdded</string>
+    <string name="description">Description:</string>
+    <string name="none">None</string>
+    <string name="comment_goes_here">Comment goes here ..</string>
 </resources>
