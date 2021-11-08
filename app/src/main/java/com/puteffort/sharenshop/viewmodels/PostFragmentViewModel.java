@@ -45,7 +45,7 @@ public class PostFragmentViewModel extends ViewModel {
         this.postInfo = postInfo;
 
         this.interestedRecyclerView = new InterestedRecyclerView(this, postInfo.getOwnerID());
-        this.commentRecyclerView = new CommentRecyclerView(this);
+        this.commentRecyclerView = new CommentRecyclerView(this, postInfo.getId());
         this.addedRecyclerView = new AddedRecyclerView(this);
 
         this.selectedTab = new MutableLiveData<>(commentRecyclerView);

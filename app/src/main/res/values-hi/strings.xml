@@ -60,4 +60,7 @@
     <string name="none">कुछ नहीं</string>
     <string name="user_name">User name</string>
     <string name="picture_of_user">Picture of user</string>
+    <string name="add_a_new_comment">Add a New Comment</string>
+    <string name="enter_your_comment">Enter Your Comment</string>
+    <string name="your_comment_goes_here">Your comment goes here ..</string>
 </resources>

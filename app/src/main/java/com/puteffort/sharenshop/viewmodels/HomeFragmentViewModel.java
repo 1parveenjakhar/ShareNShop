@@ -112,14 +112,12 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
 
     public void changeUserDetails(UserActivity userActivity) {
         if (userActivity == null) return;
-        System.out.println("User details changing ..................................................");
         wishListedPosts.clear();
         wishListedPosts.addAll(userActivity.getPostsWishListed());
         postsStatus.clear();
         for (PostStatus postStatus: userActivity.getPostsInvolved())
             postsStatus.put(postStatus.getPostID(), postStatus.getStatus());
 
-        System.out.println(wishListedPosts);
         userDetailsChanged.setValue(true);
     }
 

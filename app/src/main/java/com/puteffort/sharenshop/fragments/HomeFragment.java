@@ -78,7 +78,6 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
         model.isDataUpdating().observe(requireActivity(), dataUpdating -> binding.progressBar.setVisibility(dataUpdating ? View.VISIBLE : View.INVISIBLE));
 
         DBOperations.getUserActivity().observe(requireActivity(), userActivity -> {
-            System.out.println("Live data change observed .......................");
             binding.swipeRefreshPostList.setRefreshing(false);
             model.changeUserDetails(userActivity);
         });
