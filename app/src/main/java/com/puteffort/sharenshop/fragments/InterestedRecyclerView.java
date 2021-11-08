@@ -3,12 +3,6 @@ package com.puteffort.sharenshop.fragments;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,11 +10,15 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.R;
-import com.puteffort.sharenshop.utils.DBOperations;
+import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel;
 
 import java.util.ArrayList;
@@ -70,23 +68,23 @@ public class InterestedRecyclerView extends Fragment {
                 adapter.notifyDataSetChanged();
             }
         });
+
+        model.getInterestedIndex().observe(getViewLifecycleOwner(), index -> adapter.notifyItemInserted(index));
     }
 }
 
 class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    private List<String> usersInterested;
+    private List<UserProfile> usersInterested;
     private final Context context;
-    private final FirebaseFirestore db;
     private final boolean showOptions;
 
     public InterestedRecyclerViewAdapter(Context context, boolean showOptions) {
         this.usersInterested = new ArrayList<>();
         this.context = context;
         this.showOptions = showOptions;
-        db = FirebaseFirestore.getInstance();
     }
 
-    void setUsers(List<String> usersInterested) {
+    void setUsers(List<UserProfile> usersInterested) {
         this.usersInterested = usersInterested;
     }
 
@@ -99,7 +97,7 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-        String userID = usersInterested.get(position);
+        UserProfile user = usersInterested.get(position);
         UserHolder userHolder = (UserHolder) holder;
 
         if (showOptions) {
@@ -109,15 +107,10 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             // TODO(Add their listeners)
         }
 
-        db.collection(DBOperations.USER_PROFILE).document(userID).get()
-                .addOnSuccessListener(docSnap -> {
-                    if (docSnap != null) {
-                        userHolder.userName.setText(docSnap.getString("name"));
-                        Glide.with(context).load(docSnap.getString("imageURL"))
-                                .error(Glide.with(userHolder.userImage).load(R.drawable.default_person_icon))
-                                .circleCrop().into(userHolder.userImage);
-                    }
-                });
+        userHolder.userName.setText(user.getName());
+        Glide.with(context).load(user.getImageURL())
+                .error(Glide.with(userHolder.userImage).load(R.drawable.default_person_icon))
+                .circleCrop().into(userHolder.userImage);
     }
 
     @Override

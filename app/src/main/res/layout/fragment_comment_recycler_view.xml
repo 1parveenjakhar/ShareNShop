@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".fragments.CommentRecyclerView">
 
     <androidx.recyclerview.widget.RecyclerView
@@ -17,5 +18,15 @@
         android:layout_gravity="center"
         android:translationZ="2dp"
         android:visibility="visible"/>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/addCommentButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/add_a_new_comment"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="10dp"
+        app:fabSize="mini"
+        android:src="@drawable/plus_icon"/>
 
 </FrameLayout>

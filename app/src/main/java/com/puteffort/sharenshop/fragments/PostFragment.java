@@ -3,7 +3,6 @@ package com.puteffort.sharenshop.fragments;
 import android.annotation.SuppressLint;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
+import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.tabs.TabLayout;
@@ -29,10 +29,6 @@ public class PostFragment extends Fragment implements TabLayout.OnTabSelectedLis
     private PostFragmentViewModel model;
     private Drawable ownerImage;
 
-    private InterestedRecyclerView interestedRecyclerView;
-    private CommentRecyclerView commentRecyclerView;
-    private AddedRecyclerView addedRecyclerView;
-
     public PostFragment() {
         // Required empty public constructor
     }
@@ -46,22 +42,13 @@ public class PostFragment extends Fragment implements TabLayout.OnTabSelectedLis
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_post, container, false);
-        model = new ViewModelProvider(this).get(PostFragmentViewModel.class);
-        Log.d("a", "onCreate, " + model.toString());
-
-        this.interestedRecyclerView = new InterestedRecyclerView(model, postInfo.getOwnerID());
-        this.commentRecyclerView = new CommentRecyclerView(model);
-        this.addedRecyclerView = new AddedRecyclerView(model);
+        model = new ViewModelProvider(this, new PostFragmentViewModelFactory(postInfo)).get(PostFragmentViewModel.class);
 
         setPostInfo();
         setListeners();
         setObservers();
 
         return binding.getRoot();
-    }
-
-    public static PostInfo getPostInfo() {
-        return postInfo;
     }
 
     @SuppressLint("DefaultLocale")
@@ -79,40 +66,33 @@ public class PostFragment extends Fragment implements TabLayout.OnTabSelectedLis
 
     private void setListeners() {
         binding.tabLayout.addOnTabSelectedListener(this);
-        Objects.requireNonNull(binding.tabLayout.getTabAt(1)).select();
+        Objects.requireNonNull(binding.tabLayout.getTabAt(model.getPreviousTabIndex())).select();
     }
 
     private void setObservers() {
+        model.getSelectedTab().observe(getViewLifecycleOwner(), tab -> {
+            FragmentActivity activity = getActivity();
+            if (isAdded() && activity != null) {
+                activity.getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.recyclerViewFrameLayout, tab)
+                        .commit();
+            }
+        });
 
+        model.getPostDescription().observe(getViewLifecycleOwner(), description -> {
+            if (description == null) {
+                binding.postDescription.setText(getString(R.string.none));
+                return;
+            }
+            binding.postDescription.setText(description);
+        });
     }
 
     @SuppressLint("NonConstantResourceId")
     @Override
     public void onTabSelected(TabLayout.Tab tab) {
-        Fragment recyclerView;
-        switch (tab.getPosition()) {
-            case 0:
-                recyclerView = interestedRecyclerView;
-                break;
-            case 1:
-                recyclerView = commentRecyclerView;
-                break;
-            case 2:
-                recyclerView = addedRecyclerView;
-                break;
-            default:
-                recyclerView = null;
-        }
-        if (recyclerView != null) {
-            FragmentActivity activity = getActivity();
-            if (isAdded() && activity != null) {
-                activity.getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.recyclerViewFrameLayout, recyclerView)
-                        .commit();
-            }
-        }
-
+        model.setSelectedTab(tab.getPosition());
     }
 
     @Override
@@ -125,18 +105,18 @@ public class PostFragment extends Fragment implements TabLayout.OnTabSelectedLis
 
     }
 
-//    static class PostFragmentViewModelFactory extends ViewModelProvider.NewInstanceFactory {
-//        private final PostInfo postInfo;
-//
-//        public PostFragmentViewModelFactory(PostInfo postInfo) {
-//            this.postInfo = postInfo;
-//        }
-//
-//        @NonNull
-//        @Override
-//        @SuppressWarnings("unchecked")
-//        public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
-//            return (T) new PostFragmentViewModel(postInfo);
-//        }
-//    }
+    static class PostFragmentViewModelFactory extends ViewModelProvider.NewInstanceFactory {
+        private final PostInfo postInfo;
+
+        public PostFragmentViewModelFactory(PostInfo postInfo) {
+            this.postInfo = postInfo;
+        }
+
+        @NonNull
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
+            return (T) new PostFragmentViewModel(postInfo);
+        }
+    }
 }

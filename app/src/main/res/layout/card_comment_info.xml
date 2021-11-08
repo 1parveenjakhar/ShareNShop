@@ -22,14 +22,14 @@
             app:layout_constraintTop_toTopOf="@id/userName"
             app:layout_constraintBottom_toBottomOf="@id/userName"
             app:circularflow_radiusInDP="12dp"
-            android:contentDescription="@string/picture_of_post_owner"
+            android:contentDescription="@string/picture_of_user"
             android:src="@drawable/default_person_icon"/>
 
         <TextView
             android:id="@+id/userName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="@string/post_title"
+            android:text="@string/user_name"
             android:textStyle="bold"
             android:textSize="15sp"
             android:layout_marginTop="5dp"
