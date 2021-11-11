@@ -16,12 +16,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.google.firebase.auth.FirebaseAuth;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class InterestedRecyclerView extends Fragment {
@@ -29,17 +27,15 @@ public class InterestedRecyclerView extends Fragment {
     private PostFragmentViewModel model;
     private InterestedRecyclerViewAdapter adapter;
     private ProgressBar progressBar;
-    private String postOwnerID;
-    private String userID;
+    private boolean isUserPostOwner;
 
     public InterestedRecyclerView() {
         // Required empty public constructor
     }
 
-    public InterestedRecyclerView(PostFragmentViewModel model, String postOwnerID) {
+    public InterestedRecyclerView(PostFragmentViewModel model, boolean isUserPostOwner) {
         this.model = model;
-        this.postOwnerID = postOwnerID;
-        userID = FirebaseAuth.getInstance().getUid();
+        this.isUserPostOwner = isUserPostOwner;
     }
 
     @Override
@@ -56,36 +52,37 @@ public class InterestedRecyclerView extends Fragment {
 
     @SuppressLint("NotifyDataSetChanged")
     private void addObservers() {
-        adapter = new InterestedRecyclerViewAdapter(requireContext(), userID.equals(postOwnerID));
+        adapter = new InterestedRecyclerViewAdapter(requireContext(), isUserPostOwner,model.getUsersInterested());
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
-        model.getUsersInterested().observe(getViewLifecycleOwner(), usersInterested -> {
-            if (usersInterested != null) {
-                progressBar.setVisibility(View.INVISIBLE);
-                adapter.setUsers(usersInterested);
-                adapter.notifyDataSetChanged();
-            }
-        });
+        model.getInterestedIndex().observe(getViewLifecycleOwner(), index -> {
+            // Initial value i.e. on first load
+            if (index == null) return;
 
-        model.getInterestedIndex().observe(getViewLifecycleOwner(), index -> adapter.notifyItemInserted(index));
+            // Data refreshed through swipe
+            if (index == -1) {
+                adapter.notifyDataSetChanged();
+                return;
+            }
+
+            // Else general case
+            adapter.notifyItemInserted(index);
+            progressBar.setVisibility(View.INVISIBLE);
+        });
     }
 }
 
 class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    private List<UserProfile> usersInterested;
+    private final List<UserProfile> usersInterested;
     private final Context context;
-    private final boolean showOptions;
+    private final boolean isUserPostOwner;
 
-    public InterestedRecyclerViewAdapter(Context context, boolean showOptions) {
-        this.usersInterested = new ArrayList<>();
-        this.context = context;
-        this.showOptions = showOptions;
-    }
-
-    void setUsers(List<UserProfile> usersInterested) {
+    public InterestedRecyclerViewAdapter(Context context, boolean isUserPostOwner, List<UserProfile> usersInterested) {
         this.usersInterested = usersInterested;
+        this.context = context;
+        this.isUserPostOwner = isUserPostOwner;
     }
 
     @NonNull
@@ -100,7 +97,7 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         UserProfile user = usersInterested.get(position);
         UserHolder userHolder = (UserHolder) holder;
 
-        if (showOptions) {
+        if (isUserPostOwner) {
             userHolder.cross.setVisibility(View.VISIBLE);
             userHolder.tick.setVisibility(View.VISIBLE);
 

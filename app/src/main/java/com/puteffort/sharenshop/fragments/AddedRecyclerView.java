@@ -20,7 +20,6 @@ import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class AddedRecyclerView extends Fragment {
@@ -51,34 +50,35 @@ public class AddedRecyclerView extends Fragment {
 
     @SuppressLint("NotifyDataSetChanged")
     private void addObservers() {
-        adapter = new AddedRecyclerViewAdapter(requireContext());
+        adapter = new AddedRecyclerViewAdapter(requireContext(), model.getUsersAdded());
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
-        model.getUsersAdded().observe(getViewLifecycleOwner(), usersAdded -> {
-            if (usersAdded != null) {
-                progressBar.setVisibility(View.INVISIBLE);
-                adapter.setUsers(usersAdded);
-                adapter.notifyDataSetChanged();
-            }
-        });
+        model.getAddedIndex().observe(getViewLifecycleOwner(), index -> {
+            // Initial value i.e. on first load
+            if (index == null) return;
 
-        model.getAddedIndex().observe(getViewLifecycleOwner(), index -> adapter.notifyItemInserted(index));
+            // Data refreshed through swipe
+            if (index == -1) {
+                adapter.notifyDataSetChanged();
+                return;
+            }
+
+            // Else general case
+            adapter.notifyItemInserted(index);
+            progressBar.setVisibility(View.INVISIBLE);
+        });
     }
 }
 
 class AddedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    private List<UserProfile> usersAdded;
+    private final List<UserProfile> usersAdded;
     private final Context context;
 
-    public AddedRecyclerViewAdapter(Context context) {
-        this.usersAdded = new ArrayList<>();
-        this.context = context;
-    }
-
-    void setUsers(List<UserProfile> usersAdded) {
+    public AddedRecyclerViewAdapter(Context context, List<UserProfile> usersAdded) {
         this.usersAdded = usersAdded;
+        this.context = context;
     }
 
     @NonNull

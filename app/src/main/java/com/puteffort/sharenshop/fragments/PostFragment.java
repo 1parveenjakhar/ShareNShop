@@ -23,7 +23,7 @@ import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel;
 import java.util.Objects;
 
 public class PostFragment extends Fragment implements TabLayout.OnTabSelectedListener {
-    private static PostInfo postInfo;
+    private PostInfo postInfo;
 
     private FragmentPostBinding binding;
     private PostFragmentViewModel model;
@@ -35,7 +35,7 @@ public class PostFragment extends Fragment implements TabLayout.OnTabSelectedLis
 
     public PostFragment(PostInfo postInfo, Drawable ownerImage) {
         this.ownerImage = ownerImage;
-        PostFragment.postInfo = postInfo;
+        this.postInfo = postInfo;
     }
 
     @Override
@@ -62,11 +62,17 @@ public class PostFragment extends Fragment implements TabLayout.OnTabSelectedLis
         if (postInfo.getDays() != 0) time.append(postInfo.getDays()).append("D ");
         binding.postTime.setText(time.toString().trim());
         binding.imageView.setImageDrawable(ownerImage);
+        binding.swipeRefreshPost.setRefreshing(false);
     }
 
     private void setListeners() {
         binding.tabLayout.addOnTabSelectedListener(this);
         Objects.requireNonNull(binding.tabLayout.getTabAt(model.getPreviousTabIndex())).select();
+
+        binding.swipeRefreshPost.setOnRefreshListener(() -> {
+            model.loadPostInfo();
+            model.loadPostDetailInfo();
+        });
     }
 
     private void setObservers() {
@@ -86,6 +92,13 @@ public class PostFragment extends Fragment implements TabLayout.OnTabSelectedLis
                 return;
             }
             binding.postDescription.setText(description);
+        });
+
+        model.getPostInfo().observe(getViewLifecycleOwner(), postInfo -> {
+            if (postInfo != null) {
+                this.postInfo = postInfo;
+                setPostInfo();
+            }
         });
     }
 

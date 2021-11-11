@@ -1,11 +1,7 @@
 package com.puteffort.sharenshop.fragments;
 
-import static com.puteffort.sharenshop.utils.DBOperations.COMMENT;
-import static com.puteffort.sharenshop.utils.DBOperations.POST_DETAIL_INFO;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,17 +20,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputLayout;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.models.Comment;
-import com.puteffort.sharenshop.utils.DBOperations;
-import com.puteffort.sharenshop.utils.UITasks;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel.RecyclerViewComment;
 
-import java.util.Collections;
 import java.util.List;
 
 public class CommentRecyclerView extends Fragment {
@@ -42,19 +32,13 @@ public class CommentRecyclerView extends Fragment {
     private PostFragmentViewModel model;
     private CommentRecyclerViewAdapter adapter;
     private ProgressBar progressBar;
-    private String postID;
-    private FirebaseAuth auth;
-    private FirebaseFirestore db;
 
     public CommentRecyclerView() {
         // Required empty public constructor
     }
 
-    public CommentRecyclerView(PostFragmentViewModel model, String postID) {
+    public CommentRecyclerView(PostFragmentViewModel model) {
         this.model = model;
-        this.postID = postID;
-        auth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
     }
 
     @Override
@@ -72,21 +56,26 @@ public class CommentRecyclerView extends Fragment {
 
     @SuppressLint("NotifyDataSetChanged")
     private void addObservers() {
-        adapter = new CommentRecyclerViewAdapter(requireContext(), model.getComments().getValue());
+        adapter = new CommentRecyclerViewAdapter(requireContext(), model.getComments());
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
 
-        model.getComments().observe(getViewLifecycleOwner(), comments -> {
-            if (comments != null) {
-                progressBar.setVisibility(View.INVISIBLE);
-                adapter.setComments(comments);
-                adapter.notifyDataSetChanged();
-            }
-        });
+        model.getCommentIndex().observe(getViewLifecycleOwner(), index -> {
+            // Initial value i.e. on first load
+            if (index == null) return;
 
-        model.getCommentIndex().observe(getViewLifecycleOwner(), index -> adapter.notifyItemInserted(index));
+            // Data refreshed through swipe
+            if (index == -1) {
+                adapter.notifyDataSetChanged();
+                return;
+            }
+
+            // Else general case
+            adapter.notifyItemInserted(index);
+            progressBar.setVisibility(View.INVISIBLE);
+        });
     }
 
     private void createComment(View view) {
@@ -110,40 +99,23 @@ public class CommentRecyclerView extends Fragment {
             if (!message.isEmpty()) {
                 progressBar.setVisibility(View.VISIBLE);
 
-                String commentID = DBOperations.getUniqueID(COMMENT);
-                Comment comment = new Comment(commentID, message, postID, auth.getUid());
+                Comment comment = new Comment();
+                comment.setMessage(message);
 
-                db.collection(COMMENT).document(commentID).set(comment)
-                        .addOnSuccessListener(unused -> db.collection(POST_DETAIL_INFO).document(postID)
-                                .update(Collections.singletonMap("comments", FieldValue.arrayUnion(commentID)))
-                                .addOnSuccessListener(none -> onSuccessfulComment(alertDialog))
-                                .addOnFailureListener(error -> onFailedComment()))
-                        .addOnFailureListener(unused -> onFailedComment());
+                model.addComment(comment, alertDialog, requireContext());
             } else {
                 finalCommentBox.setError("Comment should not be empty !");
             }
         });
     }
-
-    private void onSuccessfulComment(DialogInterface dialog) {
-        dialog.dismiss();
-        UITasks.showToast(requireContext(), "Commented successfully :)");
-    }
-    private void onFailedComment() {
-        UITasks.showToast(requireContext(), "Failed to comment :(");
-    }
 }
 
 class CommentRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    private List<RecyclerViewComment> comments;
+    private final List<RecyclerViewComment> comments;
     private final Context context;
 
     public CommentRecyclerViewAdapter(Context context, List<RecyclerViewComment> comments) {
-        this.comments = comments;
         this.context = context;
-    }
-
-    void setComments(List<RecyclerViewComment> comments) {
         this.comments = comments;
     }
 
@@ -170,8 +142,6 @@ class CommentRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
     @Override
     public int getItemCount() {
-        if (comments == null)
-            return 0;
         return comments.size();
     }
 

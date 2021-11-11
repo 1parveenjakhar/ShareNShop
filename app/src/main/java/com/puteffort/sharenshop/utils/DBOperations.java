@@ -32,8 +32,8 @@ public class DBOperations {
         statusMap.put("Final Confirmation ?", "Accepted !");
     }
 
-    public static MutableLiveData<UserProfile> userProfileLiveData = new MutableLiveData<>();
-    public static MutableLiveData<UserActivity> userActivityLiveData = new MutableLiveData<>();
+    private static final MutableLiveData<UserProfile> userProfileLiveData = new MutableLiveData<>();
+    private static final MutableLiveData<UserActivity> userActivityLiveData = new MutableLiveData<>();
 
     public static void getUserDetails() {
         db.collection(USER_PROFILE).document(Objects.requireNonNull(auth.getUid())).get()

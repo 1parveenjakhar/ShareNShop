@@ -2,13 +2,19 @@ package com.puteffort.sharenshop.viewmodels;
 
 import static com.puteffort.sharenshop.utils.DBOperations.COMMENT;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_DETAIL_INFO;
+import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
 
+import android.content.Context;
+
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.fragments.AddedRecyclerView;
 import com.puteffort.sharenshop.fragments.CommentRecyclerView;
@@ -18,12 +24,16 @@ import com.puteffort.sharenshop.models.PostDetailInfo;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.models.UserStatus;
+import com.puteffort.sharenshop.utils.DBOperations;
+import com.puteffort.sharenshop.utils.UITasks;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class PostFragmentViewModel extends ViewModel {
     private final FirebaseFirestore db;
+    private final FirebaseAuth auth;
     private final PostInfo postInfo;
 
     private final InterestedRecyclerView interestedRecyclerView;
@@ -34,52 +44,57 @@ public class PostFragmentViewModel extends ViewModel {
     private int previousTabIndex = 1;
 
     private final MutableLiveData<String> postDescription = new MutableLiveData<>();
+    private final MutableLiveData<PostInfo> postInfoLiveData = new MutableLiveData<>();
 
-    private final MutableLiveData<List<UserProfile>> usersAddedLiveData, usersInterestedLiveData;
-    private final MutableLiveData<List<RecyclerViewComment>> commentsLiveData;
+    private final List<UserProfile> usersAdded, usersInterested;
+    private final List<RecyclerViewComment> comments;
 
     private final MutableLiveData<Integer> addedIndex, interestedIndex, commentIndex;
 
     public PostFragmentViewModel(PostInfo postInfo) {
         db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
         this.postInfo = postInfo;
 
-        this.interestedRecyclerView = new InterestedRecyclerView(this, postInfo.getOwnerID());
-        this.commentRecyclerView = new CommentRecyclerView(this, postInfo.getId());
-        this.addedRecyclerView = new AddedRecyclerView(this);
+        interestedRecyclerView = new InterestedRecyclerView(this, postInfo.getOwnerID().equals(auth.getUid()));
+        commentRecyclerView = new CommentRecyclerView(this);
+        addedRecyclerView = new AddedRecyclerView(this);
 
-        this.selectedTab = new MutableLiveData<>(commentRecyclerView);
+        selectedTab = new MutableLiveData<>(commentRecyclerView);
 
-        this.usersAddedLiveData = new MutableLiveData<>();
-        this.usersInterestedLiveData = new MutableLiveData<>();
-        this.commentsLiveData = new MutableLiveData<>();
+        usersAdded = new ArrayList<>();
+        usersInterested = new ArrayList<>();
+        comments = new ArrayList<>();
 
-        this.addedIndex = new MutableLiveData<>();
-        this.interestedIndex = new MutableLiveData<>();
-        this.commentIndex = new MutableLiveData<>();
+        addedIndex = new MutableLiveData<>();
+        interestedIndex = new MutableLiveData<>();
+        commentIndex = new MutableLiveData<>();
 
         loadPostDetailInfo();
     }
 
-    private void loadPostDetailInfo() {
-        db.collection(POST_DETAIL_INFO).document(postInfo.getId())
-                .addSnapshotListener((value, error) -> {
-                    if (error == null && value != null) {
-                        PostDetailInfo postDetailInfo = value.toObject(PostDetailInfo.class);
-                        if (postDetailInfo != null) {
-                            postDescription.setValue(postDetailInfo.getDescription());
+    public void loadPostInfo() {
+        db.collection(POST_INFO).document(postInfo.getId()).get()
+                .addOnSuccessListener(docSnap -> postInfoLiveData.setValue(docSnap.toObject(PostInfo.class)));
+    }
 
-                            fetchUsersAdded(postDetailInfo.getUsersAdded());
-                            fetchUsersInterested(postDetailInfo.getUsersInterested());
-                            fetchComments(postDetailInfo.getComments());
-                        }
+    public void loadPostDetailInfo() {
+        db.collection(POST_DETAIL_INFO).document(postInfo.getId()).get()
+                .addOnSuccessListener(docSnap -> {
+                    PostDetailInfo postDetailInfo = docSnap.toObject(PostDetailInfo.class);
+                    if (postDetailInfo != null) {
+                        postDescription.setValue(postDetailInfo.getDescription());
+
+                        fetchUsersAdded(postDetailInfo.getUsersAdded());
+                        fetchUsersInterested(postDetailInfo.getUsersInterested());
+                        fetchComments(postDetailInfo.getComments());
                     }
                 });
     }
 
     private void fetchUsersAdded(List<UserStatus> users) {
-        List<UserProfile> usersAdded = new ArrayList<>();
-        usersAddedLiveData.setValue(usersAdded);
+        usersAdded.clear();
+        addedIndex.setValue(-1);
         for (UserStatus user: users) {
             db.collection(USER_PROFILE).document(user.getUserID()).get()
                     .addOnSuccessListener(docSnap -> {
@@ -92,8 +107,8 @@ public class PostFragmentViewModel extends ViewModel {
     }
 
     private void fetchUsersInterested(List<String> users) {
-        List<UserProfile> usersInterested = new ArrayList<>();
-        usersInterestedLiveData.setValue(usersInterested);
+        usersInterested.clear();
+        interestedIndex.setValue(-1);
         for (String id: users) {
             db.collection(USER_PROFILE).document(id).get()
                     .addOnSuccessListener(docSnap -> {
@@ -106,8 +121,8 @@ public class PostFragmentViewModel extends ViewModel {
     }
 
     private void fetchComments(List<String> commentID) {
-        List<RecyclerViewComment> recyclerViewComments = new ArrayList<>();
-        commentsLiveData.setValue(recyclerViewComments);
+        comments.clear();
+        commentIndex.setValue(-1);
         for (String id : commentID) {
             db.collection(COMMENT).document(id).get()
                     .addOnSuccessListener(commentSnap -> {
@@ -121,8 +136,8 @@ public class PostFragmentViewModel extends ViewModel {
                                             if (user != null) {
                                                 recyclerViewComment.setName(user.getName());
                                                 recyclerViewComment.setImageURL(user.getImageURL());
-                                                recyclerViewComments.add(recyclerViewComment);
-                                                commentIndex.setValue(recyclerViewComments.size() - 1);
+                                                comments.add(recyclerViewComment);
+                                                commentIndex.setValue(comments.size() - 1);
                                             }
                                         });
                                 recyclerViewComment.setMessage(comment.getMessage());
@@ -132,15 +147,33 @@ public class PostFragmentViewModel extends ViewModel {
         }
     }
 
+    // Functions related to CommentRecyclerView
+    public void addComment(Comment comment, AlertDialog alertDialog, Context context) {
+        String commentID = DBOperations.getUniqueID(COMMENT);
+        comment.setId(commentID);
+        comment.setPostID(postInfo.getId());
+        comment.setUserID(auth.getUid());
 
-    public LiveData<List<UserProfile>> getUsersInterested() {
-        return usersInterestedLiveData;
+        db.collection(COMMENT).document(commentID).set(comment)
+                .addOnSuccessListener(unused -> db.collection(POST_DETAIL_INFO).document(postInfo.getId())
+                        .update(Collections.singletonMap("comments", FieldValue.arrayUnion(commentID)))
+                        .addOnSuccessListener(none -> {
+                            alertDialog.dismiss();
+                            comments.add(new RecyclerViewComment(comment.getMessage()));
+                            UITasks.showToast(context, "Commented successfully :)");
+                        })
+                        .addOnFailureListener(error -> UITasks.showToast(context, "Failed to comment :(")))
+                .addOnFailureListener(unused -> UITasks.showToast(context, "Failed to comment :("));
     }
-    public LiveData<List<RecyclerViewComment>> getComments() {
-        return commentsLiveData;
+
+    public List<UserProfile> getUsersInterested() {
+        return usersInterested;
     }
-    public LiveData<List<UserProfile>> getUsersAdded() {
-        return usersAddedLiveData;
+    public List<RecyclerViewComment> getComments() {
+        return comments;
+    }
+    public List<UserProfile> getUsersAdded() {
+        return usersAdded;
     }
 
     public LiveData<Fragment> getSelectedTab() {
@@ -173,6 +206,9 @@ public class PostFragmentViewModel extends ViewModel {
     public LiveData<String> getPostDescription() {
         return postDescription;
     }
+    public LiveData<PostInfo> getPostInfo() {
+        return postInfoLiveData;
+    }
 
     public LiveData<Integer> getAddedIndex() {
         return addedIndex;
@@ -184,9 +220,18 @@ public class PostFragmentViewModel extends ViewModel {
         return commentIndex;
     }
 
-
     public static class RecyclerViewComment {
         private String name, message, imageURL;
+        public RecyclerViewComment() {}
+
+        public RecyclerViewComment(String message) {
+            this.message = message;
+            UserProfile user = DBOperations.getUserProfile().getValue();
+            if (user != null) {
+                name = user.getName();
+                imageURL = user.getImageURL();
+            }
+        }
 
         public String getName() {
             return name;
