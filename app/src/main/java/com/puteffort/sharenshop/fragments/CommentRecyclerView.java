@@ -66,14 +66,13 @@ public class CommentRecyclerView extends Fragment {
             // Initial value i.e. on first load
             if (index == null) return;
 
-            // Data refreshed through swipe
             if (index == -1) {
+                // Data refreshed through swipe
                 adapter.notifyDataSetChanged();
-                return;
+            } else {
+                // Else general case
+                adapter.notifyItemInserted(index);
             }
-
-            // Else general case
-            adapter.notifyItemInserted(index);
             progressBar.setVisibility(View.INVISIBLE);
         });
     }

@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.puteffort.sharenshop.databinding.ActivityMainBinding;
@@ -31,18 +32,18 @@ public class MainActivity extends AppCompatActivity {
         binding.bottomNav.setOnItemSelectedListener(model);
         List<Class<?>> classes = Arrays.asList(HomeFragment.class, NewPostFragment.class, AccountFragment.class);
         model.getCurrentFragment().observe(this, fragment -> {
+            FragmentManager fm = getSupportFragmentManager();
+            FragmentTransaction fragmentTransaction = fm.beginTransaction()
+                        .replace(R.id.fragmentContainer, fragment)
+                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
             if (classes.contains(fragment.getClass())) {
-                FragmentManager fm = getSupportFragmentManager();
                 for(int i = 0; i < fm.getBackStackEntryCount(); ++i) {
                     fm.popBackStack();
                 }
-                fm.beginTransaction().replace(R.id.fragmentContainer, fragment).commit();
             } else {
-                getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.fragmentContainer, fragment)
-                        .addToBackStack(null)
-                        .commit();
+                fragmentTransaction.addToBackStack(null);
             }
+            fragmentTransaction.commit();
         });
         DBOperations.getUserDetails();
     }

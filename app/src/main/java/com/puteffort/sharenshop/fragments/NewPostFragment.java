@@ -45,7 +45,6 @@ public class NewPostFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_new_post, container, false);
-        binding.progressBar.setVisibility(View.INVISIBLE);
         binding.postButton.setOnClickListener(this::handlePostListener);
 
         return binding.getRoot();
