@@ -29,10 +29,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.firestore.*;
-import com.puteffort.sharenshop.utils.StaticData;
 import com.puteffort.sharenshop.databinding.ActivityLoginBinding;
 import com.puteffort.sharenshop.models.UserProfile;
-import com.puteffort.sharenshop.utils.DBOperations;
 
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -57,7 +55,7 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setThemeAndLanguage();
+        setTheme();
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_login);
 
@@ -78,7 +76,7 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    private void setThemeAndLanguage() {
+    private void setTheme() {
         SharedPreferences sharedPrefs = getSharedPreferences(getString(R.string.app_name), Context.MODE_PRIVATE);
 
         // Theme change
@@ -86,16 +84,6 @@ public class LoginActivity extends AppCompatActivity {
         if (themeVal != AppCompatDelegate.getDefaultNightMode()) {
             AppCompatDelegate.setDefaultNightMode(themeVal);
         }
-
-        // TODO(Language change)
-//        String language = sharedPrefs.getString(getString(R.string.shared_pref_language), "en");
-//        System.out.println("System - " + StaticData.getCurrentLocale(this).getLanguage());
-//        System.out.println("Shared - " + sharedPrefs.getString(getString(R.string.shared_pref_language), "default"));
-//        if (!language.equals(StaticData.getCurrentLocale(this).getLanguage())) {
-//            System.out.println("Hello, setting language -> " + language);
-//            StaticData.changeLanguage(language, this.getBaseContext());
-//            this.recreate();
-//        }
     }
 
     private void addListeners() {

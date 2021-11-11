@@ -26,18 +26,29 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Load user details (UserProfile and UserActivity)
+        DBOperations.getUserDetails();
+
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
         model = new ViewModelProvider(this).get(MainActivityViewModel.class);
 
+        setListenersAndObservers();
+    }
+
+    private void setListenersAndObservers() {
         binding.bottomNav.setOnItemSelectedListener(model);
+
         List<Class<?>> classes = Arrays.asList(HomeFragment.class, NewPostFragment.class, AccountFragment.class);
+
         model.getCurrentFragment().observe(this, fragment -> {
             FragmentManager fm = getSupportFragmentManager();
             FragmentTransaction fragmentTransaction = fm.beginTransaction()
-                        .replace(R.id.fragmentContainer, fragment)
+                    .replace(R.id.fragmentContainer, fragment)
                     .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
+
             if (classes.contains(fragment.getClass())) {
-                for(int i = 0; i < fm.getBackStackEntryCount(); ++i) {
+                for(int i = 0; i < fm.getBackStackEntryCount(); i++) {
                     fm.popBackStack();
                 }
             } else {
@@ -45,7 +56,6 @@ public class MainActivity extends AppCompatActivity {
             }
             fragmentTransaction.commit();
         });
-        DBOperations.getUserDetails();
     }
 
     public void changeFragment(int fragmentID) {
