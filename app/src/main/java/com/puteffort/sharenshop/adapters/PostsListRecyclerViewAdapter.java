@@ -21,7 +21,6 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.utils.DBOperations;
-import com.puteffort.sharenshop.utils.StaticData;
 
 import java.util.List;
 import java.util.Map;

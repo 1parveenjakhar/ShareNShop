@@ -28,6 +28,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.databinding.ActivitySignUpBinding;
 import com.puteffort.sharenshop.models.UserProfile;
+import com.puteffort.sharenshop.utils.UtilFunctions;
 
 import java.util.Map;
 import java.util.Objects;
@@ -237,7 +238,7 @@ public class SignUpActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                if (!LoginActivity.emailValidator(s.toString().trim())) {
+                if (!UtilFunctions.isEmailValid(s.toString().trim())) {
                     binding.signUpEmail.setError("Invalid email!");
                 } else {
                     binding.signUpEmail.setError(null);

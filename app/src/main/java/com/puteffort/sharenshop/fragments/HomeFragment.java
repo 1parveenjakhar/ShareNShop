@@ -19,7 +19,7 @@ import com.puteffort.sharenshop.adapters.PostsListRecyclerViewAdapter;
 import com.puteffort.sharenshop.databinding.FragmentHomeBinding;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.utils.DBOperations;
-import com.puteffort.sharenshop.utils.UITasks;
+import com.puteffort.sharenshop.utils.UtilFunctions;
 import com.puteffort.sharenshop.viewmodels.HomeFragmentViewModel;
 
 import java.util.Objects;
@@ -73,7 +73,7 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
             }
         });
 
-        model.getToastMessage().observe(requireActivity(), toastID -> UITasks.showToast(requireContext(), requireContext().getString(toastID)));
+        model.getToastMessage().observe(requireActivity(), toastID -> UtilFunctions.showToast(requireContext(), requireContext().getString(toastID)));
 
         model.isDataUpdating().observe(requireActivity(), dataUpdating -> binding.progressBar.setVisibility(dataUpdating ? View.VISIBLE : View.INVISIBLE));
 

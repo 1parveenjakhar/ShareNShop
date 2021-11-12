@@ -4,7 +4,7 @@ import static com.puteffort.sharenshop.utils.DBOperations.POST_DETAIL_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_ACTIVITY;
 import static com.puteffort.sharenshop.utils.DBOperations.getUniqueID;
-import static com.puteffort.sharenshop.utils.UITasks.showToast;
+import static com.puteffort.sharenshop.utils.UtilFunctions.showToast;
 
 import android.os.Bundle;
 import android.text.TextUtils;

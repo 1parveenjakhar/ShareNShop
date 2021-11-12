@@ -25,7 +25,7 @@ import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.models.UserStatus;
 import com.puteffort.sharenshop.utils.DBOperations;
-import com.puteffort.sharenshop.utils.UITasks;
+import com.puteffort.sharenshop.utils.UtilFunctions;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -160,10 +160,10 @@ public class PostFragmentViewModel extends ViewModel {
                         .addOnSuccessListener(none -> {
                             alertDialog.dismiss();
                             comments.add(new RecyclerViewComment(comment.getMessage()));
-                            UITasks.showToast(context, "Commented successfully :)");
+                            UtilFunctions.showToast(context, "Commented successfully :)");
                         })
-                        .addOnFailureListener(error -> UITasks.showToast(context, "Failed to comment :(")))
-                .addOnFailureListener(unused -> UITasks.showToast(context, "Failed to comment :("));
+                        .addOnFailureListener(error -> UtilFunctions.showToast(context, "Failed to comment :(")))
+                .addOnFailureListener(unused -> UtilFunctions.showToast(context, "Failed to comment :("));
     }
 
     public List<UserProfile> getUsersInterested() {
