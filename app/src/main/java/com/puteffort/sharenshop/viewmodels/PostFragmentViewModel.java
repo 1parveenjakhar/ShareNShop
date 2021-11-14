@@ -3,9 +3,13 @@ package com.puteffort.sharenshop.viewmodels;
 import static com.puteffort.sharenshop.utils.DBOperations.COMMENT;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_DETAIL_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
+import static com.puteffort.sharenshop.utils.DBOperations.USER_ACTIVITY;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
+import static com.puteffort.sharenshop.utils.UtilFunctions.showToast;
 
 import android.content.Context;
+import android.view.View;
+import android.widget.ProgressBar;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
@@ -13,6 +17,8 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -22,10 +28,10 @@ import com.puteffort.sharenshop.fragments.InterestedRecyclerView;
 import com.puteffort.sharenshop.models.Comment;
 import com.puteffort.sharenshop.models.PostDetailInfo;
 import com.puteffort.sharenshop.models.PostInfo;
+import com.puteffort.sharenshop.models.PostStatus;
 import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.models.UserStatus;
 import com.puteffort.sharenshop.utils.DBOperations;
-import com.puteffort.sharenshop.utils.UtilFunctions;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,27 +46,23 @@ public class PostFragmentViewModel extends ViewModel {
     private final CommentRecyclerView commentRecyclerView;
     private final AddedRecyclerView addedRecyclerView;
 
-    private final MutableLiveData<Fragment> selectedTab;
-    private int previousTabIndex = 1;
-
     private final MutableLiveData<String> postDescription = new MutableLiveData<>();
-    private final MutableLiveData<PostInfo> postInfoLiveData = new MutableLiveData<>();
+    private final MutableLiveData<PostInfo> postInfoLiveData;
 
     private final List<UserProfile> usersAdded, usersInterested;
     private final List<RecyclerViewComment> comments;
 
-    private final MutableLiveData<Integer> addedIndex, interestedIndex, commentIndex;
+    private final MutableLiveData<Integer> addedIndex, interestedIndex, commentIndex, interestedRemoveIndex;
 
     public PostFragmentViewModel(PostInfo postInfo) {
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
         this.postInfo = postInfo;
+        postInfoLiveData = new MutableLiveData<>(postInfo);
 
         interestedRecyclerView = new InterestedRecyclerView(this, postInfo.getOwnerID().equals(auth.getUid()));
         commentRecyclerView = new CommentRecyclerView(this);
         addedRecyclerView = new AddedRecyclerView(this);
-
-        selectedTab = new MutableLiveData<>(commentRecyclerView);
 
         usersAdded = new ArrayList<>();
         usersInterested = new ArrayList<>();
@@ -69,6 +71,7 @@ public class PostFragmentViewModel extends ViewModel {
         addedIndex = new MutableLiveData<>();
         interestedIndex = new MutableLiveData<>();
         commentIndex = new MutableLiveData<>();
+        interestedRemoveIndex = new MutableLiveData<>();
 
         loadPostDetailInfo();
     }
@@ -90,11 +93,20 @@ public class PostFragmentViewModel extends ViewModel {
                         fetchComments(postDetailInfo.getComments());
                     }
                 });
+
+        comments.clear();
+        usersAdded.clear();
+        usersInterested.clear();
+        // Notifying observers about data load
+        commentIndex.setValue(null);
+        addedIndex.setValue(null);
+        interestedIndex.setValue(null);
     }
 
     private void fetchUsersAdded(List<UserStatus> users) {
-        usersAdded.clear();
-        addedIndex.setValue(-1);
+        // -1 as a flag for empty list
+        if (users.isEmpty()) addedIndex.setValue(-1);
+
         for (UserStatus user: users) {
             db.collection(USER_PROFILE).document(user.getUserID()).get()
                     .addOnSuccessListener(docSnap -> {
@@ -107,8 +119,9 @@ public class PostFragmentViewModel extends ViewModel {
     }
 
     private void fetchUsersInterested(List<String> users) {
-        usersInterested.clear();
-        interestedIndex.setValue(-1);
+        // -1 as a flag for empty list
+        if (users.isEmpty()) interestedIndex.setValue(-1);
+
         for (String id: users) {
             db.collection(USER_PROFILE).document(id).get()
                     .addOnSuccessListener(docSnap -> {
@@ -121,8 +134,9 @@ public class PostFragmentViewModel extends ViewModel {
     }
 
     private void fetchComments(List<String> commentID) {
-        comments.clear();
-        commentIndex.setValue(-1);
+        // -1 as a flag for empty list
+        if (commentID.isEmpty()) commentIndex.setValue(-1);
+
         for (String id : commentID) {
             db.collection(COMMENT).document(id).get()
                     .addOnSuccessListener(commentSnap -> {
@@ -160,10 +174,62 @@ public class PostFragmentViewModel extends ViewModel {
                         .addOnSuccessListener(none -> {
                             alertDialog.dismiss();
                             comments.add(new RecyclerViewComment(comment.getMessage()));
-                            UtilFunctions.showToast(context, "Commented successfully :)");
+                            showToast(context, "Commented successfully :)");
                         })
-                        .addOnFailureListener(error -> UtilFunctions.showToast(context, "Failed to comment :(")))
-                .addOnFailureListener(unused -> UtilFunctions.showToast(context, "Failed to comment :("));
+                        .addOnFailureListener(error -> showToast(context, "Failed to comment :(")))
+                .addOnFailureListener(unused -> showToast(context, "Failed to comment :("));
+    }
+
+    // Functions related to InterestedRecyclerView
+    public void addUser(int position, ProgressBar progressBar) {
+        String userID = usersInterested.get(position).getId();
+        List<Task<Void>> tasks = new ArrayList<>();
+
+        // Updating status to UserActivity
+        tasks.add(db.collection(USER_ACTIVITY).document(userID)
+                .update(Collections.singletonMap("postsInvolved", FieldValue.arrayRemove(new PostStatus(postInfo.getId(), "Requested !")))));
+        tasks.add(db.collection(USER_ACTIVITY).document(userID)
+                .update(Collections.singletonMap("postsInvolved", FieldValue.arrayUnion(new PostStatus(postInfo.getId())))));
+
+        // Updating status to PostDetailInfo
+        tasks.add(db.collection(POST_DETAIL_INFO).document(postInfo.getId())
+                .update(Collections.singletonMap("usersInterested", FieldValue.arrayRemove(userID))));
+        tasks.add(db.collection(POST_DETAIL_INFO).document(postInfo.getId())
+                .update(Collections.singletonMap("usersAdded", FieldValue.arrayUnion(new UserStatus(userID)))));
+
+
+        Tasks.whenAllSuccess(tasks).addOnSuccessListener(results -> {
+            usersAdded.add(usersInterested.remove(position));
+            addedIndex.setValue(usersAdded.size() - 1);
+            interestedRemoveIndex.setValue(position);
+            // Setting to null to avoid wrong delete request in InterestedRecyclerView on recreate
+            interestedRemoveIndex.setValue(null);
+        }).addOnFailureListener(unused -> interestedUserChangeFailure(progressBar));
+    }
+
+    public void removeUser(int position, ProgressBar progressBar) {
+        String userID = usersInterested.get(position).getId();
+        List<Task<Void>> tasks = new ArrayList<>();
+
+        // Updating status to UserActivity
+        tasks.add(db.collection(USER_ACTIVITY).document(userID)
+        .update(Collections.singletonMap("postsInvolved", FieldValue.arrayRemove(new PostStatus(postInfo.getId(), "Requested !")))));
+
+        // Updating status to PostDetailInfo
+        tasks.add(db.collection(POST_DETAIL_INFO).document(postInfo.getId())
+                .update(Collections.singletonMap("usersInterested", FieldValue.arrayRemove(userID))));
+
+        Tasks.whenAllSuccess(tasks).addOnSuccessListener(results -> {
+            usersInterested.remove(position);
+            interestedRemoveIndex.setValue(position);
+            // Setting to null to avoid wrong delete request in InterestedRecyclerView on recreate
+            interestedRemoveIndex.setValue(null);
+        }).addOnFailureListener(unused -> interestedUserChangeFailure(progressBar));
+    }
+
+    private void interestedUserChangeFailure(ProgressBar progressBar) {
+        showToast(interestedRecyclerView.getContext(), "Unable to process your request :(");
+        progressBar.setVisibility(View.INVISIBLE);
     }
 
     public List<UserProfile> getUsersInterested() {
@@ -174,33 +240,6 @@ public class PostFragmentViewModel extends ViewModel {
     }
     public List<UserProfile> getUsersAdded() {
         return usersAdded;
-    }
-
-    public LiveData<Fragment> getSelectedTab() {
-        return selectedTab;
-    }
-    public int getPreviousTabIndex() {
-        return previousTabIndex;
-    }
-    public void setSelectedTab(int tabIndex) {
-        Fragment recyclerView;
-        previousTabIndex = tabIndex;
-        switch (tabIndex) {
-            case 0:
-                recyclerView = interestedRecyclerView;
-                break;
-            case 1:
-                recyclerView = commentRecyclerView;
-                break;
-            case 2:
-                recyclerView = addedRecyclerView;
-                break;
-            default:
-                recyclerView = null;
-        }
-        if (recyclerView != null) {
-            selectedTab.setValue(recyclerView);
-        }
     }
 
     public LiveData<String> getPostDescription() {
@@ -216,8 +255,28 @@ public class PostFragmentViewModel extends ViewModel {
     public LiveData<Integer> getInterestedIndex() {
         return interestedIndex;
     }
+    public LiveData<Integer> getInterestedRemoveIndex() {
+        return interestedRemoveIndex;
+    }
     public LiveData<Integer> getCommentIndex() {
         return commentIndex;
+    }
+
+    public Fragment getFragment(int position) {
+        switch (position) {
+            case 0: return interestedRecyclerView;
+            case 1: return commentRecyclerView;
+            case 2: return addedRecyclerView;
+            default: return null;
+        }
+    }
+    public String getFragmentTitle(int position) {
+        switch (position) {
+            case 0: return "People\nInterested";
+            case 1: return "Comments";
+            case 2: return "People\nAdded";
+            default: return "";
+        }
     }
 
     public static class RecyclerViewComment {

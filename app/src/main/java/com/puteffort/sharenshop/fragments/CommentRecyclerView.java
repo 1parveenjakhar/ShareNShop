@@ -63,14 +63,15 @@ public class CommentRecyclerView extends Fragment {
 
 
         model.getCommentIndex().observe(getViewLifecycleOwner(), index -> {
-            // Initial value i.e. on first load
-            if (index == null) return;
-
-            if (index == -1) {
-                // Data refreshed through swipe
+            // For loading data
+            if (index == null) {
+                progressBar.setVisibility(View.VISIBLE);
                 adapter.notifyDataSetChanged();
-            } else {
-                // Else general case
+                return;
+            }
+
+            if (index != -1) {
+                // Insert at index, if list is not empty
                 adapter.notifyItemInserted(index);
             }
             progressBar.setVisibility(View.INVISIBLE);
@@ -132,7 +133,7 @@ class CommentRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
 
         Glide.with(context).load(comment.getImageURL())
-                .error(Glide.with(commentHolder.userImage).load(R.drawable.default_person_icon))
+                .error(R.drawable.default_person_icon)
                 .circleCrop().into(commentHolder.userImage);
 
         commentHolder.userName.setText(comment.getName());

@@ -52,35 +52,49 @@ public class InterestedRecyclerView extends Fragment {
 
     @SuppressLint("NotifyDataSetChanged")
     private void addObservers() {
-        adapter = new InterestedRecyclerViewAdapter(requireContext(), isUserPostOwner,model.getUsersInterested());
+        adapter = new InterestedRecyclerViewAdapter(this, isUserPostOwner,model.getUsersInterested());
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
         model.getInterestedIndex().observe(getViewLifecycleOwner(), index -> {
-            // Initial value i.e. on first load
-            if (index == null) return;
-
-            if (index == -1) {
-                // Data refreshed through swipe
+            // For loading data
+            if (index == null) {
+                progressBar.setVisibility(View.VISIBLE);
                 adapter.notifyDataSetChanged();
-            } else {
-                // Else general case
+                return;
+            }
+
+            if (index != -1) {
+                // Insert at index, if list is not empty
                 adapter.notifyItemInserted(index);
             }
             progressBar.setVisibility(View.INVISIBLE);
         });
+
+        model.getInterestedRemoveIndex().observe(getViewLifecycleOwner(), index -> {
+            if (index == null) return;
+            adapter.notifyItemRemoved(index);
+        });
+    }
+
+    void addUser(boolean isUserAdded, int position, ProgressBar progressBar) {
+        progressBar.setVisibility(View.VISIBLE);
+        if (isUserAdded) model.addUser(position, progressBar);
+        else model.removeUser(position, progressBar);
     }
 }
 
 class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final List<UserProfile> usersInterested;
     private final Context context;
+    private final InterestedRecyclerView parentFragment;
     private final boolean isUserPostOwner;
 
-    public InterestedRecyclerViewAdapter(Context context, boolean isUserPostOwner, List<UserProfile> usersInterested) {
+    public InterestedRecyclerViewAdapter(InterestedRecyclerView parentFragment, boolean isUserPostOwner, List<UserProfile> usersInterested) {
         this.usersInterested = usersInterested;
-        this.context = context;
+        this.parentFragment = parentFragment;
+        this.context = parentFragment.requireContext();
         this.isUserPostOwner = isUserPostOwner;
     }
 
@@ -100,12 +114,13 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             userHolder.cross.setVisibility(View.VISIBLE);
             userHolder.tick.setVisibility(View.VISIBLE);
 
-            // TODO(Add their listeners)
+            userHolder.cross.setOnClickListener(view -> parentFragment.addUser(false, position, userHolder.crossPB));
+            userHolder.tick.setOnClickListener(view -> parentFragment.addUser(true, position, userHolder.tickPB));
         }
 
         userHolder.userName.setText(user.getName());
         Glide.with(context).load(user.getImageURL())
-                .error(Glide.with(userHolder.userImage).load(R.drawable.default_person_icon))
+                .error(R.drawable.default_person_icon)
                 .circleCrop().into(userHolder.userImage);
     }
 
@@ -117,6 +132,7 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     static class UserHolder extends RecyclerView.ViewHolder {
         TextView userName;
         ImageView userImage, cross, tick;
+        ProgressBar tickPB, crossPB;
 
         public UserHolder(@NonNull View itemView) {
             super(itemView);
@@ -125,6 +141,8 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             userImage = itemView.findViewById(R.id.userImage);
             cross = itemView.findViewById(R.id.cross);
             tick = itemView.findViewById(R.id.tick);
+            tickPB = itemView.findViewById(R.id.tickProgressBar);
+            crossPB = itemView.findViewById(R.id.crossProgressBar);
         }
     }
 }

@@ -79,4 +79,5 @@
     <string name="add_a_new_comment">Add a New Comment</string>
     <string name="enter_your_comment">Enter Your Comment</string>
     <string name="your_comment_goes_here">Your comment goes here ..</string>
+    <string name="description_of_the_post">Description of the post</string>
 </resources>

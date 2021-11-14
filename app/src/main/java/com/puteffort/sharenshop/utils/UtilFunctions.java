@@ -19,4 +19,12 @@ public class UtilFunctions {
         Matcher matcher = VALID_EMAIL_ADDRESS_REGEX.matcher(emailId);
         return matcher.find();
     }
+
+    public static String getFormattedTime(int years, int months, int days) {
+        StringBuilder time = new StringBuilder();
+        if (years != 0) time.append(years).append("Y ");
+        if (months != 0) time.append(months).append("M ");
+        if (days != 0) time.append(days).append("D ");
+        return time.toString().trim();
+    }
 }

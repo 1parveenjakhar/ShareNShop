@@ -32,11 +32,11 @@
             android:text="@string/user_name"
             android:textStyle="bold"
             android:textSize="15sp"
-            android:layout_marginTop="5dp"
             android:layout_marginStart="20dp"
             app:layout_constraintStart_toEndOf="@id/userImage"
             app:layout_constraintEnd_toStartOf="@id/cross"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
 
         <ImageView
             android:id="@+id/cross"
@@ -67,6 +67,27 @@
             android:visibility="gone"
             android:clickable="true"
             android:focusable="true"/>
+
+        <ProgressBar
+            android:id="@+id/crossProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toStartOf="@id/cross"
+            app:layout_constraintEnd_toEndOf="@id/cross"
+            app:layout_constraintTop_toTopOf="@id/cross"
+            app:layout_constraintBottom_toBottomOf="@id/cross"
+            android:visibility="invisible"
+            style="?android:attr/progressBarStyleSmall"/>
+        <ProgressBar
+            android:id="@+id/tickProgressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toStartOf="@id/tick"
+            app:layout_constraintEnd_toEndOf="@id/tick"
+            app:layout_constraintTop_toTopOf="@id/tick"
+            app:layout_constraintBottom_toBottomOf="@id/tick"
+            android:visibility="invisible"
+            style="?android:attr/progressBarStyleSmall"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
