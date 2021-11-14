@@ -52,7 +52,7 @@ public class InterestedRecyclerView extends Fragment {
 
     @SuppressLint("NotifyDataSetChanged")
     private void addObservers() {
-        adapter = new InterestedRecyclerViewAdapter(this, isUserPostOwner,model.getUsersInterested());
+        adapter = new InterestedRecyclerViewAdapter(this, isUserPostOwner, model.getUsersInterested());
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);

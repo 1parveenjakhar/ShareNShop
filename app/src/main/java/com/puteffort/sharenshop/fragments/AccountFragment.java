@@ -17,6 +17,7 @@ import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.puteffort.sharenshop.LoginActivity;
+import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentAccountBinding;
 
@@ -77,5 +78,8 @@ public class AccountFragment extends Fragment {
             AppCompatDelegate.setDefaultNightMode(themeVal);
             sharedPrefs.edit().clear().putInt(getString(R.string.shared_pref_theme), themeVal).apply();
         });
+
+        binding.postsHistoryButton.setOnClickListener(view ->
+                ((MainActivity)requireActivity()).changeFragment(new HistoryFragment()));
     }
 }
