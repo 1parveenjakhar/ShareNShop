@@ -55,7 +55,7 @@
     <string name="logout">Logout</string>
     <string name="post_title">Post Title</string>
     <string name="amount_in_rs">Amount (in Rs.)</string>
-    <string name="people_required">People Required</string>
+    <string name="people_required_text">People Required</string>
     <string name="days">Days</string>
     <string name="months">Months</string>
     <string name="years">Years</string>
@@ -80,4 +80,27 @@
     <string name="enter_your_comment">Enter Your Comment</string>
     <string name="your_comment_goes_here">Your comment goes here ..</string>
     <string name="description_of_the_post">Description of the post</string>
+
+
+    <string name="sort_button">SORT</string>
+    <string name="filter_button">FILTER</string>
+    <string name="amount_text">Amount</string>
+    <string name="filter_amount_less_than_1000">less than 1000</string>
+    <string name="filter_amount_1000_to_5000">1000 to 5000</string>
+    <string name="filter_amount_5001_to_10000">5001 to 10000</string>
+    <string name="filter_amount_greater_than_10000">greater than 10000</string>
+    <string name="people_req_filter_less_than_3">less than 3</string>
+    <string name="people_req_filter_3_to_5">3 to 5</string>
+    <string name="people_req_filter_6_to_10">6 to 10</string>
+    <string name="people_req_filter_greater_than_10">greater than 10</string>
+    <string name="last_activity_text">Last Activity</string>
+    <string name="last_activity_filter_less_than_1_month">less than 1 month</string>
+    <string name="last_activity_filter_1_month_to_6_months">1 month to 6 months</string>
+    <string name="last_activity_filter_6_months_to_1_year">6 months to 1 year</string>
+    <string name="last_activity_filter_greater_than_1_year">greater than 1 year</string>
+    <string-array name="sort_tags">
+        <item>"Amount"</item>
+        <item>"Peoples Required"</item>
+        <item>"Last Activity"</item>
+    </string-array>
 </resources>

@@ -26,8 +26,11 @@ import com.puteffort.sharenshop.utils.DBOperations;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,6 +53,8 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
     private final MutableLiveData<Integer> dataChanged, dataAdded, dataRemoved;
 
     private final Map<String, String> statusMap;
+    private final ArrayList<Integer> filtersSelected;
+    private int sortSelected;
 
     public HomeFragmentViewModel() {
         originalPosts = new ArrayList<>();
@@ -68,6 +73,9 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
 
         db = FirebaseFirestore.getInstance();
         userID = FirebaseAuth.getInstance().getUid();
+
+        filtersSelected = new ArrayList<>();
+        sortSelected = -1;
 
         fetchPosts();
     }
@@ -210,6 +218,107 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
         return postsLiveData;
     }
 
+    public ArrayList<Integer> getCheckedFilter() { return filtersSelected; }
+    public int getCheckedSort() { return sortSelected; }
+
+    public void getFilteredPosts(ArrayList<Integer> filters, ArrayList<Integer> type) {
+        filtersSelected.addAll(filters);
+        posts.clear();
+        List<PostInfo> amountFilteredPosts = new ArrayList<>();
+        List<PostInfo> peopleRequiredFilteredPosts = new ArrayList<>();
+        List<PostInfo> lastActivityFilteredPosts = new ArrayList<>();
+        Set<PostInfo> combinedFilteredPosts = new LinkedHashSet<>(originalPosts);
+        for(int i=0; i<type.size(); i++) {
+            if(type.get(i) == 1) {
+                if((filters.get(i)%4) == 0) {
+                    for (PostInfo p : originalPosts) {
+                        if(p.getAmount() < 1000)
+                            amountFilteredPosts.add(p);
+                    }
+                }
+                if((filters.get(i)%4) == 1) {
+                    for (PostInfo p : originalPosts) {
+                        if(p.getAmount() >= 1000 && p.getAmount() <= 5000)
+                            amountFilteredPosts.add(p);
+                    }
+                }
+                if((filters.get(i)%4) == 2) {
+                    for (PostInfo p : originalPosts) {
+                        if(p.getAmount() >= 5001 && p.getAmount() <= 10000)
+                            amountFilteredPosts.add(p);
+                    }
+                }
+                if((filters.get(i)%4) == 3) {
+                    for (PostInfo p : originalPosts) {
+                        if(p.getAmount() >= 10001)
+                            amountFilteredPosts.add(p);
+                    }
+                }
+                combinedFilteredPosts = new LinkedHashSet<>(amountFilteredPosts);
+            }
+            else if(type.get(i) == 2) {
+                if((filters.get(i)%4) == 0) {
+                    for (PostInfo p : originalPosts) {
+                        if(p.getPeopleRequired() < 3)
+                            peopleRequiredFilteredPosts.add(p);
+                    }
+                }
+                if((filters.get(i)%4) == 1) {
+                    for (PostInfo p : originalPosts) {
+                        if(p.getPeopleRequired() >= 3 && p.getPeopleRequired() <= 5)
+                            peopleRequiredFilteredPosts.add(p);
+                    }
+                }
+                if((filters.get(i)%4) == 2) {
+                    for (PostInfo p : originalPosts) {
+                        if(p.getPeopleRequired() >= 5 && p.getPeopleRequired() <= 10)
+                            peopleRequiredFilteredPosts.add(p);
+                    }
+                }
+                if((filters.get(i)%4) == 3) {
+                    for (PostInfo p : originalPosts) {
+                        if(p.getPeopleRequired() > 10)
+                            peopleRequiredFilteredPosts.add(p);
+                    }
+                }
+                combinedFilteredPosts.retainAll(peopleRequiredFilteredPosts);
+            }
+            else if(type.get(i) == 3) {
+                if((filters.get(i)%4) == 0) {
+                    for (PostInfo p : originalPosts) {
+                        if(p.getLastActivity() > ((new Date().getTime() / 1000) - 2629743))
+                            lastActivityFilteredPosts.add(p);
+                    }
+                }
+                if((filters.get(i)%4) == 1) {
+                    for (PostInfo p : originalPosts) {
+                        if(p.getLastActivity() >= ((System.currentTimeMillis() / 1000) - (6 * 2629743))  && p.getLastActivity() <= ((System.currentTimeMillis() / 1000) - 2629743))
+                            lastActivityFilteredPosts.add(p);
+                    }
+                }
+                if((filters.get(i)%4) == 2) {
+                    for (PostInfo p : originalPosts) {
+                        if(p.getLastActivity() >= ((System.currentTimeMillis() / 1000) - 31556926 )  && p.getLastActivity() <= ((System.currentTimeMillis() / 1000) - (6 * 2629743)))
+                            lastActivityFilteredPosts.add(p);
+                    }
+                }
+                if((filters.get(i)%4) == 3) {
+                    for (PostInfo p : originalPosts) {
+                        if(p.getLastActivity() < ((System.currentTimeMillis() / 1000) - 31556926 ))
+                            lastActivityFilteredPosts.add(p);
+                    }
+                }
+                combinedFilteredPosts.retainAll(lastActivityFilteredPosts);
+            }
+        }
+        if(type.size() == 0) {
+            posts.addAll(originalPosts);
+        } else {
+            posts.addAll(combinedFilteredPosts);
+        }
+        postsLiveData.setValue(posts);
+    }
+
     public LiveData<Boolean> areUserDetailsChanged() {
         return userDetailsChanged;
     }
@@ -228,5 +337,43 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
 
     public Map<String, String> getPostsStatus() {
         return postsStatus;
+    }
+
+    public void sortPosts(String sortBy) {
+        posts.clear();
+        posts.addAll(originalPosts);
+        switch (sortBy) {
+            case "Amount":
+                sortSelected = 0;
+                Collections.sort(posts, new Comparator<PostInfo>() {
+                    @Override
+                    public int compare(PostInfo p1, PostInfo p2) {
+                        return p1.getAmount() - p2.getAmount();
+                    }
+                });
+                break;
+            case "Peoples Required":
+                sortSelected = 1;
+                Collections.sort(posts, new Comparator<PostInfo>() {
+                    @Override
+                    public int compare(PostInfo p1, PostInfo p2) {
+                        return p1.getPeopleRequired() - p2.getPeopleRequired();
+                    }
+                });
+                break;
+            case "Last Activity":
+                sortSelected = 2;
+                Collections.sort(posts, new Comparator<PostInfo>() {
+                    @Override
+                    public int compare(PostInfo p1, PostInfo p2) {
+                        return (int)(p1.getLastActivity() - p2.getLastActivity());
+                    }
+                });
+                break;
+            case "DEFAULTS":
+                sortSelected = -1;
+                break;
+        }
+        postsLiveData.setValue(posts);
     }
 }

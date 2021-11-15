@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginStart="25dp">
+        <TextView
+            android:id="@+id/amountFilterTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="20sp"
+            android:text="@string/amount_text"
+            android:textColor="@color/black"
+            android:layout_marginStart="10dp"/>
+
+        <CheckBox
+            android:id="@+id/amountCheckBox1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/filter_amount_less_than_1000" />
+
+        <CheckBox
+            android:id="@+id/amountCheckBox2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/filter_amount_1000_to_5000" />
+
+        <CheckBox
+            android:id="@+id/amountCheckBox3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/filter_amount_5001_to_10000" />
+
+        <CheckBox
+            android:id="@+id/amountCheckBox4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/filter_amount_greater_than_10000" />
+
+        <TextView
+            android:id="@+id/peopleFilterTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/people_required_text"
+            android:textSize="20sp"
+            android:textColor="@color/black"
+            android:layout_marginStart="10dp"/>
+
+        <CheckBox
+            android:id="@+id/peopleCheckBox1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/people_req_filter_less_than_3" />
+
+        <CheckBox
+            android:id="@+id/peopleCheckBox2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/people_req_filter_3_to_5" />
+
+        <CheckBox
+            android:id="@+id/peopleCheckBox3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/people_req_filter_6_to_10" />
+
+        <CheckBox
+            android:id="@+id/peopleCheckBox4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/people_req_filter_greater_than_10" />
+
+        <TextView
+            android:id="@+id/LastActivityFilterTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/last_activity_text"
+            android:textSize="20sp"
+            android:textColor="@color/black"
+            android:layout_marginStart="10dp"/>
+
+        <CheckBox
+            android:id="@+id/lastActivityCheckBox1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/last_activity_filter_less_than_1_month" />
+
+        <CheckBox
+            android:id="@+id/lastActivityCheckBox2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/last_activity_filter_1_month_to_6_months" />
+
+        <CheckBox
+            android:id="@+id/lastActivityCheckBox3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/last_activity_filter_6_months_to_1_year" />
+
+        <CheckBox
+            android:id="@+id/lastActivityCheckBox4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/last_activity_filter_greater_than_1_year" />
+
+    </LinearLayout>
+
+</ScrollView>
