@@ -18,8 +18,7 @@
             android:textSize="35sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/searchView"/>
+            app:layout_constraintTop_toTopOf="parent"/>
 
         <androidx.appcompat.widget.SearchView
             android:id="@+id/searchView"
@@ -28,9 +27,10 @@
             android:layout_marginHorizontal="20dp"
             android:background="@drawable/gradient_long_button_bg"
             android:paddingHorizontal="15dp"
-            app:layout_constraintStart_toEndOf="@id/appNameHeading"
             app:layout_constraintBottom_toBottomOf="@+id/appNameHeading"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/appNameHeading" />
 
         <Button

@@ -3,6 +3,7 @@ package com.puteffort.sharenshop.fragments;
 import android.annotation.SuppressLint;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -50,6 +51,9 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
 
     private void setUpComponents() {
         binding.searchView.setOnQueryTextListener(model);
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        requireActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        binding.searchView.setMaxWidth(displayMetrics.widthPixels - 70);
 
         binding.postsRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.postsRecyclerView.setHasFixedSize(true);
