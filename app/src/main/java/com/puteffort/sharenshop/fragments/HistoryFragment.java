@@ -23,7 +23,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.google.android.material.chip.Chip;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentHistoryBinding;
 import com.puteffort.sharenshop.models.PostInfo;
@@ -76,12 +75,21 @@ public class HistoryFragment extends Fragment {
             });
         }
 
-        // TODO(check chips from model.filterNumbers)
+        for (int chipNum: model.getChipNumbers()) {
+            Chip chip;
+            switch (chipNum) {
+                case 0: chip = binding.postsCreatedChip; break;
+                case 1: chip = binding.postsWishListedChip; break;
+                case 2: chip = binding.postsInvolvedChip; break;
+                default: chip = null;
+            }
+            if (chip != null)
+                chip.setChecked(true);
+        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
     private void addObservers() {
-
         model.getPosts().observe(getViewLifecycleOwner(), posts -> {
             recyclerViewAdapter.setPosts(posts);
             if (posts == null) {
@@ -90,14 +98,14 @@ public class HistoryFragment extends Fragment {
                 binding.progressBar.setVisibility(View.INVISIBLE);
                 binding.swipeRefreshHistory.setRefreshing(false);
             }
-            binding.progressBar.setVisibility((posts == null) ? View.VISIBLE : View.INVISIBLE);
             recyclerViewAdapter.notifyDataSetChanged();
         });
     }
 
     private void openPostFragment(int position, Drawable postOwnerImage) {
-        ((MainActivity)requireActivity()).changeFragment(
-                new PostFragment(Objects.requireNonNull(model.getPosts().getValue()).get(position), postOwnerImage));
+        PostFragment postFragment =
+                new PostFragment(Objects.requireNonNull(model.getPosts().getValue()).get(position), postOwnerImage);
+        ((HomeFragment.PostCommunicator)requireParentFragment()).addPostFragment(postFragment);
     }
 
     private static class HistoryRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {

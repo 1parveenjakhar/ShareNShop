@@ -5,6 +5,8 @@ import static com.puteffort.sharenshop.utils.UtilFunctions.getFormattedTime;
 import android.annotation.SuppressLint;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Parcelable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,11 +14,11 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
+import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentPostBinding;
@@ -44,10 +46,13 @@ public class PostFragment extends Fragment {
                              Bundle savedInstanceState) {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_post, container, false);
         model = new ViewModelProvider(this, new PostFragmentViewModelFactory(postInfo)).get(PostFragmentViewModel.class);
+        binding.tabLayout.setTabGravity(TabLayout.GRAVITY_FILL);
 
+        Log.d("a", "PostFragment Recreated! 1");
         setListeners();
         setObservers();
 
+        Log.d("a", "PostFragment Recreated! 2");
         return binding.getRoot();
     }
 
@@ -67,7 +72,7 @@ public class PostFragment extends Fragment {
             model.loadPostDetailInfo();
         });
 
-        binding.viewPager.setAdapter(new ViewPagerAdapter(getActivity()));
+        binding.viewPager.setAdapter(new ViewPagerAdapter(this));
         new TabLayoutMediator(binding.tabLayout, binding.viewPager,
                 (tab, position) -> tab.setText(model.getFragmentTitle(position))).attach();
         binding.viewPager.setCurrentItem(1);
@@ -107,8 +112,8 @@ public class PostFragment extends Fragment {
     }
 
     private class ViewPagerAdapter extends FragmentStateAdapter {
-        public ViewPagerAdapter(FragmentActivity fragmentActivity){
-            super(fragmentActivity);
+        public ViewPagerAdapter(Fragment fragment){
+            super(fragment);
         }
 
         @Override

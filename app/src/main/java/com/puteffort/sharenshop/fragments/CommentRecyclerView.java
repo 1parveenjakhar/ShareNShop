@@ -14,6 +14,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -37,14 +38,11 @@ public class CommentRecyclerView extends Fragment {
         // Required empty public constructor
     }
 
-    public CommentRecyclerView(PostFragmentViewModel model) {
-        this.model = model;
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_comment_recycler_view, container, false);
+        model = new ViewModelProvider(requireParentFragment()).get(PostFragmentViewModel.class);
 
         recyclerView = view.findViewById(R.id.commentRecyclerView);
         progressBar = view.findViewById(R.id.progressBar);

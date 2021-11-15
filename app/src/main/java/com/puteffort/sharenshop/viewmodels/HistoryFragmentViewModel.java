@@ -14,6 +14,7 @@ import androidx.lifecycle.ViewModel;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.models.PostStatus;
 import com.puteffort.sharenshop.models.UserActivity;
@@ -33,8 +34,8 @@ public class HistoryFragmentViewModel extends ViewModel {
     private final Set<String> wishListedIds = new HashSet<>();
     private final Set<String> involvedIds = new HashSet<>();
 
-    private final List<Set<String>> filterArray = new ArrayList<>();
-    private final Set<Integer> filterNumbers = new HashSet<>();
+    private final List<Set<String>> idArray = new ArrayList<>();
+    private final Set<Integer> chipNumbers = new HashSet<>();
 
     private final List<PostInfo> posts = new ArrayList<>();
     private final MutableLiveData<List<PostInfo>> postsLiveData = new MutableLiveData<>();
@@ -45,10 +46,10 @@ public class HistoryFragmentViewModel extends ViewModel {
         db = FirebaseFirestore.getInstance();
         userID = FirebaseAuth.getInstance().getUid();
 
-        filterArray.add(createdIds); // Idx 0
-        filterArray.add(wishListedIds); // Idx 1
-        filterArray.add(involvedIds);// Idx 2
-        filterNumbers.add(1); // Default selected chip
+        idArray.add(createdIds); // Idx 0
+        idArray.add(wishListedIds); // Idx 1
+        idArray.add(involvedIds);// Idx 2
+        chipNumbers.add(1); // Default selected chip
 
         handler = new Handler(Looper.getMainLooper());
 
@@ -83,18 +84,15 @@ public class HistoryFragmentViewModel extends ViewModel {
         Set<String> allPosts = new HashSet<>(createdIds);
         allPosts.addAll(wishListedIds);
         allPosts.addAll(involvedIds);
-        for (String postID: allPosts) {
-            db.collection(POST_INFO).document(postID).get()
-                    .addOnSuccessListener(postSnap -> {
-                       PostInfo postInfo = postSnap.toObject(PostInfo.class);
-                       if (postInfo != null) {
-                           idToPostMapping.put(postID, postInfo);
-                           if (idToPostMapping.size() == allPosts.size()) {
-                               setUpPosts();
-                           }
-                       }
-                    });
-        }
+
+        db.collection(POST_INFO).whereIn("id", new ArrayList<>(allPosts)).get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                   for (QueryDocumentSnapshot docSnap: queryDocumentSnapshots) {
+                       PostInfo postInfo = docSnap.toObject(PostInfo.class);
+                       idToPostMapping.put(postInfo.getId(), postInfo);
+                   }
+                   setUpPosts();
+                });
     }
 
     private void setUpPosts() {
@@ -102,8 +100,8 @@ public class HistoryFragmentViewModel extends ViewModel {
 
         AsyncTask.execute(() -> {
             Set<String> tmpIDs = new HashSet<>();
-            for (int chipNum: filterNumbers)
-                tmpIDs.addAll(filterArray.get(chipNum));
+            for (int chipNum: chipNumbers)
+                tmpIDs.addAll(idArray.get(chipNum));
             for (String id: tmpIDs)
                 posts.add(idToPostMapping.get(id));
             handler.post(() -> postsLiveData.setValue(posts));
@@ -114,9 +112,9 @@ public class HistoryFragmentViewModel extends ViewModel {
     public synchronized void changeData(int chipNum, boolean isChecked) {
         postsLiveData.setValue(null);
         if (isChecked) {
-            filterNumbers.add(chipNum);
+            chipNumbers.add(chipNum);
         } else {
-            filterNumbers.remove(chipNum);
+            chipNumbers.remove(chipNum);
         }
         setUpPosts();
     }
@@ -125,4 +123,7 @@ public class HistoryFragmentViewModel extends ViewModel {
         return postsLiveData;
     }
 
+    public Set<Integer> getChipNumbers() {
+        return chipNumbers;
+    }
 }

@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -33,15 +34,12 @@ public class InterestedRecyclerView extends Fragment {
         // Required empty public constructor
     }
 
-    public InterestedRecyclerView(PostFragmentViewModel model, boolean isUserPostOwner) {
-        this.model = model;
-        this.isUserPostOwner = isUserPostOwner;
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_interested_recycler_view, container, false);
+        model = new ViewModelProvider(requireParentFragment()).get(PostFragmentViewModel.class);
+        isUserPostOwner = model.isUserPostOwner();
 
         recyclerView = view.findViewById(R.id.interestedRecyclerView);
         progressBar = view.findViewById(R.id.progressBar);

@@ -3,9 +3,12 @@ package com.puteffort.sharenshop;
 import static com.puteffort.sharenshop.utils.UtilFunctions.isEmailValid;
 import static com.puteffort.sharenshop.utils.UtilFunctions.showToast;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
@@ -60,6 +63,8 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (setOrientation()) return;
+
         setTheme();
         binding = DataBindingUtil.setContentView(this, R.layout.activity_login);
         editEmailAddress = Objects.requireNonNull(binding.emailAddress);
@@ -78,6 +83,21 @@ public class LoginActivity extends AppCompatActivity {
             mSignInClient = GoogleSignIn.getClient(this, gso);
             addListeners();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setOrientation();
+    }
+
+    @SuppressLint("SourceLockedOrientationActivity")
+    private boolean setOrientation() {
+        if (getResources().getBoolean(R.bool.portrait_only)) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            return getResources().getConfiguration().orientation != Configuration.ORIENTATION_PORTRAIT;
+        }
+        return false;
     }
 
     private void setTheme() {

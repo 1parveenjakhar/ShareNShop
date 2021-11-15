@@ -8,6 +8,7 @@ import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
 import static com.puteffort.sharenshop.utils.UtilFunctions.showToast;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 
@@ -54,15 +55,20 @@ public class PostFragmentViewModel extends ViewModel {
 
     private final MutableLiveData<Integer> addedIndex, interestedIndex, commentIndex, interestedRemoveIndex;
 
+    private final boolean isUserPostOwner;
+
     public PostFragmentViewModel(PostInfo postInfo) {
+        Log.d("a", "ViewModel created!");
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
         this.postInfo = postInfo;
         postInfoLiveData = new MutableLiveData<>(postInfo);
 
-        interestedRecyclerView = new InterestedRecyclerView(this, postInfo.getOwnerID().equals(auth.getUid()));
-        commentRecyclerView = new CommentRecyclerView(this);
-        addedRecyclerView = new AddedRecyclerView(this);
+        isUserPostOwner = postInfo.getOwnerID().equals(auth.getUid());
+
+        interestedRecyclerView = new InterestedRecyclerView();
+        commentRecyclerView = new CommentRecyclerView();
+        addedRecyclerView = new AddedRecyclerView();
 
         usersAdded = new ArrayList<>();
         usersInterested = new ArrayList<>();
@@ -277,6 +283,10 @@ public class PostFragmentViewModel extends ViewModel {
             case 2: return "People\nAdded";
             default: return "";
         }
+    }
+
+    public boolean isUserPostOwner() {
+        return isUserPostOwner;
     }
 
     public static class RecyclerViewComment {

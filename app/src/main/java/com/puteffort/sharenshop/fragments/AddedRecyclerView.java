@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -32,14 +33,11 @@ public class AddedRecyclerView extends Fragment {
         // Required empty public constructor
     }
 
-    public AddedRecyclerView(PostFragmentViewModel model) {
-        this.model = model;
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_added_recycler_view, container, false);
+        model = new ViewModelProvider(requireParentFragment()).get(PostFragmentViewModel.class);
 
         recyclerView = view.findViewById(R.id.addedRecyclerView);
         progressBar = view.findViewById(R.id.progressBar);

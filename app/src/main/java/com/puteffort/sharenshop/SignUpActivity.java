@@ -1,6 +1,9 @@
 package com.puteffort.sharenshop;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -47,6 +50,7 @@ public class SignUpActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (setOrientation()) return;
 
         setContentView(R.layout.activity_sign_up);
         mAuth = FirebaseAuth.getInstance();
@@ -70,6 +74,22 @@ public class SignUpActivity extends AppCompatActivity {
         }
 
         addListeners(listenerSetAlready);
+    }
+
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setOrientation();
+    }
+
+    @SuppressLint("SourceLockedOrientationActivity")
+    private boolean setOrientation() {
+        if(getResources().getBoolean(R.bool.portrait_only)){
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            return getResources().getConfiguration().orientation != Configuration.ORIENTATION_PORTRAIT;
+        }
+        return false;
     }
 
     private void setUpLinking() {

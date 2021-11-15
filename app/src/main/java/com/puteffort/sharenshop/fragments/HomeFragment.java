@@ -29,6 +29,10 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
     private HomeFragmentViewModel model;
     private PostsListRecyclerViewAdapter recyclerViewAdapter;
 
+    public interface PostCommunicator {
+        void addPostFragment(PostFragment postFragment);
+    }
+
     public HomeFragment() {
         // Required empty public constructor
     }
@@ -87,7 +91,9 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
     public void onItemClick(View view, int position, Drawable ownerImage) {
         // Handling a particular post click.
         PostInfo post = Objects.requireNonNull(model.getPosts().getValue()).get(position);
-        ((MainActivity)requireActivity()).changeFragment(new PostFragment(post, ownerImage));
+        PostFragment postFragment = new PostFragment(post, ownerImage);
+
+        ((PostCommunicator)requireParentFragment()).addPostFragment(postFragment);
     }
 
     @Override

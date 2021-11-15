@@ -80,6 +80,6 @@ public class AccountFragment extends Fragment {
         });
 
         binding.postsHistoryButton.setOnClickListener(view ->
-                ((MainActivity)requireActivity()).changeFragment(new HistoryFragment()));
+                ((MainActivity)requireActivity()).changeFragment(new HistoryContainerFragment()));
     }
 }
