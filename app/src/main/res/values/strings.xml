@@ -98,9 +98,11 @@
     <string name="last_activity_filter_1_month_to_6_months">1 month to 6 months</string>
     <string name="last_activity_filter_6_months_to_1_year">6 months to 1 year</string>
     <string name="last_activity_filter_greater_than_1_year">greater than 1 year</string>
+    <string name="to">To</string>
+    <string name="from">From</string>
     <string-array name="sort_tags">
         <item>"Amount"</item>
-        <item>"Peoples Required"</item>
+        <item>"People Required"</item>
         <item>"Last Activity"</item>
     </string-array>
 </resources>

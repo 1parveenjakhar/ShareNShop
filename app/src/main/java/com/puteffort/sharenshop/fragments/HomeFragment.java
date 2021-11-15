@@ -13,7 +13,6 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.adapters.PostsListRecyclerViewAdapter;
 import com.puteffort.sharenshop.databinding.FragmentHomeBinding;
@@ -22,7 +21,6 @@ import com.puteffort.sharenshop.utils.DBOperations;
 import com.puteffort.sharenshop.utils.UtilFunctions;
 import com.puteffort.sharenshop.viewmodels.HomeFragmentViewModel;
 
-import java.util.ArrayList;
 import java.util.Objects;
 
 public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapter.ItemClickListener {
@@ -63,32 +61,17 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
         binding.postsRecyclerView.setAdapter(recyclerViewAdapter);
         binding.swipeRefreshPostList.setOnRefreshListener(DBOperations::getUserDetails);
         binding.swipeRefreshPostList.setRefreshing(true);
-        binding.filterButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                FilterDialogFragment newFragment = new FilterDialogFragment(model.getCheckedFilter());
-                newFragment.show(getActivity().getSupportFragmentManager(), "filter_dialog");
-                newFragment.setOnFilterClick(new FilterDialogFragment.OnFilterClick(){
-                    @Override
-                    public void onFilterClicked(ArrayList<Integer> checked, ArrayList<Integer> type) {
-                        model.getFilteredPosts(checked, type);
-                    }
-                });
-            }
+
+        binding.filterButton.setOnClickListener(v -> {
+            FilterDialogFragment newFragment = new FilterDialogFragment(model.getLastActivityChips(), model.getEditTexts());
+            newFragment.show(requireActivity().getSupportFragmentManager(), "filter_dialog");
+            newFragment.setOnFilterClick((lastActivityChips, fromAndTos) -> model.filterPosts(lastActivityChips, fromAndTos));
         });
 
-        binding.sortButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                SortDialogFragment newFragment = new SortDialogFragment(model.getCheckedSort());
-                newFragment.show(getActivity().getSupportFragmentManager(), "sort_dialog");
-                newFragment.setOnSortClick(new SortDialogFragment.OnSortClick(){
-                    @Override
-                    public void onSortClicked(String sortBy) {
-                        model.sortPosts(sortBy);
-                    }
-                });
-            }
+        binding.sortButton.setOnClickListener(v -> {
+            SortDialogFragment newFragment = new SortDialogFragment(model.getCheckedSort());
+            newFragment.show(requireActivity().getSupportFragmentManager(), "sort_dialog");
+            newFragment.setOnSortClick(sortBy -> model.sortPosts(sortBy, false));
         });
     }
 

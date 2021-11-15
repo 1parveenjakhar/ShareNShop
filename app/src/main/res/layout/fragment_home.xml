@@ -31,32 +31,25 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/appNameHeading" />
 
-        <LinearLayout
-            android:id="@+id/linearLayout"
-            android:layout_width="match_parent"
+        <Button
+            android:id="@+id/filter_button"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            app:layout_constraintTop_toBottomOf="@+id/appNameHeading"
-            tools:layout_editor_absoluteX="376dp"
-            android:layout_margin="2dp">
+            android:text="@string/filter_button"
+            android:layout_margin="10dp"
+            app:layout_constraintTop_toBottomOf="@id/appNameHeading"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/sort_button"/>
 
-            <Button
-                android:id="@+id/filter_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/filter_button"
-                android:layout_margin="3dp" />
-
-            <Button
-                android:id="@+id/sort_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/sort_button"
-                android:layout_margin="3dp" />
-
-        </LinearLayout>
+        <Button
+            android:id="@+id/sort_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/sort_button"
+            android:layout_margin="10dp"
+            app:layout_constraintTop_toBottomOf="@id/appNameHeading"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/filter_button"/>
 
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipeRefreshPostList"
@@ -65,7 +58,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/linearLayout">
+            app:layout_constraintTop_toBottomOf="@id/sort_button">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/postsRecyclerView"
@@ -77,10 +70,10 @@
             android:id="@+id/progressBar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintStart_toStartOf="@id/swipeRefreshPostList"
+            app:layout_constraintEnd_toEndOf="@id/swipeRefreshPostList"
+            app:layout_constraintBottom_toBottomOf="@id/swipeRefreshPostList"
+            app:layout_constraintTop_toTopOf="@id/swipeRefreshPostList"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

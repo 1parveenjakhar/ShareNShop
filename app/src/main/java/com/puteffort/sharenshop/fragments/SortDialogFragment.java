@@ -1,7 +1,6 @@
 package com.puteffort.sharenshop.fragments;
 
 
-import android.content.DialogInterface;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -19,7 +18,7 @@ public class SortDialogFragment extends DialogFragment {
     }
 
     public interface OnSortClick {
-        public void onSortClicked(String sortBy);
+        void onSortClicked(String sortBy);
     }
 
     public void setOnSortClick(OnSortClick callback) {
@@ -29,28 +28,22 @@ public class SortDialogFragment extends DialogFragment {
     @NonNull
     @Override
     public AlertDialog onCreateDialog(Bundle savedInstanceState) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
         String[] sort_tags = getResources().getStringArray(R.array.sort_tags);
 
         builder.setTitle("Sort by")
                 .setSingleChoiceItems(R.array.sort_tags, checkedItem,null)
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        int selectedPosition = ((AlertDialog)dialog).getListView().getCheckedItemPosition();
-                        if(callback != null) {
-                            dialog.dismiss();
-                            callback.onSortClicked(sort_tags[selectedPosition]);
-                        }
+                .setPositiveButton("OK", (dialog, id) -> {
+                    int selectedPosition = ((AlertDialog)dialog).getListView().getCheckedItemPosition();
+                    if(callback != null) {
+                        dialog.dismiss();
+                        callback.onSortClicked(sort_tags[selectedPosition]);
                     }
                 })
-                .setNegativeButton("DEFAULT", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        if(callback != null) {
-                            dialog.dismiss();
-                            callback.onSortClicked("DEFAULTS");
-                        }
+                .setNegativeButton("DEFAULT", (dialog, id) -> {
+                    if(callback != null) {
+                        dialog.dismiss();
+                        callback.onSortClicked("Last Activity");
                     }
                 });
         return builder.create();

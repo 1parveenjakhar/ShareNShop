@@ -1,30 +1,36 @@
 package com.puteffort.sharenshop.fragments;
 
-import android.content.DialogInterface;
 import android.os.Bundle;
-
 import android.view.View;
-import android.widget.CheckBox;
+import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.DialogFragment;
 
+import com.google.android.material.chip.Chip;
+import com.google.android.material.textfield.TextInputLayout;
 import com.puteffort.sharenshop.R;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class FilterDialogFragment extends DialogFragment {
 
     private OnFilterClick callback;
-    private ArrayList<Integer> checked = new ArrayList<>();
+    private final Set<Integer> lastActivityChips;
+    private final List<String> fromAndTos;
 
-    public FilterDialogFragment(ArrayList<Integer> filterSelected) {
-        this.checked = filterSelected;
+    public FilterDialogFragment(Set<Integer> lastActivityChips, List<String> fromAndTos) {
+        this.lastActivityChips = lastActivityChips;
+        this.fromAndTos = fromAndTos;
     }
 
     public interface OnFilterClick {
-        void onFilterClicked(ArrayList<Integer> checked, ArrayList<Integer> type);
+        void onFilterClicked(Set<Integer> lastActivityChips, List<String> fromAndTos);
     }
 
     public void setOnFilterClick(OnFilterClick callback) {
@@ -34,51 +40,46 @@ public class FilterDialogFragment extends DialogFragment {
     @NonNull
     @Override
     public AlertDialog onCreateDialog(Bundle savedInstanceState) {
+        // TODO(make context of fragment)
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        ArrayList<Integer> type = new ArrayList<>();
+        final View layout = getLayoutInflater().inflate(R.layout.custom_filter_dialog, null);
 
-        final View customLayout = getLayoutInflater().inflate(R.layout.custom_filter_dialog, null);
-        CheckBox[] checkBoxes = new CheckBox[12];
-        Integer[] checkBoxIds = {R.id.amountCheckBox1, R.id.amountCheckBox2, R.id.amountCheckBox3, R.id.amountCheckBox4, R.id.peopleCheckBox1, R.id.peopleCheckBox2, R.id.peopleCheckBox3, R.id.peopleCheckBox4, R.id.lastActivityCheckBox1, R.id.lastActivityCheckBox2, R.id.lastActivityCheckBox3, R.id.lastActivityCheckBox4};
-        for(Integer i : this.checked){
-            CheckBox chkBoxes = (CheckBox)customLayout.findViewById(checkBoxIds[i]);
-            chkBoxes.setChecked(true);
+        EditText amountFrom = ((TextInputLayout)layout.findViewById(R.id.filterAmountFrom)).getEditText();
+        EditText amountTo = ((TextInputLayout)layout.findViewById(R.id.filterAmountTo)).getEditText();
+        EditText peopleFrom = ((TextInputLayout)layout.findViewById(R.id.filterPeopleFrom)).getEditText();
+        EditText peopleTo = ((TextInputLayout)layout.findViewById(R.id.filterPeopleTo)).getEditText();
+
+        EditText[] editTexts = {amountFrom, amountTo, peopleFrom, peopleTo};
+        Chip[] chips = {layout.findViewById(R.id.lessThan1Month), layout.findViewById(R.id.oneMonthTo6Months),
+                layout.findViewById(R.id.sixMonthsTo1Year), layout.findViewById(R.id.greaterThan1Year)};
+
+        for (int i = 0; i < 4; i++) {
+            editTexts[i].setText(fromAndTos.get(i));
+            if (lastActivityChips.contains(chips[i].getId())) {
+                chips[i].setChecked(true);
+            }
         }
 
-        builder.setView(customLayout);
+        builder.setView(layout);
+        builder.setPositiveButton("OK", (dialog, id) -> {
+                    Set<Integer> chipsSelected = new HashSet<>();
+                    List<String> values = new ArrayList<>();
+                    for (int i = 0; i < 4; i++) {
+                        if (chips[i].isChecked())
+                            chipsSelected.add(chips[i].getId());
+                        values.add(editTexts[i].getText().toString());
+                    }
 
-        builder.setTitle("Filter by")
-                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        checked.clear();
-                        type.clear();
-                        for(int i = 0; i < checkBoxIds.length; i++) {
-                            checkBoxes[i] = (CheckBox) customLayout.findViewById(checkBoxIds[i]);
-                            if(checkBoxes[i].isChecked()) {
-                                if(i < 4)
-                                    type.add(1);
-                                else if(i < 9)
-                                    type.add(2);
-                                else
-                                    type.add(3);
-                                checked.add(i);
-                            }
-                        }
-                        if(callback != null) {
-                            callback.onFilterClicked(checked, type);
-                            dialog.dismiss();
-                        }
+                    if(callback != null) {
+                        callback.onFilterClicked(chipsSelected, values);
+                        dialog.dismiss();
                     }
                 })
-                .setNegativeButton("CLEAR FILTERS", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int id) {
-                        if(callback != null) {
-                            callback.onFilterClicked(checked, type);
-                            dialog.dismiss();
-                        }
+                .setNegativeButton("CLEAR FILTERS", (dialog, id) -> {
+                    if(callback != null) {
+                        callback.onFilterClicked(new HashSet<>(), Arrays.asList("0", "", "0", ""));
+                        dialog.dismiss();
                     }
                 });
         return builder.create();

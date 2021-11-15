@@ -1,112 +1,168 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_marginStart="25dp">
+        android:layout_margin="20dp">
+
         <TextView
             android:id="@+id/amountFilterTextView"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="20sp"
+            android:textSize="25sp"
+            android:textStyle="bold"
             android:text="@string/amount_text"
             android:textColor="@color/black"
-            android:layout_marginStart="10dp"/>
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"/>
 
-        <CheckBox
-            android:id="@+id/amountCheckBox1"
-            android:layout_width="match_parent"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/filterAmountFrom"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="@string/filter_amount_less_than_1000" />
+            android:layout_marginStart="25dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginTop="20dp"
+            android:hint="@string/from"
+            app:layout_constraintEnd_toStartOf="@id/filterAmountTo"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/amountFilterTextView">
 
-        <CheckBox
-            android:id="@+id/amountCheckBox2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/filter_amount_1000_to_5000" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:text="@string/zero"/>
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <CheckBox
-            android:id="@+id/amountCheckBox3"
-            android:layout_width="match_parent"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/filterAmountTo"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="@string/filter_amount_5001_to_10000" />
+            android:layout_marginStart="5dp"
+            android:layout_marginEnd="25dp"
+            android:layout_marginTop="20dp"
+            android:hint="@string/to"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/filterAmountFrom"
+            app:layout_constraintTop_toBottomOf="@id/amountFilterTextView">
 
-        <CheckBox
-            android:id="@+id/amountCheckBox4"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/filter_amount_greater_than_10000" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
             android:id="@+id/peopleFilterTextView"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textSize="25sp"
+            android:textStyle="bold"
             android:text="@string/people_required_text"
-            android:textSize="20sp"
             android:textColor="@color/black"
-            android:layout_marginStart="10dp"/>
+            android:layout_marginTop="25dp"
+            app:layout_constraintTop_toBottomOf="@id/filterAmountFrom"
+            app:layout_constraintStart_toStartOf="parent"/>
 
-        <CheckBox
-            android:id="@+id/peopleCheckBox1"
-            android:layout_width="match_parent"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/filterPeopleFrom"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="@string/people_req_filter_less_than_3" />
+            android:layout_marginStart="25dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginTop="20dp"
+            android:hint="@string/from"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/peopleFilterTextView"
+            app:layout_constraintEnd_toStartOf="@id/filterPeopleTo">
 
-        <CheckBox
-            android:id="@+id/peopleCheckBox2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/people_req_filter_3_to_5" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:text="@string/zero"/>
+        </com.google.android.material.textfield.TextInputLayout>
 
-        <CheckBox
-            android:id="@+id/peopleCheckBox3"
-            android:layout_width="match_parent"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/filterPeopleTo"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="@string/people_req_filter_6_to_10" />
+            android:layout_marginStart="5dp"
+            android:layout_marginEnd="25dp"
+            android:layout_marginTop="20dp"
+            android:hint="@string/to"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/filterPeopleFrom"
+            app:layout_constraintTop_toBottomOf="@id/peopleFilterTextView">
 
-        <CheckBox
-            android:id="@+id/peopleCheckBox4"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/people_req_filter_greater_than_10" />
+            <com.google.android.material.textfield.TextInputEditText
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
-            android:id="@+id/LastActivityFilterTextView"
-            android:layout_width="match_parent"
+            android:id="@+id/lastActivityFilterTextView"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textSize="25sp"
+            android:textStyle="bold"
             android:text="@string/last_activity_text"
-            android:textSize="20sp"
             android:textColor="@color/black"
-            android:layout_marginStart="10dp"/>
+            android:layout_marginTop="25dp"
+            app:layout_constraintTop_toBottomOf="@id/filterPeopleFrom"
+            app:layout_constraintStart_toStartOf="parent"/>
 
-        <CheckBox
-            android:id="@+id/lastActivityCheckBox1"
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/lastActivityChips"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/last_activity_filter_less_than_1_month" />
+            android:layout_margin="10dp"
+            app:layout_constraintTop_toBottomOf="@id/lastActivityFilterTextView">
 
-        <CheckBox
-            android:id="@+id/lastActivityCheckBox2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/last_activity_filter_1_month_to_6_months" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/lessThan1Month"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/last_activity_filter_less_than_1_month"
+                app:checkedIconEnabled="true"
+                style="@style/Widget.MaterialComponents.Chip.Choice"/>
 
-        <CheckBox
-            android:id="@+id/lastActivityCheckBox3"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/last_activity_filter_6_months_to_1_year" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/oneMonthTo6Months"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/last_activity_filter_1_month_to_6_months"
+                app:checkedIconEnabled="true"
+                style="@style/Widget.MaterialComponents.Chip.Choice"/>
 
-        <CheckBox
-            android:id="@+id/lastActivityCheckBox4"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/last_activity_filter_greater_than_1_year" />
+            <com.google.android.material.chip.Chip
+                android:id="@+id/sixMonthsTo1Year"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/last_activity_filter_6_months_to_1_year"
+                app:checkedIconEnabled="true"
+                style="@style/Widget.MaterialComponents.Chip.Choice"/>
 
-    </LinearLayout>
+            <com.google.android.material.chip.Chip
+                android:id="@+id/greaterThan1Year"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/last_activity_filter_greater_than_1_year"
+                app:checkedIconEnabled="true"
+                style="@style/Widget.MaterialComponents.Chip.Choice"/>
+        </com.google.android.material.chip.ChipGroup>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </ScrollView>
