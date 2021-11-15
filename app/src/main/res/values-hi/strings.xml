@@ -40,7 +40,7 @@
     <string name="logout">लॉग आउट</string>
     <string name="post_title">पोस्ट का शीर्षक</string>
     <string name="amount_in_rs">राशि (रुपये में)</string>
-    <string name="people_required">लोगों की आवश्यकता</string>
+    <string name="people_required_text">लोगों की आवश्यकता</string>
     <string name="days">दिन</string>
     <string name="months">महीने</string>
     <string name="years">वर्ष</string>
