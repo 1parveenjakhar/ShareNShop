@@ -3,6 +3,7 @@ package com.puteffort.sharenshop.fragments;
 import android.annotation.SuppressLint;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,13 +14,12 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.adapters.PostsListRecyclerViewAdapter;
 import com.puteffort.sharenshop.databinding.FragmentHomeBinding;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.utils.DBOperations;
-import com.puteffort.sharenshop.utils.UITasks;
+import com.puteffort.sharenshop.utils.UtilFunctions;
 import com.puteffort.sharenshop.viewmodels.HomeFragmentViewModel;
 
 import java.util.Objects;
@@ -28,6 +28,10 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
     private FragmentHomeBinding binding;
     private HomeFragmentViewModel model;
     private PostsListRecyclerViewAdapter recyclerViewAdapter;
+
+    public interface PostCommunicator {
+        void addPostFragment(PostFragment postFragment);
+    }
 
     public HomeFragment() {
         // Required empty public constructor
@@ -47,6 +51,9 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
 
     private void setUpComponents() {
         binding.searchView.setOnQueryTextListener(model);
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        requireActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        binding.searchView.setMaxWidth(displayMetrics.widthPixels - 70);
 
         binding.postsRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.postsRecyclerView.setHasFixedSize(true);
@@ -58,6 +65,18 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
         binding.postsRecyclerView.setAdapter(recyclerViewAdapter);
         binding.swipeRefreshPostList.setOnRefreshListener(DBOperations::getUserDetails);
         binding.swipeRefreshPostList.setRefreshing(true);
+
+        binding.filterButton.setOnClickListener(v -> {
+            FilterDialogFragment newFragment = new FilterDialogFragment(model.getLastActivityChips(), model.getEditTexts());
+            newFragment.show(requireActivity().getSupportFragmentManager(), "filter_dialog");
+            newFragment.setOnFilterClick((lastActivityChips, fromAndTos) -> model.filterPosts(lastActivityChips, fromAndTos));
+        });
+
+        binding.sortButton.setOnClickListener(v -> {
+            SortDialogFragment newFragment = new SortDialogFragment(model.getCheckedSort());
+            newFragment.show(requireActivity().getSupportFragmentManager(), "sort_dialog");
+            newFragment.setOnSortClick(sortBy -> model.sortPosts(sortBy, false));
+        });
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -73,12 +92,11 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
             }
         });
 
-        model.getToastMessage().observe(requireActivity(), toastID -> UITasks.showToast(requireContext(), requireContext().getString(toastID)));
+        model.getToastMessage().observe(requireActivity(), toastID -> UtilFunctions.showToast(requireContext(), requireContext().getString(toastID)));
 
         model.isDataUpdating().observe(requireActivity(), dataUpdating -> binding.progressBar.setVisibility(dataUpdating ? View.VISIBLE : View.INVISIBLE));
 
         DBOperations.getUserActivity().observe(requireActivity(), userActivity -> {
-            System.out.println("Live data change observed .......................");
             binding.swipeRefreshPostList.setRefreshing(false);
             model.changeUserDetails(userActivity);
         });
@@ -88,7 +106,9 @@ public class HomeFragment extends Fragment implements PostsListRecyclerViewAdapt
     public void onItemClick(View view, int position, Drawable ownerImage) {
         // Handling a particular post click.
         PostInfo post = Objects.requireNonNull(model.getPosts().getValue()).get(position);
-        ((MainActivity)requireActivity()).changeFragment(new PostFragment(post, ownerImage));
+        PostFragment postFragment = new PostFragment(post, ownerImage);
+
+        ((PostCommunicator)requireParentFragment()).addPostFragment(postFragment);
     }
 
     @Override

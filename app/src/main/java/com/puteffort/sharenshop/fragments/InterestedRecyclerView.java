@@ -3,12 +3,6 @@ package com.puteffort.sharenshop.fragments;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,14 +10,17 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.R;
-import com.puteffort.sharenshop.utils.DBOperations;
+import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class InterestedRecyclerView extends Fragment {
@@ -31,23 +28,18 @@ public class InterestedRecyclerView extends Fragment {
     private PostFragmentViewModel model;
     private InterestedRecyclerViewAdapter adapter;
     private ProgressBar progressBar;
-    private String postOwnerID;
-    private String userID;
+    private boolean isUserPostOwner;
 
     public InterestedRecyclerView() {
         // Required empty public constructor
-    }
-
-    public InterestedRecyclerView(PostFragmentViewModel model, String postOwnerID) {
-        this.model = model;
-        this.postOwnerID = postOwnerID;
-        userID = FirebaseAuth.getInstance().getUid();
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_interested_recycler_view, container, false);
+        model = new ViewModelProvider(requireParentFragment()).get(PostFragmentViewModel.class);
+        isUserPostOwner = model.isUserPostOwner();
 
         recyclerView = view.findViewById(R.id.interestedRecyclerView);
         progressBar = view.findViewById(R.id.progressBar);
@@ -58,36 +50,50 @@ public class InterestedRecyclerView extends Fragment {
 
     @SuppressLint("NotifyDataSetChanged")
     private void addObservers() {
-        adapter = new InterestedRecyclerViewAdapter(requireContext(), userID.equals(postOwnerID));
+        adapter = new InterestedRecyclerViewAdapter(this, isUserPostOwner, model.getUsersInterested());
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
-        model.getUsersInterested().observe(getViewLifecycleOwner(), usersInterested -> {
-            if (usersInterested != null) {
-                progressBar.setVisibility(View.INVISIBLE);
-                adapter.setUsers(usersInterested);
+        model.getInterestedIndex().observe(getViewLifecycleOwner(), index -> {
+            // For loading data
+            if (index == null) {
+                progressBar.setVisibility(View.VISIBLE);
                 adapter.notifyDataSetChanged();
+                return;
             }
+
+            if (index != -1) {
+                // Insert at index, if list is not empty
+                adapter.notifyItemInserted(index);
+            }
+            progressBar.setVisibility(View.INVISIBLE);
         });
+
+        model.getInterestedRemoveIndex().observe(getViewLifecycleOwner(), index -> {
+            if (index == null) return;
+            adapter.notifyItemRemoved(index);
+        });
+    }
+
+    void addUser(boolean isUserAdded, int position, ProgressBar progressBar) {
+        progressBar.setVisibility(View.VISIBLE);
+        if (isUserAdded) model.addUser(position, progressBar);
+        else model.removeUser(position, progressBar);
     }
 }
 
 class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    private List<String> usersInterested;
+    private final List<UserProfile> usersInterested;
     private final Context context;
-    private final FirebaseFirestore db;
-    private final boolean showOptions;
+    private final InterestedRecyclerView parentFragment;
+    private final boolean isUserPostOwner;
 
-    public InterestedRecyclerViewAdapter(Context context, boolean showOptions) {
-        this.usersInterested = new ArrayList<>();
-        this.context = context;
-        this.showOptions = showOptions;
-        db = FirebaseFirestore.getInstance();
-    }
-
-    void setUsers(List<String> usersInterested) {
+    public InterestedRecyclerViewAdapter(InterestedRecyclerView parentFragment, boolean isUserPostOwner, List<UserProfile> usersInterested) {
         this.usersInterested = usersInterested;
+        this.parentFragment = parentFragment;
+        this.context = parentFragment.requireContext();
+        this.isUserPostOwner = isUserPostOwner;
     }
 
     @NonNull
@@ -99,25 +105,21 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-        String userID = usersInterested.get(position);
+        UserProfile user = usersInterested.get(position);
         UserHolder userHolder = (UserHolder) holder;
 
-        if (showOptions) {
+        if (isUserPostOwner) {
             userHolder.cross.setVisibility(View.VISIBLE);
             userHolder.tick.setVisibility(View.VISIBLE);
 
-            // TODO(Add their listeners)
+            userHolder.cross.setOnClickListener(view -> parentFragment.addUser(false, position, userHolder.crossPB));
+            userHolder.tick.setOnClickListener(view -> parentFragment.addUser(true, position, userHolder.tickPB));
         }
 
-        db.collection(DBOperations.USER_PROFILE).document(userID).get()
-                .addOnSuccessListener(docSnap -> {
-                    if (docSnap != null) {
-                        userHolder.userName.setText(docSnap.getString("name"));
-                        Glide.with(context).load(docSnap.getString("imageURL"))
-                                .error(Glide.with(userHolder.userImage).load(R.drawable.default_person_icon))
-                                .circleCrop().into(userHolder.userImage);
-                    }
-                });
+        userHolder.userName.setText(user.getName());
+        Glide.with(context).load(user.getImageURL())
+                .error(R.drawable.default_person_icon)
+                .circleCrop().into(userHolder.userImage);
     }
 
     @Override
@@ -128,6 +130,7 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     static class UserHolder extends RecyclerView.ViewHolder {
         TextView userName;
         ImageView userImage, cross, tick;
+        ProgressBar tickPB, crossPB;
 
         public UserHolder(@NonNull View itemView) {
             super(itemView);
@@ -136,6 +139,8 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             userImage = itemView.findViewById(R.id.userImage);
             cross = itemView.findViewById(R.id.cross);
             tick = itemView.findViewById(R.id.tick);
+            tickPB = itemView.findViewById(R.id.tickProgressBar);
+            crossPB = itemView.findViewById(R.id.crossProgressBar);
         }
     }
 }

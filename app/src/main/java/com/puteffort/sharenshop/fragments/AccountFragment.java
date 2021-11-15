@@ -17,9 +17,9 @@ import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.puteffort.sharenshop.LoginActivity;
+import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentAccountBinding;
-import com.puteffort.sharenshop.utils.StaticData;
 
 public class AccountFragment extends Fragment {
     private FragmentAccountBinding binding;
@@ -43,8 +43,9 @@ public class AccountFragment extends Fragment {
         return binding.getRoot();
     }
 
+    @SuppressLint("SwitchIntDef")
     private void setRadioButtons() {
-        RadioButton themeButton, langButton;
+        RadioButton themeButton;
 
         switch (AppCompatDelegate.getDefaultNightMode()) {
             case AppCompatDelegate.MODE_NIGHT_NO:
@@ -57,22 +58,6 @@ public class AccountFragment extends Fragment {
                 themeButton = binding.defaultTheme;
         }
         themeButton.setChecked(true);
-
-        String language = StaticData.getCurrentLocale(requireContext()).getLanguage();
-        switch (language) {
-            case "en":
-                langButton = binding.englishLanguage;
-                break;
-            case "hi":
-                langButton = binding.hindiLanguage;
-                break;
-            default:
-                langButton = null;
-                break;
-        }
-        if (langButton != null) {
-            langButton.setChecked(true);
-        }
     }
 
     @SuppressLint("NonConstantResourceId")
@@ -94,19 +79,7 @@ public class AccountFragment extends Fragment {
             sharedPrefs.edit().clear().putInt(getString(R.string.shared_pref_theme), themeVal).apply();
         });
 
-        binding.languageOptions.setOnCheckedChangeListener((group, checkedId) -> {
-            String languageVal;
-            switch (checkedId) {
-                case R.id.englishLanguage: languageVal = "en"; break;
-                case R.id.hindiLanguage: languageVal = "hi"; break;
-                default: languageVal = "";
-            }
-            if (!languageVal.isEmpty()) {
-                // TODO()
-//                StaticData.changeLanguage(languageVal, requireActivity().getBaseContext());
-//                sharedPrefs.edit().clear().putString(getString(R.string.shared_pref_language), languageVal).apply();
-//                requireActivity().recreate();
-            }
-        });
+        binding.postsHistoryButton.setOnClickListener(view ->
+                ((MainActivity)requireActivity()).changeFragment(new HistoryContainerFragment()));
     }
 }

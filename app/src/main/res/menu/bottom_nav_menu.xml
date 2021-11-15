@@ -5,7 +5,7 @@
         android:icon="@drawable/home_icon"/>
     <item android:id="@+id/newPostMenuItem"
         android:title="@string/new_post"
-        android:icon="@drawable/add_icon"/>
+        android:icon="@drawable/add_post_icon"/>
     <item android:id="@+id/accountMenuItem"
         android:title="@string/account"
         android:icon="@drawable/account_icon"/>

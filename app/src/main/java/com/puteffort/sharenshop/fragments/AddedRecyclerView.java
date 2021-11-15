@@ -3,12 +3,6 @@ package com.puteffort.sharenshop.fragments;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,13 +10,17 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
-import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.R;
-import com.puteffort.sharenshop.utils.DBOperations;
+import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class AddedRecyclerView extends Fragment {
@@ -35,14 +33,11 @@ public class AddedRecyclerView extends Fragment {
         // Required empty public constructor
     }
 
-    public AddedRecyclerView(PostFragmentViewModel model) {
-        this.model = model;
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_added_recycler_view, container, false);
+        model = new ViewModelProvider(requireParentFragment()).get(PostFragmentViewModel.class);
 
         recyclerView = view.findViewById(R.id.addedRecyclerView);
         progressBar = view.findViewById(R.id.progressBar);
@@ -53,34 +48,35 @@ public class AddedRecyclerView extends Fragment {
 
     @SuppressLint("NotifyDataSetChanged")
     private void addObservers() {
-        adapter = new AddedRecyclerViewAdapter(requireContext());
+        adapter = new AddedRecyclerViewAdapter(requireContext(), model.getUsersAdded());
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
-        model.getUsersAdded().observe(getViewLifecycleOwner(), usersAdded -> {
-            if (usersAdded != null) {
-                progressBar.setVisibility(View.INVISIBLE);
-                adapter.setUsers(usersAdded);
+        model.getAddedIndex().observe(getViewLifecycleOwner(), index -> {
+            // For loading data
+            if (index == null) {
+                progressBar.setVisibility(View.VISIBLE);
                 adapter.notifyDataSetChanged();
+                return;
             }
+
+            if (index != -1) {
+                // Insert at index, if list is not empty
+                adapter.notifyItemInserted(index);
+            }
+            progressBar.setVisibility(View.INVISIBLE);
         });
     }
 }
 
 class AddedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    private List<String> usersAdded;
+    private final List<UserProfile> usersAdded;
     private final Context context;
-    private final FirebaseFirestore db;
 
-    public AddedRecyclerViewAdapter(Context context) {
-        this.usersAdded = new ArrayList<>();
-        this.context = context;
-        db = FirebaseFirestore.getInstance();
-    }
-
-    void setUsers(List<String> usersAdded) {
+    public AddedRecyclerViewAdapter(Context context, List<UserProfile> usersAdded) {
         this.usersAdded = usersAdded;
+        this.context = context;
     }
 
     @NonNull
@@ -92,18 +88,13 @@ class AddedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-        String userID = usersAdded.get(position);
+        UserProfile user = usersAdded.get(position);
         UserHolder userHolder = (UserHolder) holder;
 
-        db.collection(DBOperations.USER_PROFILE).document(userID).get()
-                .addOnSuccessListener(docSnap -> {
-                    if (docSnap != null) {
-                        userHolder.userName.setText(docSnap.getString("name"));
-                        Glide.with(context).load(docSnap.getString("imageURL"))
-                                .error(Glide.with(userHolder.userImage).load(R.drawable.default_person_icon))
-                                .circleCrop().into(userHolder.userImage);
-                    }
-                });
+        userHolder.userName.setText(user.getName());
+        Glide.with(context).load(user.getImageURL())
+                .error(R.drawable.default_person_icon)
+                .circleCrop().into(userHolder.userImage);
     }
 
     @Override

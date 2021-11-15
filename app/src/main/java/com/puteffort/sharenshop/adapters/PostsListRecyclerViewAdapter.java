@@ -1,6 +1,7 @@
 package com.puteffort.sharenshop.adapters;
 
 import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
+import static com.puteffort.sharenshop.utils.UtilFunctions.getFormattedTime;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -21,7 +22,6 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.utils.DBOperations;
-import com.puteffort.sharenshop.utils.StaticData;
 
 import java.util.List;
 import java.util.Map;
@@ -65,17 +65,13 @@ public class PostsListRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerV
         postHolder.title.setText(post.getTitle());
         postHolder.amount.setText(String.format("Rs. %s", post.getAmount()));
         postHolder.people.setText(String.format("%d\nPeople", post.getPeopleRequired()));
-        StringBuilder time = new StringBuilder();
-        if (post.getYears() != 0) time.append(post.getYears()).append("Y ");
-        if (post.getMonths() != 0) time.append(post.getMonths()).append("M ");
-        if (post.getDays() != 0) time.append(post.getDays()).append("D ");
-        postHolder.time.setText(time.toString().trim());
+        postHolder.time.setText(getFormattedTime(post.getYears(), post.getMonths(), post.getDays()));
 
         db.collection(USER_PROFILE).document(post.getOwnerID()).get()
         .addOnSuccessListener(docSnap -> {
                 if (docSnap != null) {
                     Glide.with(context).load(docSnap.getString("imageURL"))
-                            .error(Glide.with(postHolder.image).load(R.drawable.default_person_icon))
+                            .error(R.drawable.default_person_icon)
                             .circleCrop().into(postHolder.image);
                 }
             });

@@ -1,6 +1,9 @@
 package com.puteffort.sharenshop;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -28,6 +31,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.databinding.ActivitySignUpBinding;
 import com.puteffort.sharenshop.models.UserProfile;
+import com.puteffort.sharenshop.utils.UtilFunctions;
 
 import java.util.Map;
 import java.util.Objects;
@@ -46,6 +50,7 @@ public class SignUpActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (setOrientation()) return;
 
         setContentView(R.layout.activity_sign_up);
         mAuth = FirebaseAuth.getInstance();
@@ -69,6 +74,22 @@ public class SignUpActivity extends AppCompatActivity {
         }
 
         addListeners(listenerSetAlready);
+    }
+
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setOrientation();
+    }
+
+    @SuppressLint("SourceLockedOrientationActivity")
+    private boolean setOrientation() {
+        if(getResources().getBoolean(R.bool.portrait_only)){
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            return getResources().getConfiguration().orientation != Configuration.ORIENTATION_PORTRAIT;
+        }
+        return false;
     }
 
     private void setUpLinking() {
@@ -237,7 +258,7 @@ public class SignUpActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                if (!LoginActivity.emailValidator(s.toString().trim())) {
+                if (!UtilFunctions.isEmailValid(s.toString().trim())) {
                     binding.signUpEmail.setError("Invalid email!");
                 } else {
                     binding.signUpEmail.setError(null);
