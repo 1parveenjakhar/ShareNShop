@@ -261,9 +261,9 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
             Set<Integer> allowedCategories = new HashSet<>();
             for (int chip: lastActivityChips) allowedCategories.add(lastActivityTimeMap.get(chip));
 
-            int amountFrom = Integer.parseInt(fromAndTos.get(0));
+            int amountFrom = fromAndTos.get(0).trim().isEmpty() ? 0 : Integer.parseInt(fromAndTos.get(0));
             int amountTo = fromAndTos.get(1).trim().isEmpty() ? Integer.MAX_VALUE : Integer.parseInt(fromAndTos.get(1));
-            int peopleFrom = Integer.parseInt(fromAndTos.get(2));
+            int peopleFrom = fromAndTos.get(2).trim().isEmpty() ? 0 : Integer.parseInt(fromAndTos.get(2));
             int peopleTo = fromAndTos.get(3).trim().isEmpty() ? Integer.MAX_VALUE : Integer.parseInt(fromAndTos.get(3));
 
             List<PostInfo> tmpList = new ArrayList<>(searchedPosts);

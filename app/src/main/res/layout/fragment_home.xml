@@ -10,7 +10,7 @@
 
         <TextView
             android:id="@+id/appNameHeading"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="25dp"
             android:layout_marginTop="10dp"
@@ -18,7 +18,8 @@
             android:textSize="35sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/searchView"/>
 
         <androidx.appcompat.widget.SearchView
             android:id="@+id/searchView"
@@ -27,6 +28,7 @@
             android:layout_marginHorizontal="20dp"
             android:background="@drawable/gradient_long_button_bg"
             android:paddingHorizontal="15dp"
+            app:layout_constraintStart_toEndOf="@id/appNameHeading"
             app:layout_constraintBottom_toBottomOf="@+id/appNameHeading"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/appNameHeading" />

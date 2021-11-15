@@ -78,7 +78,8 @@ public class FilterDialogFragment extends DialogFragment {
                 })
                 .setNegativeButton("CLEAR FILTERS", (dialog, id) -> {
                     if(callback != null) {
-                        callback.onFilterClicked(new HashSet<>(), Arrays.asList("0", "", "0", ""));
+                        callback.onFilterClicked(new HashSet<>(Arrays.asList(R.id.lessThan1Month, R.id.oneMonthTo6Months, R.id.sixMonthsTo1Year, R.id.greaterThan1Year)),
+                                Arrays.asList("0", "", "0", ""));
                         dialog.dismiss();
                     }
                 });
