@@ -10,8 +10,9 @@ import android.view.ViewGroup;
 
 import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
+import com.puteffort.sharenshop.interfaces.DualPanePostCommunicator;
 
-public class HomeContainerFragment extends Fragment implements HomeFragment.PostCommunicator {
+public class HomeContainerFragment extends Fragment implements DualPanePostCommunicator {
     private boolean isDualPaneSystem;
 
     public HomeContainerFragment() {
@@ -28,7 +29,7 @@ public class HomeContainerFragment extends Fragment implements HomeFragment.Post
     }
 
     @Override
-    public void addPostFragment(PostFragment postFragment) {
+    public void openPostFragment(PostFragment postFragment) {
         if (isDualPaneSystem) {
             getChildFragmentManager().beginTransaction()
                     .replace(R.id.postFragment, postFragment)

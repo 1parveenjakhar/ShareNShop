@@ -8,7 +8,9 @@ import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
 import static com.puteffort.sharenshop.utils.UtilFunctions.showToast;
 
 import android.content.Context;
-import android.util.Log;
+import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.ProgressBar;
 
@@ -23,6 +25,8 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.puteffort.sharenshop.fragments.AddedRecyclerView;
 import com.puteffort.sharenshop.fragments.CommentRecyclerView;
 import com.puteffort.sharenshop.fragments.InterestedRecyclerView;
@@ -56,9 +60,9 @@ public class PostFragmentViewModel extends ViewModel {
     private final MutableLiveData<Integer> addedIndex, interestedIndex, commentIndex, interestedRemoveIndex;
 
     private final boolean isUserPostOwner;
+    private final Handler handler;
 
     public PostFragmentViewModel(PostInfo postInfo) {
-        Log.d("a", "ViewModel created!");
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
         this.postInfo = postInfo;
@@ -79,6 +83,7 @@ public class PostFragmentViewModel extends ViewModel {
         commentIndex = new MutableLiveData<>();
         interestedRemoveIndex = new MutableLiveData<>();
 
+        handler = new Handler(Looper.getMainLooper());
         loadPostDetailInfo();
     }
 
@@ -88,7 +93,15 @@ public class PostFragmentViewModel extends ViewModel {
     }
 
     public void loadPostDetailInfo() {
-        db.collection(POST_DETAIL_INFO).document(postInfo.getId()).get()
+        comments.clear();
+        usersAdded.clear();
+        usersInterested.clear();
+        // Notifying observers about data load
+        commentIndex.setValue(null);
+        addedIndex.setValue(null);
+        interestedIndex.setValue(null);
+
+        new Thread(() -> db.collection(POST_DETAIL_INFO).document(postInfo.getId()).get()
                 .addOnSuccessListener(docSnap -> {
                     PostDetailInfo postDetailInfo = docSnap.toObject(PostDetailInfo.class);
                     if (postDetailInfo != null) {
@@ -98,81 +111,76 @@ public class PostFragmentViewModel extends ViewModel {
                         fetchUsersInterested(postDetailInfo.getUsersInterested());
                         fetchComments(postDetailInfo.getComments());
                     }
-                });
-
-        comments.clear();
-        usersAdded.clear();
-        usersInterested.clear();
-        // Notifying observers about data load
-        commentIndex.setValue(null);
-        addedIndex.setValue(null);
-        interestedIndex.setValue(null);
+                })).start();
     }
 
     private void fetchUsersAdded(List<UserStatus> users) {
         // -1 as a flag for empty list
-        if (users.isEmpty()) addedIndex.setValue(-1);
-
-        for (UserStatus user: users) {
-            db.collection(USER_PROFILE).document(user.getUserID()).get()
-                    .addOnSuccessListener(docSnap -> {
-                        if (docSnap != null) {
-                            usersAdded.add(docSnap.toObject(UserProfile.class));
-                            addedIndex.setValue(usersAdded.size() - 1);
-                        }
-                    });
+        if (users.isEmpty()) {
+            handler.post(() -> addedIndex.setValue(-1));
+            return;
         }
+
+        List<String> ids = new ArrayList<>();
+        for (UserStatus user: users) ids.add(user.getUserID());
+        db.collection(USER_PROFILE).whereIn("id", ids).get()
+                .addOnSuccessListener(docSnaps -> {
+                    for (QueryDocumentSnapshot docSnap: docSnaps) {
+                        usersAdded.add(docSnap.toObject(UserProfile.class));
+                        handler.post(() -> addedIndex.setValue(usersAdded.size() - 1));
+                    }
+                });
     }
 
     private void fetchUsersInterested(List<String> users) {
         // -1 as a flag for empty list
-        if (users.isEmpty()) interestedIndex.setValue(-1);
-
-        for (String id: users) {
-            db.collection(USER_PROFILE).document(id).get()
-                    .addOnSuccessListener(docSnap -> {
-                        if (docSnap != null) {
-                            usersInterested.add(docSnap.toObject(UserProfile.class));
-                            interestedIndex.setValue(usersInterested.size() - 1);
-                        }
-                    });
+        if (users.isEmpty()) {
+            handler.post(() -> interestedIndex.setValue(-1));
+            return;
         }
+
+        db.collection(USER_PROFILE).whereIn("id", users).get()
+                .addOnSuccessListener(docSnaps -> {
+                    for (QueryDocumentSnapshot docSnap: docSnaps) {
+                        usersInterested.add(docSnap.toObject(UserProfile.class));
+                        handler.post(() -> interestedIndex.setValue(usersInterested.size() - 1));
+                    }
+                });
     }
 
-    private void fetchComments(List<String> commentID) {
-        // -1 as a flag for empty list
-        if (commentID.isEmpty()) commentIndex.setValue(-1);
-
-        for (String id : commentID) {
-            db.collection(COMMENT).document(id).get()
-                    .addOnSuccessListener(commentSnap -> {
-                        if (commentSnap != null) {
-                            RecyclerViewComment recyclerViewComment = new RecyclerViewComment();
-                            Comment comment = commentSnap.toObject(Comment.class);
-                            if (comment != null) {
-                                db.collection(USER_PROFILE).document(comment.getUserID()).get()
-                                        .addOnSuccessListener(docSnap -> {
-                                            UserProfile user = docSnap.toObject(UserProfile.class);
-                                            if (user != null) {
-                                                recyclerViewComment.setName(user.getName());
-                                                recyclerViewComment.setImageURL(user.getImageURL());
-                                                comments.add(recyclerViewComment);
-                                                commentIndex.setValue(comments.size() - 1);
-                                            }
-                                        });
-                                recyclerViewComment.setMessage(comment.getMessage());
-                            }
-                        }
-                    });
+    private void fetchComments(List<String> commentIDs) {
+        if (commentIDs.isEmpty()) {
+            commentIndex.setValue(CommentRecyclerView.EMPTY_LIST);
+            return;
         }
+
+        db.collection(COMMENT).whereIn("id", commentIDs).orderBy("postedTime", Query.Direction.ASCENDING)
+            .get().addOnSuccessListener(commentSnaps -> {
+                for (QueryDocumentSnapshot commentSnap: commentSnaps) {
+                    RecyclerViewComment recyclerViewComment = new RecyclerViewComment();
+                    Comment comment = commentSnap.toObject(Comment.class);
+                    db.collection(USER_PROFILE).document(comment.getUserID()).get()
+                            .addOnSuccessListener(docSnap -> {
+                                UserProfile user = docSnap.toObject(UserProfile.class);
+                                if (user != null) {
+                                    recyclerViewComment.setName(user.getName());
+                                    recyclerViewComment.setImageURL(user.getImageURL());
+                                    comments.add(recyclerViewComment);
+                                    handler.post(() -> commentIndex.setValue(comments.size() - 1));
+                                }
+                            });
+                    recyclerViewComment.setMessage(comment.getMessage());
+                }
+        });
+
     }
 
     // Functions related to CommentRecyclerView
-    public void addComment(Comment comment, AlertDialog alertDialog, Context context) {
+    public void addComment(String message, AlertDialog alertDialog, Context context, ProgressBar progressBar) {
+        progressBar.setVisibility(View.VISIBLE);
+
         String commentID = DBOperations.getUniqueID(COMMENT);
-        comment.setId(commentID);
-        comment.setPostID(postInfo.getId());
-        comment.setUserID(auth.getUid());
+        Comment comment = new Comment(commentID, message, auth.getUid());
 
         db.collection(COMMENT).document(commentID).set(comment)
                 .addOnSuccessListener(unused -> db.collection(POST_DETAIL_INFO).document(postInfo.getId())
@@ -180,10 +188,16 @@ public class PostFragmentViewModel extends ViewModel {
                         .addOnSuccessListener(none -> {
                             alertDialog.dismiss();
                             comments.add(new RecyclerViewComment(comment.getMessage()));
+                            commentIndex.setValue(comments.size() - 1);
                             showToast(context, "Commented successfully :)");
                         })
-                        .addOnFailureListener(error -> showToast(context, "Failed to comment :(")))
-                .addOnFailureListener(unused -> showToast(context, "Failed to comment :("));
+                        .addOnFailureListener(error -> commentFailure(progressBar, context)))
+                .addOnFailureListener(unused -> commentFailure(progressBar, context));
+    }
+
+    private void commentFailure(ProgressBar progressBar, Context context) {
+        progressBar.setVisibility(View.INVISIBLE);
+        showToast(context, "Failed to comment :(");
     }
 
     // Functions related to InterestedRecyclerView

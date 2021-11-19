@@ -114,6 +114,7 @@
             app:layout_constraintStart_toStartOf="@id/postStatusButton"
             app:layout_constraintEnd_toEndOf="@id/postStatusButton"
             android:translationZ="5dp"
+            android:visibility="gone"
             android:scaleX="0.7"
             android:scaleY="0.7"/>
 

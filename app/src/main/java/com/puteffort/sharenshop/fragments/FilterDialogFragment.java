@@ -11,6 +11,7 @@ import androidx.fragment.app.DialogFragment;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.textfield.TextInputLayout;
 import com.puteffort.sharenshop.R;
+import com.puteffort.sharenshop.utils.UtilFunctions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,7 +41,6 @@ public class FilterDialogFragment extends DialogFragment {
     @NonNull
     @Override
     public AlertDialog onCreateDialog(Bundle savedInstanceState) {
-        // TODO(make context of fragment)
         AlertDialog.Builder builder = new AlertDialog.Builder(requireActivity());
 
         final View layout = getLayoutInflater().inflate(R.layout.custom_filter_dialog, null);
@@ -78,7 +78,7 @@ public class FilterDialogFragment extends DialogFragment {
                 })
                 .setNegativeButton("CLEAR FILTERS", (dialog, id) -> {
                     if(callback != null) {
-                        callback.onFilterClicked(new HashSet<>(Arrays.asList(R.id.lessThan1Month, R.id.oneMonthTo6Months, R.id.sixMonthsTo1Year, R.id.greaterThan1Year)),
+                        callback.onFilterClicked(UtilFunctions.getDefaultLastActivityChips(),
                                 Arrays.asList("0", "", "0", ""));
                         dialog.dismiss();
                     }

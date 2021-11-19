@@ -1,15 +1,16 @@
 package com.puteffort.sharenshop.models;
 
 public class Comment {
-    private String id, message, postID, userID;
+    private String id, message, userID;
+    private long postedTime;
 
     public Comment() {}
 
-    public Comment(String id, String message, String postID, String userID) {
+    public Comment(String id, String message, String userID) {
         this.id = id;
         this.message = message;
-        this.postID = postID;
         this.userID = userID;
+        postedTime = System.currentTimeMillis();
     }
 
     public String getId() {
@@ -28,12 +29,12 @@ public class Comment {
         this.message = message;
     }
 
-    public String getPostID() {
-        return postID;
+    public long getPostedTime() {
+        return postedTime;
     }
 
-    public void setPostID(String postID) {
-        this.postID = postID;
+    public void setPostedTime(long postedTime) {
+        this.postedTime = postedTime;
     }
 
     public String getUserID() {

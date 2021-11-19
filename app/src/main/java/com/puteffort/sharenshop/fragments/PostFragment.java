@@ -5,8 +5,6 @@ import static com.puteffort.sharenshop.utils.UtilFunctions.getFormattedTime;
 import android.annotation.SuppressLint;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.os.Parcelable;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,11 +46,9 @@ public class PostFragment extends Fragment {
         model = new ViewModelProvider(this, new PostFragmentViewModelFactory(postInfo)).get(PostFragmentViewModel.class);
         binding.tabLayout.setTabGravity(TabLayout.GRAVITY_FILL);
 
-        Log.d("a", "PostFragment Recreated! 1");
         setListeners();
         setObservers();
 
-        Log.d("a", "PostFragment Recreated! 2");
         return binding.getRoot();
     }
 

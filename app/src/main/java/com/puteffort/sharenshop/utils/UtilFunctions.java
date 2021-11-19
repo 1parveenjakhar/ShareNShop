@@ -3,6 +3,11 @@ package com.puteffort.sharenshop.utils;
 import android.content.Context;
 import android.widget.Toast;
 
+import com.puteffort.sharenshop.R;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,5 +31,10 @@ public class UtilFunctions {
         if (months != 0) time.append(months).append("M ");
         if (days != 0) time.append(days).append("D ");
         return time.toString().trim();
+    }
+
+    public static Set<Integer> getDefaultLastActivityChips() {
+        return new HashSet<>(Arrays.asList(
+                R.id.lessThan1Month, R.id.oneMonthTo6Months, R.id.sixMonthsTo1Year, R.id.greaterThan1Year));
     }
 }

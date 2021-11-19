@@ -7,7 +7,9 @@ import static com.puteffort.sharenshop.utils.DBOperations.USER_ACTIVITY;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ProgressBar;
 
 import androidx.appcompat.widget.SearchView;
 import androidx.lifecycle.LiveData;
@@ -28,6 +30,7 @@ import com.puteffort.sharenshop.models.PostStatus;
 import com.puteffort.sharenshop.models.UserActivity;
 import com.puteffort.sharenshop.models.UserStatus;
 import com.puteffort.sharenshop.utils.DBOperations;
+import com.puteffort.sharenshop.utils.UtilFunctions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,7 +54,6 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
 
     private final FirebaseFirestore db;
     private final String userID;
-    private final MutableLiveData<Integer> toastMessage = new MutableLiveData<>();
 
     private final MutableLiveData<Boolean> dataUpdating = new MutableLiveData<>(true);
     private final MutableLiveData<Integer> dataChanged, dataAdded, dataRemoved;
@@ -89,7 +91,7 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
         lastActivityTimeMap.put(R.id.oneMonthTo6Months, 1);
         lastActivityTimeMap.put(R.id.sixMonthsTo1Year, 2);
         lastActivityTimeMap.put(R.id.greaterThan1Year, 3);
-        lastActivityChips = new HashSet<>(Arrays.asList(R.id.lessThan1Month, R.id.oneMonthTo6Months, R.id.sixMonthsTo1Year, R.id.greaterThan1Year));
+        lastActivityChips = UtilFunctions.getDefaultLastActivityChips();
         fromAndTos = Arrays.asList("0", "", "0", "");
 
         sortSelected = 2;
@@ -103,7 +105,7 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
     }
 
     private void fetchPosts() {
-        db.collection(POST_INFO).orderBy("lastActivity", Query.Direction.DESCENDING)
+        new Thread(() -> db.collection(POST_INFO).orderBy("lastActivity", Query.Direction.DESCENDING)
                 .addSnapshotListener((value, error) -> {
                     if (error == null && value != null) {
                         for (DocumentChange docChange: value.getDocumentChanges()) {
@@ -114,7 +116,7 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
                                 posts.add(post);
                                 searchedPosts.add(post);
 
-                                dataAdded.setValue(posts.size()-1);
+                                handler.post(() -> dataAdded.setValue(posts.size()-1));
                             } else if (type == DocumentChange.Type.MODIFIED) {
                                 int index = originalPosts.indexOf(post);
                                 originalPosts.set(index, post);
@@ -125,7 +127,8 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
                                 index = searchedPosts.indexOf(post);
                                 posts.set(index, post);
 
-                                dataChanged.setValue(index);
+                                int finalIndex = index;
+                                handler.post(() -> dataChanged.setValue(finalIndex));
                             } else if (type == DocumentChange.Type.REMOVED) {
                                 originalPosts.remove(post);
                                 searchedPosts.remove(post);
@@ -133,16 +136,15 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
                                 int index = posts.indexOf(post);
                                 posts.remove(index);
 
-                                dataRemoved.setValue(index);
+                                handler.post(() -> dataRemoved.setValue(index));
                             }
-                            dataUpdating.setValue(false);
+                            handler.post(() -> dataUpdating.setValue(false));
                         }
                     } else {
                         // Database Error
-                        toastMessage.setValue(R.string.db_fetch_error);
-                        dataUpdating.setValue(false);
+                        handler.post(() -> dataUpdating.setValue(false));
                     }
-                });
+                })).start();
     }
 
     public void changeUserDetails(UserActivity userActivity) {
@@ -156,7 +158,11 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
         userDetailsChanged.setValue(true);
     }
 
-    public void changeStatus(int position, String status) {
+    public void changeStatus(int position, Button postStatus, ProgressBar progressBar) {
+        progressBar.setVisibility(View.VISIBLE);
+        String status = postStatus.getText().toString();
+        postStatus.setText("");
+
         PostInfo post = posts.get(position);
         String newStatus = statusMap.get(status);
         List<Task<Void>> taskList = new ArrayList<>();
@@ -185,7 +191,12 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
         Tasks.whenAllSuccess(taskList)
             .addOnSuccessListener(objects -> {
                 postsStatus.put(post.getId(), newStatus);
+                progressBar.setVisibility(View.GONE);
+                postStatus.setText(newStatus);
                 dataChanged.setValue(position);
+            }).addOnFailureListener(error -> {
+                progressBar.setVisibility(View.GONE);
+                postStatus.setText(status);
             });
     }
 
@@ -225,7 +236,6 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
                     searchedPosts.add(post);
             }
         }
-        Log.d("a", "Queried = " + Arrays.toString(searchedPosts.toArray()));
         filterPosts(lastActivityChips, fromAndTos);
         return true;
     }
@@ -269,9 +279,6 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
             List<PostInfo> tmpList = new ArrayList<>(searchedPosts);
             posts.clear();
 
-            Log.d("a", "Ranges = " + Arrays.toString(new int[]{amountFrom, amountTo, peopleFrom, peopleTo}));
-            Log.d("a", "Time categories = " + allowedCategories + ", " + lastActivityChips);
-
             for (PostInfo postInfo: tmpList) {
                 if (amountFrom <= postInfo.getAmount() && postInfo.getAmount() <= amountTo &&
                         peopleFrom <= postInfo.getPeopleRequired() && postInfo.getPeopleRequired() <= peopleTo &&
@@ -279,8 +286,7 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
                     posts.add(postInfo);
                 }
             }
-            Log.d("a", "Filtered = " + Arrays.toString(posts.toArray()));
-            sortPosts(Objects.requireNonNull(sortMap.get(sortSelected)), true);
+            sortPosts(Objects.requireNonNull(sortMap.get(sortSelected)));
         });
     }
 
@@ -303,9 +309,6 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
     public LiveData<Boolean> isDataUpdating() {
         return dataUpdating;
     }
-    public LiveData<Integer> getToastMessage() {
-        return toastMessage;
-    }
     public Set<String> getWishListedPosts() {
         return wishListedPosts;
     }
@@ -313,16 +316,15 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
         return postsStatus;
     }
 
-    public void sortPosts(String sortBy, boolean needHandler) {
-        if (!needHandler)
-            dataUpdating.setValue(true);
+    public void sortPosts(String sortBy) {
+        handler.post(() -> dataUpdating.setValue(true));
+
         switch (sortBy) {
             case "Amount":
                 sortSelected = 0;
                 Collections.sort(posts, (p1, p2) -> p1.getAmount() - p2.getAmount());
                 break;
             case "People Required":
-                Log.d("a", "Sorting on base of people required");
                 sortSelected = 1;
                 Collections.sort(posts, (p1, p2) -> p1.getPeopleRequired() - p2.getPeopleRequired());
                 break;
@@ -334,7 +336,6 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
                 sortSelected = -1;
                 break;
         }
-        Log.d("a", "Sorted = " + Arrays.toString(posts.toArray()));
         handler.post(() -> {
             dataUpdating.setValue(false);
             postsLiveData.setValue(posts);

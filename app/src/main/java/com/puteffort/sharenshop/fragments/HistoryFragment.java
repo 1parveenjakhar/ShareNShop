@@ -25,6 +25,7 @@ import com.google.android.material.chip.Chip;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentHistoryBinding;
+import com.puteffort.sharenshop.interfaces.DualPanePostCommunicator;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.viewmodels.HistoryFragmentViewModel;
 
@@ -105,7 +106,7 @@ public class HistoryFragment extends Fragment {
     private void openPostFragment(int position, Drawable postOwnerImage) {
         PostFragment postFragment =
                 new PostFragment(Objects.requireNonNull(model.getPosts().getValue()).get(position), postOwnerImage);
-        ((HomeFragment.PostCommunicator)requireParentFragment()).addPostFragment(postFragment);
+        ((DualPanePostCommunicator)requireParentFragment()).openPostFragment(postFragment);
     }
 
     private static class HistoryRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {

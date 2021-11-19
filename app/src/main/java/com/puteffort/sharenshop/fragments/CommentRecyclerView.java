@@ -22,7 +22,6 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputLayout;
 import com.puteffort.sharenshop.R;
-import com.puteffort.sharenshop.models.Comment;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel.RecyclerViewComment;
 
@@ -33,6 +32,8 @@ public class CommentRecyclerView extends Fragment {
     private PostFragmentViewModel model;
     private CommentRecyclerViewAdapter adapter;
     private ProgressBar progressBar;
+
+    public static final int EMPTY_LIST = -1;
 
     public CommentRecyclerView() {
         // Required empty public constructor
@@ -68,11 +69,11 @@ public class CommentRecyclerView extends Fragment {
                 return;
             }
 
-            if (index != -1) {
-                // Insert at index, if list is not empty
+            if (index != EMPTY_LIST) {
+                // Insert only if index != -1
                 adapter.notifyItemInserted(index);
             }
-            progressBar.setVisibility(View.INVISIBLE);
+            progressBar.setVisibility(View.GONE);
         });
     }
 
@@ -95,12 +96,7 @@ public class CommentRecyclerView extends Fragment {
         alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             String message = finalCommentBox.getText().toString().trim();
             if (!message.isEmpty()) {
-                progressBar.setVisibility(View.VISIBLE);
-
-                Comment comment = new Comment();
-                comment.setMessage(message);
-
-                model.addComment(comment, alertDialog, requireContext());
+                model.addComment(message, alertDialog, requireContext(), progressBar);
             } else {
                 finalCommentBox.setError("Comment should not be empty !");
             }

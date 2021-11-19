@@ -65,7 +65,7 @@ public class AddedRecyclerView extends Fragment {
                 // Insert at index, if list is not empty
                 adapter.notifyItemInserted(index);
             }
-            progressBar.setVisibility(View.INVISIBLE);
+            progressBar.setVisibility(View.GONE);
         });
     }
 }
