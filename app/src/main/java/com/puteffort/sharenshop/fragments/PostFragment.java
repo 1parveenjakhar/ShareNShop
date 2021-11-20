@@ -12,10 +12,10 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
+import com.bumptech.glide.Glide;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 import com.puteffort.sharenshop.R;
@@ -30,6 +30,8 @@ public class PostFragment extends Fragment {
     private PostFragmentViewModel model;
     private Drawable ownerImage;
 
+    private String postID;
+
     public PostFragment() {
         // Required empty public constructor
     }
@@ -39,11 +41,19 @@ public class PostFragment extends Fragment {
         this.postInfo = postInfo;
     }
 
+    public PostFragment(String postID) {
+        this.postID = postID;
+    }
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_post, container, false);
-        model = new ViewModelProvider(this, new PostFragmentViewModelFactory(postInfo)).get(PostFragmentViewModel.class);
+        model = new ViewModelProvider(this).get(PostFragmentViewModel.class);
+
+        if (postInfo != null) model.setPostInfo(postInfo, ownerImage);
+        else if (postID != null) model.setPostInfo(postID);
+
         binding.tabLayout.setTabGravity(TabLayout.GRAVITY_FILL);
 
         setListeners();
@@ -58,14 +68,13 @@ public class PostFragment extends Fragment {
         binding.postAmount.setText(String.format("Rs. %s", postInfo.getAmount()));
         binding.postPeople.setText(String.format("%d\nPeople", postInfo.getPeopleRequired()));
         binding.postTime.setText(getFormattedTime(postInfo.getYears(), postInfo.getMonths(), postInfo.getDays()));
-        binding.imageView.setImageDrawable(ownerImage);
         binding.swipeRefreshPost.setRefreshing(false);
     }
 
     private void setListeners() {
         binding.swipeRefreshPost.setOnRefreshListener(() -> {
-            model.loadPostInfo();
-            model.loadPostDetailInfo();
+            model.loadPostInfo(this.postInfo.getId());
+            model.loadPostDetailInfo(this.postInfo.getId());
         });
 
         binding.viewPager.setAdapter(new ViewPagerAdapter(this));
@@ -90,21 +99,17 @@ public class PostFragment extends Fragment {
                 setPostInfo();
             }
         });
-    }
 
-    static class PostFragmentViewModelFactory extends ViewModelProvider.NewInstanceFactory {
-        private final PostInfo postInfo;
-
-        public PostFragmentViewModelFactory(PostInfo postInfo) {
-            this.postInfo = postInfo;
-        }
-
-        @NonNull
-        @Override
-        @SuppressWarnings("unchecked")
-        public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
-            return (T) new PostFragmentViewModel(postInfo);
-        }
+        model.getOwnerImage().observe(getViewLifecycleOwner(), ownerImage -> {
+            if (ownerImage == null) return;
+            binding.imageView.setImageDrawable(ownerImage);
+        });
+        model.getOwnerImageURL().observe(getViewLifecycleOwner(), imageURL -> {
+            if (imageURL == null) return;
+            Glide.with(requireContext()).load(imageURL)
+                    .error(R.drawable.default_person_icon)
+                    .circleCrop().into(binding.imageView);
+        });
     }
 
     private class ViewPagerAdapter extends FragmentStateAdapter {

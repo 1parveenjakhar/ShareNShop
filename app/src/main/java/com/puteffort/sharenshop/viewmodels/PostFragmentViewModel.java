@@ -8,7 +8,7 @@ import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
 import static com.puteffort.sharenshop.utils.UtilFunctions.showToast;
 
 import android.content.Context;
-import android.os.AsyncTask;
+import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
@@ -45,7 +45,9 @@ import java.util.List;
 public class PostFragmentViewModel extends ViewModel {
     private final FirebaseFirestore db;
     private final FirebaseAuth auth;
-    private final PostInfo postInfo;
+    private PostInfo postInfo;
+    private final MutableLiveData<Drawable> ownerImage = new MutableLiveData<>();
+    private final MutableLiveData<String> ownerImageURL = new MutableLiveData<>();
 
     private final InterestedRecyclerView interestedRecyclerView;
     private final CommentRecyclerView commentRecyclerView;
@@ -59,16 +61,13 @@ public class PostFragmentViewModel extends ViewModel {
 
     private final MutableLiveData<Integer> addedIndex, interestedIndex, commentIndex, interestedRemoveIndex;
 
-    private final boolean isUserPostOwner;
+    private boolean isUserPostOwner;
     private final Handler handler;
 
-    public PostFragmentViewModel(PostInfo postInfo) {
+    public PostFragmentViewModel() {
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
-        this.postInfo = postInfo;
         postInfoLiveData = new MutableLiveData<>(postInfo);
-
-        isUserPostOwner = postInfo.getOwnerID().equals(auth.getUid());
 
         interestedRecyclerView = new InterestedRecyclerView();
         commentRecyclerView = new CommentRecyclerView();
@@ -84,15 +83,45 @@ public class PostFragmentViewModel extends ViewModel {
         interestedRemoveIndex = new MutableLiveData<>();
 
         handler = new Handler(Looper.getMainLooper());
-        loadPostDetailInfo();
     }
 
-    public void loadPostInfo() {
-        db.collection(POST_INFO).document(postInfo.getId()).get()
-                .addOnSuccessListener(docSnap -> postInfoLiveData.setValue(docSnap.toObject(PostInfo.class)));
+    public void setPostInfo(PostInfo postInfo, Drawable ownerImage) {
+        this.postInfo = postInfo;
+        this.ownerImage.setValue(ownerImage);
+        postInfoLiveData.setValue(postInfo);
+        setIDSpecificDetails(postInfo.getId());
     }
 
-    public void loadPostDetailInfo() {
+    public void setPostInfo(String postID) {
+        loadPostInfo(postID);
+        setIDSpecificDetails(postID);
+    }
+
+    public void setIDSpecificDetails(String postID) {
+        isUserPostOwner = postID.equals(auth.getUid());
+        loadPostDetailInfo(postID);
+    }
+
+    public void loadPostInfo(String postID) {
+        db.collection(POST_INFO).document(postID).get()
+                .addOnSuccessListener(docSnap -> {
+                    this.postInfo = docSnap.toObject(PostInfo.class);
+                    postInfoLiveData.setValue(postInfo);
+
+                    db.collection(USER_PROFILE).document(postInfo.getOwnerID()).get()
+                            .addOnSuccessListener(userSnap -> {
+                                String imageURL = userSnap.getString("imageURL");
+                                ownerImageURL.setValue(imageURL);
+                            });
+                });
+    }
+
+    public void loadPostDetailInfo(String postID) {
+        if (postID == null) {
+            if (postInfo == null) return;
+            postID = postInfo.getId();
+        }
+
         comments.clear();
         usersAdded.clear();
         usersInterested.clear();
@@ -101,7 +130,8 @@ public class PostFragmentViewModel extends ViewModel {
         addedIndex.setValue(null);
         interestedIndex.setValue(null);
 
-        new Thread(() -> db.collection(POST_DETAIL_INFO).document(postInfo.getId()).get()
+        String finalPostID = postID;
+        new Thread(() -> db.collection(POST_DETAIL_INFO).document(finalPostID).get()
                 .addOnSuccessListener(docSnap -> {
                     PostDetailInfo postDetailInfo = docSnap.toObject(PostDetailInfo.class);
                     if (postDetailInfo != null) {
@@ -267,6 +297,12 @@ public class PostFragmentViewModel extends ViewModel {
     }
     public LiveData<PostInfo> getPostInfo() {
         return postInfoLiveData;
+    }
+    public LiveData<Drawable> getOwnerImage() {
+        return ownerImage;
+    }
+    public LiveData<String> getOwnerImageURL() {
+        return ownerImageURL;
     }
 
     public LiveData<Integer> getAddedIndex() {
