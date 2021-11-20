@@ -4,26 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PostDetailInfo {
-    private String description, id;
+    private String id;
     private List<String> comments, usersInterested;
     private List<UserStatus> usersAdded;
 
     public PostDetailInfo() {}
 
-    public PostDetailInfo(String description, String userID) {
-        this.description = description;
+    public PostDetailInfo(String userID) {
         this.comments = new ArrayList<>();
         this.usersInterested = new ArrayList<>();
         this.usersAdded = new ArrayList<>();
         usersAdded.add(new UserStatus(userID, "Added"));
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public List<String> getComments() {

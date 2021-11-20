@@ -69,6 +69,12 @@ public class PostFragment extends Fragment {
         binding.postPeople.setText(String.format("%d\nPeople", postInfo.getPeopleRequired()));
         binding.postTime.setText(getFormattedTime(postInfo.getYears(), postInfo.getMonths(), postInfo.getDays()));
         binding.swipeRefreshPost.setRefreshing(false);
+        if (postInfo.getDescription() == null || postInfo.getDescription().isEmpty()) {
+            binding.postDescription.setVisibility(View.GONE);
+        } else {
+            binding.postDescription.setVisibility(View.VISIBLE);
+            binding.postDescription.setText(postInfo.getDescription());
+        }
     }
 
     private void setListeners() {
@@ -84,15 +90,6 @@ public class PostFragment extends Fragment {
     }
 
     private void setObservers() {
-        model.getPostDescription().observe(getViewLifecycleOwner(), description -> {
-            if (description == null || description.isEmpty()) {
-                binding.postDescription.setVisibility(View.GONE);
-                return;
-            }
-            binding.postDescription.setVisibility(View.VISIBLE);
-            binding.postDescription.setText(description);
-        });
-
         model.getPostInfo().observe(getViewLifecycleOwner(), postInfo -> {
             if (postInfo != null) {
                 this.postInfo = postInfo;

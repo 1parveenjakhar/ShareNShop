@@ -23,6 +23,7 @@ public class DBOperations {
     public final static String USER_PROFILE = "UserProfile";
     public final static String USER_ACTIVITY = "UserActivity";
     public final static String COMMENT = "Comment";
+    public final static String TOKEN = "Token";
 
     public final static Map<String, String> statusMap;
 

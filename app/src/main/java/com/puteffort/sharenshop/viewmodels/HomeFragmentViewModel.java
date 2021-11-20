@@ -1,8 +1,12 @@
 package com.puteffort.sharenshop.viewmodels;
 
-import static com.puteffort.sharenshop.utils.DBOperations.POST_DETAIL_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_ACTIVITY;
+import static com.puteffort.sharenshop.utils.UtilFunctions.SERVER_URL;
+import static com.puteffort.sharenshop.utils.UtilFunctions.SUCCESS_CODE;
+import static com.puteffort.sharenshop.utils.UtilFunctions.client;
+import static com.puteffort.sharenshop.utils.UtilFunctions.getRequest;
+import static com.puteffort.sharenshop.utils.UtilFunctions.gson;
 
 import android.os.AsyncTask;
 import android.os.Handler;
@@ -11,13 +15,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.widget.SearchView;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentReference;
@@ -28,10 +31,13 @@ import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.models.PostStatus;
 import com.puteffort.sharenshop.models.UserActivity;
-import com.puteffort.sharenshop.models.UserStatus;
 import com.puteffort.sharenshop.utils.DBOperations;
 import com.puteffort.sharenshop.utils.UtilFunctions;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,6 +47,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQueryTextListener {
     // For filtering the list
@@ -165,39 +175,44 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
 
         PostInfo post = posts.get(position);
         String newStatus = statusMap.get(status);
-        List<Task<Void>> taskList = new ArrayList<>();
 
-        if (status.equals("Interested ?")) {
-            // Adding this user to userInterested in Post
-            taskList.add(db.collection(POST_DETAIL_INFO).document(post.getId())
-                    .update(Collections.singletonMap("usersInterested", FieldValue.arrayUnion(userID))));
-        } else {
-            // Deleting old status from post
-            taskList.add(db.collection(POST_DETAIL_INFO).document(post.getId())
-                    .update(Collections.singletonMap("usersAdded", FieldValue.arrayRemove(new UserStatus(userID, status)))));
-            // Deleting old status from user
-            taskList.add(db.collection(USER_ACTIVITY).document(userID)
-                    .update(Collections.singletonMap("postsInvolved", FieldValue.arrayRemove(new PostStatus(post.getId(), status)))));
+        try {
+            String json = new JSONObject()
+                    .put("post", gson.toJson(post))
+                    .put("oldStatus", status)
+                    .put("newStatus", statusMap.get(status))
+                    .put("userID", userID)
+                    .toString();
 
-            // Adding new status to post
-            taskList.add(db.collection(POST_DETAIL_INFO).document(post.getId())
-                    .update(Collections.singletonMap("usersAdded", FieldValue.arrayUnion(new UserStatus(userID, newStatus)))));
-        }
-
-        // Adding new status to user
-        taskList.add(db.collection(USER_ACTIVITY).document(userID)
-                .update(Collections.singletonMap("postsInvolved", FieldValue.arrayUnion(new PostStatus(post.getId(), newStatus)))));
-
-        Tasks.whenAllSuccess(taskList)
-            .addOnSuccessListener(objects -> {
-                postsStatus.put(post.getId(), newStatus);
-                progressBar.setVisibility(View.GONE);
-                postStatus.setText(newStatus);
-                dataChanged.setValue(position);
-            }).addOnFailureListener(error -> {
-                progressBar.setVisibility(View.GONE);
-                postStatus.setText(status);
+            client.newCall(getRequest(json, SERVER_URL + "changeStatus")).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    onStatusChangeFailure(progressBar, postStatus, status);
+                }
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) {
+                    if (response.code() != SUCCESS_CODE) {
+                        onStatusChangeFailure(progressBar, postStatus, status);
+                        return;
+                    }
+                    handler.post(() -> {
+                        postsStatus.put(post.getId(), newStatus);
+                        progressBar.setVisibility(View.GONE);
+                        postStatus.setText(newStatus);
+                        dataChanged.setValue(position);
+                    });
+                }
             });
+        } catch (JSONException e) {
+            onStatusChangeFailure(progressBar, postStatus, status);
+        }
+    }
+
+    private void onStatusChangeFailure(ProgressBar progressBar, Button postStatus, String status) {
+        handler.post(() -> {
+            progressBar.setVisibility(View.GONE);
+            postStatus.setText(status);
+        });
     }
 
     public void changePostFavourite(int position, boolean isFavourite) {

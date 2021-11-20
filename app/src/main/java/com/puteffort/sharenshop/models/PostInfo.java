@@ -3,7 +3,7 @@ package com.puteffort.sharenshop.models;
 import androidx.annotation.NonNull;
 
 public class PostInfo {
-    private String title;
+    private String title, description;
     private String ownerID;
     private String id;
     private int days, months, years, peopleRequired;
@@ -15,9 +15,10 @@ public class PostInfo {
         // Empty constructor required for Firestore
     }
 
-    public PostInfo(String title, String ownerID, String days, String months,
+    public PostInfo(String title, String description, String ownerID, String days, String months,
                     String years, String peopleRequired, String amount) {
         this.title = title;
+        this.description = description;
         this.ownerID = ownerID;
         this.days = Integer.parseInt(days);
         this.months = Integer.parseInt(months);
@@ -38,6 +39,14 @@ public class PostInfo {
         return "PostInfo{" +
                 "title='" + title + '\'' +
                 '}';
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getTitle() {

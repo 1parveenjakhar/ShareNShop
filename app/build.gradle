@@ -55,6 +55,14 @@ dependencies {
 
     //Cloud Firestore
     implementation 'com.google.firebase:firebase-firestore'
+    // FCM
+    implementation 'com.google.firebase:firebase-messaging'
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-functions'
+
+    implementation 'com.squareup.okhttp3:okhttp:4.9.0'
+
+    implementation 'com.google.code.gson:gson:2.8.9'
 }
 
 apply plugin: 'com.google.gms.google-services'

@@ -1,5 +1,12 @@
 package com.puteffort.sharenshop;
 
+import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
+import static com.puteffort.sharenshop.utils.UtilFunctions.ERROR_CODE;
+import static com.puteffort.sharenshop.utils.UtilFunctions.SERVER_URL;
+import static com.puteffort.sharenshop.utils.UtilFunctions.SUCCESS_CODE;
+import static com.puteffort.sharenshop.utils.UtilFunctions.client;
+import static com.puteffort.sharenshop.utils.UtilFunctions.getRequest;
+import static com.puteffort.sharenshop.utils.UtilFunctions.gson;
 import static com.puteffort.sharenshop.utils.UtilFunctions.isEmailValid;
 import static com.puteffort.sharenshop.utils.UtilFunctions.showToast;
 
@@ -10,11 +17,14 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.databinding.DataBindingUtil;
@@ -26,21 +36,22 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
-import com.google.firebase.firestore.*;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.databinding.ActivityLoginBinding;
-import com.puteffort.sharenshop.models.UserActivity;
 import com.puteffort.sharenshop.models.UserProfile;
-import com.puteffort.sharenshop.utils.DBOperations;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
 import java.util.Objects;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 public class LoginActivity extends AppCompatActivity {
     private ActivityLoginBinding binding;
@@ -53,12 +64,10 @@ public class LoginActivity extends AppCompatActivity {
 
     private final String IS_LINKING = "IS_LINKING";
 
-    //Cloud fireStore constants
-    private final String USER_PROFILE = "UserProfile"; //collection type
-    // field
-
     private TextInputLayout editEmailAddress;
     private FirebaseUser currentUser;
+    private FirebaseFirestore db;
+    private Handler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +90,10 @@ public class LoginActivity extends AppCompatActivity {
                     .requestEmail()
                     .build();
             mSignInClient = GoogleSignIn.getClient(this, gso);
+
+            db = FirebaseFirestore.getInstance();
+            handler = new Handler(Looper.getMainLooper());
+
             addListeners();
         }
     }
@@ -190,36 +203,41 @@ public class LoginActivity extends AppCompatActivity {
 
         // Checking if current user exists in DB
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        DocumentReference docRef = db.collection(USER_PROFILE).document(currentUser.getUid());
-        docRef.get().addOnSuccessListener(documentSnapshot -> {
+        db.collection(USER_PROFILE).document(currentUser.getUid()).get()
+                .addOnSuccessListener(documentSnapshot -> {
                 if (documentSnapshot.exists()) {
                     Log.i(TAG,"User already added. Not adding new one!");
                     handleSuccessfulAuthentication();
                 } else {
-                    Tasks.whenAllSuccess(addNewUserToFireStore(db, docRef))
-                            .addOnSuccessListener(results -> {
-                                // Sync Login methods only if new user added successfully
-                                // Else can give error
-                                syncLoginMethods(signInMethod);
-                            });
+                    addNewUserToFireStore(signInMethod);
                 }
             });
     }
 
-    private List<Task<Void>> addNewUserToFireStore(FirebaseFirestore db, DocumentReference docRef) {
+    private void addNewUserToFireStore(int signInMethod) {
         String email = currentUser.getEmail();
         String name = currentUser.getDisplayName();
         String Uid = currentUser.getUid();
-        UserProfile userProfile = new UserProfile(name,email,"",Uid);
 
-        List<Task<Void>> tasks = new ArrayList<>();
-        tasks.add(docRef.set(userProfile));
-        tasks.add(
-            // Adding UserActivity for new user
-            db.collection(DBOperations.USER_ACTIVITY).document(Uid).set(new UserActivity(Uid))
-                    .addOnSuccessListener(unused -> Log.i(TAG,"New User info added in profile...")));
-        return tasks;
+        currentUser.getIdToken(false)
+                .addOnSuccessListener(tokenResult -> {
+                    UserProfile userProfile = new UserProfile(name, email, "", Uid);
+
+                    client.newCall(getRequest(gson.toJson(userProfile), SERVER_URL + "createNewUser")).enqueue(new Callback() {
+                        @Override
+                        public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                            handler.post(() -> showToast(LoginActivity.this, "Failed to login !"));
+                        }
+                        @Override
+                        public void onResponse(@NonNull Call call, @NonNull Response response) {
+                            if (response.code() != SUCCESS_CODE) {
+                                handler.post(() -> showToast(LoginActivity.this, "Failed to login !"));
+                                return;
+                            }
+                            handler.post(() -> syncLoginMethods(signInMethod));
+                        }
+                    });
+                });
     }
 
     private void syncLoginMethods(int signInMethod) {
@@ -258,10 +276,8 @@ public class LoginActivity extends AppCompatActivity {
 
     private void getAuthLinkedStatus(FirebaseUser currentUser, MutableLiveData<Boolean> authLinked) {
         //Fetching data from the fireStore
-        FirebaseFirestore db = FirebaseFirestore.getInstance();
-        DocumentReference userProfileRef = db.collection(USER_PROFILE).document(currentUser.getUid());
-
-        userProfileRef.get().addOnCompleteListener(task -> {
+        db.collection(USER_PROFILE).document(currentUser.getUid()).get()
+                .addOnCompleteListener(task -> {
             if(task.isSuccessful()){
                 DocumentSnapshot document = task.getResult();
                 if(document.exists()){

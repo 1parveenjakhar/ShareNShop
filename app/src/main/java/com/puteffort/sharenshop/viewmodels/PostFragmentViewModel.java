@@ -5,6 +5,11 @@ import static com.puteffort.sharenshop.utils.DBOperations.POST_DETAIL_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_ACTIVITY;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
+import static com.puteffort.sharenshop.utils.UtilFunctions.SERVER_URL;
+import static com.puteffort.sharenshop.utils.UtilFunctions.SUCCESS_CODE;
+import static com.puteffort.sharenshop.utils.UtilFunctions.client;
+import static com.puteffort.sharenshop.utils.UtilFunctions.getRequest;
+import static com.puteffort.sharenshop.utils.UtilFunctions.gson;
 import static com.puteffort.sharenshop.utils.UtilFunctions.showToast;
 
 import android.content.Context;
@@ -14,6 +19,7 @@ import android.os.Looper;
 import android.view.View;
 import android.widget.ProgressBar;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.LiveData;
@@ -38,9 +44,17 @@ import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.models.UserStatus;
 import com.puteffort.sharenshop.utils.DBOperations;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 public class PostFragmentViewModel extends ViewModel {
     private final FirebaseFirestore db;
@@ -53,7 +67,6 @@ public class PostFragmentViewModel extends ViewModel {
     private final CommentRecyclerView commentRecyclerView;
     private final AddedRecyclerView addedRecyclerView;
 
-    private final MutableLiveData<String> postDescription = new MutableLiveData<>();
     private final MutableLiveData<PostInfo> postInfoLiveData;
 
     private final List<UserProfile> usersAdded, usersInterested;
@@ -135,8 +148,6 @@ public class PostFragmentViewModel extends ViewModel {
                 .addOnSuccessListener(docSnap -> {
                     PostDetailInfo postDetailInfo = docSnap.toObject(PostDetailInfo.class);
                     if (postDetailInfo != null) {
-                        postDescription.setValue(postDetailInfo.getDescription());
-
                         fetchUsersAdded(postDetailInfo.getUsersAdded());
                         fetchUsersInterested(postDetailInfo.getUsersInterested());
                         fetchComments(postDetailInfo.getComments());
@@ -212,17 +223,34 @@ public class PostFragmentViewModel extends ViewModel {
         String commentID = DBOperations.getUniqueID(COMMENT);
         Comment comment = new Comment(commentID, message, auth.getUid());
 
-        db.collection(COMMENT).document(commentID).set(comment)
-                .addOnSuccessListener(unused -> db.collection(POST_DETAIL_INFO).document(postInfo.getId())
-                        .update(Collections.singletonMap("comments", FieldValue.arrayUnion(commentID)))
-                        .addOnSuccessListener(none -> {
-                            alertDialog.dismiss();
-                            comments.add(new RecyclerViewComment(comment.getMessage()));
-                            commentIndex.setValue(comments.size() - 1);
-                            showToast(context, "Commented successfully :)");
-                        })
-                        .addOnFailureListener(error -> commentFailure(progressBar, context)))
-                .addOnFailureListener(unused -> commentFailure(progressBar, context));
+        try {
+            String json = new JSONObject()
+                    .put("postID", postInfo.getId())
+                    .put("comment", gson.toJson(comment)) // JSON itself in form of a string
+                    .toString();
+            client.newCall(getRequest(json, SERVER_URL + "addComment")).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    handler.post(() -> commentFailure(progressBar, context));
+                }
+
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) {
+                    if (response.code() != SUCCESS_CODE) {
+                        handler.post(() -> commentFailure(progressBar, context));
+                        return;
+                    }
+                    handler.post(() -> {
+                        alertDialog.dismiss();
+                        comments.add(new RecyclerViewComment(comment.getMessage()));
+                        commentIndex.setValue(comments.size() - 1);
+                        showToast(context, "Commented successfully :)");
+                    });
+                }
+            });
+        } catch (JSONException e) {
+            commentFailure(progressBar, context);
+        }
     }
 
     private void commentFailure(ProgressBar progressBar, Context context) {
@@ -292,9 +320,6 @@ public class PostFragmentViewModel extends ViewModel {
         return usersAdded;
     }
 
-    public LiveData<String> getPostDescription() {
-        return postDescription;
-    }
     public LiveData<PostInfo> getPostInfo() {
         return postInfoLiveData;
     }
