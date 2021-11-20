@@ -7,10 +7,12 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -65,6 +67,7 @@ public class HistoryFragment extends Fragment {
         for (int i = 0; i < binding.chips.getChildCount(); i++) {
             ((Chip)binding.chips.getChildAt(i)).setOnCheckedChangeListener((chip, isChecked) -> {
                 Integer chipNum;
+                Log.d("a", "chip " + chip.getId() + " is selected? " + isChecked);
                 switch (chip.getId()) {
                     case R.id.postsCreatedChip: chipNum = 0; break;
                     case R.id.postsWishListedChip: chipNum = 1; break;
@@ -101,12 +104,25 @@ public class HistoryFragment extends Fragment {
             }
             recyclerViewAdapter.notifyDataSetChanged();
         });
+
+        model.getModifyIndex().observe(getViewLifecycleOwner(), index -> {
+            if (index == null) return;
+            recyclerViewAdapter.notifyItemChanged(index);
+        });
+        model.getDeleteIndex().observe(getViewLifecycleOwner(), index -> {
+            if (index == null) return;
+            recyclerViewAdapter.notifyItemRemoved(index);
+        });
     }
 
     private void openPostFragment(int position, Drawable postOwnerImage) {
         PostFragment postFragment =
                 new PostFragment(Objects.requireNonNull(model.getPosts().getValue()).get(position), postOwnerImage);
         ((DualPanePostCommunicator)requireParentFragment()).openPostFragment(postFragment);
+    }
+
+    private void removeFavourite(int position, ProgressBar favProgress) {
+        model.removeFavourite(position, favProgress);
     }
 
     private static class HistoryRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -128,7 +144,7 @@ public class HistoryFragment extends Fragment {
         @NonNull
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View rootView = LayoutInflater.from(context).inflate(R.layout.card_post_basic,parent,false);
+            View rootView = LayoutInflater.from(context).inflate(R.layout.card_history,parent,false);
             return new PostHolder(rootView);
         }
 
@@ -145,6 +161,13 @@ public class HistoryFragment extends Fragment {
                                     .circleCrop().into(postHolder.image);
                         }
                     });
+
+            if (historyFragment.model.getWishListedIds().contains(post.getId())) {
+                postHolder.favorite.setVisibility(View.VISIBLE);
+            } else {
+                postHolder.favorite.setVisibility(View.INVISIBLE);
+            }
+
             postHolder.title.setText(post.getTitle());
             postHolder.amount.setText(String.format("Rs. %s", post.getAmount()));
             postHolder.people.setText(String.format("%d\nPeople", post.getPeopleRequired()));
@@ -160,6 +183,7 @@ public class HistoryFragment extends Fragment {
         class PostHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
             TextView title, amount, time, people;
             ImageView image, favorite;
+            ProgressBar favProgress;
 
             public PostHolder(@NonNull View itemView) {
                 super(itemView);
@@ -171,6 +195,9 @@ public class HistoryFragment extends Fragment {
                 people = itemView.findViewById(R.id.postPeople);
                 image = itemView.findViewById(R.id.imageView);
                 favorite = itemView.findViewById(R.id.favouriteIcon);
+                favProgress = itemView.findViewById(R.id.favProgress);
+
+                favorite.setOnClickListener(view -> historyFragment.removeFavourite(getAdapterPosition(), favProgress));
             }
 
             @Override

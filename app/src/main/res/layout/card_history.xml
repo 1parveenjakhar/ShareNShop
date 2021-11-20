@@ -36,8 +36,32 @@
             android:textSize="20sp"
             android:layout_marginStart="20dp"
             app:layout_constraintStart_toEndOf="@id/imageView"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/favouriteIcon"
+            android:layout_marginEnd="5dp"
             app:layout_constraintTop_toTopOf="@id/imageView"/>
+
+        <ImageView
+            android:id="@+id/favouriteIcon"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            app:layout_constraintTop_toTopOf="parent"
+            android:src="@drawable/filled_star_icon"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:contentDescription="@string/favourite_post_icon"
+            android:clickable="true"
+            android:focusable="true"
+            android:visibility="invisible"/>
+
+        <ProgressBar
+            android:id="@+id/favProgress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/favouriteIcon"
+            app:layout_constraintEnd_toEndOf="@id/favouriteIcon"
+            app:layout_constraintStart_toStartOf="@id/favouriteIcon"
+            app:layout_constraintBottom_toBottomOf="@id/favouriteIcon"
+            style="?android:attr/progressBarStyleSmall"
+            android:visibility="invisible"/>
 
         <TextView
             android:id="@+id/postAmount"
@@ -49,9 +73,7 @@
             app:layout_constraintTop_toTopOf="@id/postTime"
             app:layout_constraintBottom_toBottomOf="@id/postTime"
             android:textSize="15sp"
-            android:gravity="center">
-
-        </TextView>
+            android:gravity="center"/>
 
         <TextView
             android:id="@+id/postTime"
@@ -63,9 +85,7 @@
             app:layout_constraintStart_toEndOf="@id/postAmount"
             app:layout_constraintTop_toBottomOf="@id/postTitle"
             android:textSize="15sp"
-            android:gravity="center">
-
-        </TextView>
+            android:gravity="center"/>
 
         <TextView
             android:id="@+id/postPeople"
@@ -77,9 +97,7 @@
             app:layout_constraintTop_toTopOf="@id/postTime"
             app:layout_constraintBottom_toBottomOf="@id/postTime"
             android:textSize="15sp"
-            android:gravity="center">
-
-        </TextView>
+            android:gravity="center"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -7,12 +7,16 @@ import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
+import android.view.View;
+import android.widget.ProgressBar;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.puteffort.sharenshop.models.PostInfo;
@@ -20,6 +24,7 @@ import com.puteffort.sharenshop.models.PostStatus;
 import com.puteffort.sharenshop.models.UserActivity;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -40,6 +45,8 @@ public class HistoryFragmentViewModel extends ViewModel {
     private final List<PostInfo> posts = new ArrayList<>();
     private final MutableLiveData<List<PostInfo>> postsLiveData = new MutableLiveData<>();
 
+    private final MutableLiveData<Integer> modifyIndex, deleteIndex;
+
     private final Handler handler;
 
     public HistoryFragmentViewModel() {
@@ -50,6 +57,9 @@ public class HistoryFragmentViewModel extends ViewModel {
         idArray.add(wishListedIds); // Idx 1
         idArray.add(involvedIds);// Idx 2
         chipNumbers.add(1); // Default selected chip
+
+        modifyIndex = new MutableLiveData<>();
+        deleteIndex = new MutableLiveData<>();
 
         handler = new Handler(Looper.getMainLooper());
 
@@ -104,6 +114,7 @@ public class HistoryFragmentViewModel extends ViewModel {
                 tmpIDs.addAll(idArray.get(chipNum));
             for (String id: tmpIDs)
                 posts.add(idToPostMapping.get(id));
+            Log.d("a", "posts length = " + posts.size());
             handler.post(() -> postsLiveData.setValue(posts));
         });
     }
@@ -116,7 +127,32 @@ public class HistoryFragmentViewModel extends ViewModel {
         } else {
             chipNumbers.remove(chipNum);
         }
-        setUpPosts();
+        if (chipNumbers.size() > 0)
+            setUpPosts();
+    }
+
+    public void removeFavourite(int position, ProgressBar favProgress) {
+        favProgress.setVisibility(View.VISIBLE);
+        String postID = posts.get(position).getId();
+
+        db.collection(USER_ACTIVITY).document(userID)
+                .update(Collections.singletonMap("postsWishListed", FieldValue.arrayRemove(postID)))
+                .addOnSuccessListener(unused -> {
+                    favProgress.setVisibility(View.INVISIBLE);
+                    wishListedIds.remove(postID);
+
+                    // if current post is also in other selected criteria
+                    if ((chipNumbers.contains(0) || chipNumbers.contains(2)) && (createdIds.contains(postID) || involvedIds.contains(postID))) {
+                        modifyIndex.setValue(position);
+                        modifyIndex.setValue(null);
+                        return;
+                    }
+                    // Else need to delete from posts
+                    posts.remove(position);
+                    deleteIndex.setValue(position);
+                    deleteIndex.setValue(null);
+                })
+                .addOnFailureListener(error -> favProgress.setVisibility(View.INVISIBLE));
     }
 
     public LiveData<List<PostInfo>> getPosts() {
@@ -125,5 +161,16 @@ public class HistoryFragmentViewModel extends ViewModel {
 
     public Set<Integer> getChipNumbers() {
         return chipNumbers;
+    }
+
+    public Set<String> getWishListedIds() {
+        return wishListedIds;
+    }
+
+    public LiveData<Integer> getModifyIndex() {
+        return modifyIndex;
+    }
+    public LiveData<Integer> getDeleteIndex() {
+        return deleteIndex;
     }
 }
