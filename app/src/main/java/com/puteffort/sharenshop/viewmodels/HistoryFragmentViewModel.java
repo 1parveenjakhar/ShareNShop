@@ -7,7 +7,6 @@ import android.annotation.SuppressLint;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 
@@ -114,7 +113,6 @@ public class HistoryFragmentViewModel extends ViewModel {
                 tmpIDs.addAll(idArray.get(chipNum));
             for (String id: tmpIDs)
                 posts.add(idToPostMapping.get(id));
-            Log.d("a", "posts length = " + posts.size());
             handler.post(() -> postsLiveData.setValue(posts));
         });
     }

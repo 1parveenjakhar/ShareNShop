@@ -7,7 +7,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -67,7 +66,6 @@ public class HistoryFragment extends Fragment {
         for (int i = 0; i < binding.chips.getChildCount(); i++) {
             ((Chip)binding.chips.getChildAt(i)).setOnCheckedChangeListener((chip, isChecked) -> {
                 Integer chipNum;
-                Log.d("a", "chip " + chip.getId() + " is selected? " + isChecked);
                 switch (chip.getId()) {
                     case R.id.postsCreatedChip: chipNum = 0; break;
                     case R.id.postsWishListedChip: chipNum = 1; break;
