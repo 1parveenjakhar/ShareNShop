@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentHomeBinding;
 import com.puteffort.sharenshop.interfaces.DualPanePostCommunicator;
@@ -86,6 +87,12 @@ public class HomeFragment extends Fragment {
             newFragment.show(getChildFragmentManager(), "sort_dialog");
             newFragment.setOnSortClick(sortBy -> model.sortPosts(sortBy));
         });
+
+        binding.notificationIconImageView.setOnClickListener(v -> {
+            NotificationRecyclerView notificationRecyclerView = new NotificationRecyclerView();
+            ((MainActivity)requireActivity()).changeFragment(notificationRecyclerView);
+        });
+
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -117,8 +124,8 @@ public class HomeFragment extends Fragment {
         ((DualPanePostCommunicator)requireParentFragment()).openPostFragment(postFragment);
     }
 
-    public void changeFavourite(int position, boolean isFavourite) {
-        model.changePostFavourite(position, isFavourite);
+    public void changeFavourite(int position, ImageView favorite, boolean isFavourite, ProgressBar progressBar) {
+        model.changePostFavourite(position, favorite, isFavourite, progressBar);
     }
 
     public void changeStatus(int position, Button status, ProgressBar progressBar) {
@@ -188,7 +195,7 @@ public class HomeFragment extends Fragment {
             ImageView image, favorite;
             Button postStatus;
             boolean isFavourite = false;
-            ProgressBar progressBar;
+            ProgressBar statusProgressBar, favouriteProgressBar;
 
             public PostHolder(@NonNull View itemView) {
                 super(itemView);
@@ -201,15 +208,16 @@ public class HomeFragment extends Fragment {
                 image = itemView.findViewById(R.id.imageView);
                 favorite = itemView.findViewById(R.id.favouriteIcon);
                 postStatus = itemView.findViewById(R.id.postStatusButton);
-                progressBar = itemView.findViewById(R.id.statusProgressBar);
+                favouriteProgressBar = itemView.findViewById(R.id.favouriteProgressBar);
+                statusProgressBar = itemView.findViewById(R.id.statusProgressBar);
 
                 favorite.setOnClickListener(view -> {
                     isFavourite = !isFavourite;
-                    homeFragment.changeFavourite(getAdapterPosition(), isFavourite);
+                    homeFragment.changeFavourite(getAdapterPosition(), favorite, isFavourite, favouriteProgressBar);
                 });
                 postStatus.setOnClickListener(view -> {
                     if (DBOperations.statusMap.containsKey(postStatus.getText().toString())) {
-                        homeFragment.changeStatus(getAdapterPosition(), postStatus, progressBar);
+                        homeFragment.changeStatus(getAdapterPosition(), postStatus, statusProgressBar);
                     }
                 });
             }

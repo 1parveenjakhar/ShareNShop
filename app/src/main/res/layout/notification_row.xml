@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/notificationLayout"
+    android:focusable="true"
+    android:clickable="true"
+    android:background="#BCFFFFFF"
+    android:layout_margin="5dp">
+
+    <TextView
+        android:id="@+id/productName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:text="@tools:sample/full_names"
+        android:textStyle="bold"
+        android:textColor="#121212"
+        android:padding="5dp" />
+
+    <TextView
+        android:id="@+id/notifDescription"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        tools:text="@tools:sample/full_names"
+        android:padding="5dp"
+        android:textColor="#121212" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#DA686565"
+        android:padding="5dp" />
+
+</LinearLayout>

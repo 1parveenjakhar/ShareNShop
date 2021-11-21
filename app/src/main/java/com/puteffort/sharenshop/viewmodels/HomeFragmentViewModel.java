@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 
 import androidx.appcompat.widget.SearchView;
@@ -200,22 +201,30 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
             });
     }
 
-    public void changePostFavourite(int position, boolean isFavourite) {
+    public void changePostFavourite(int position, ImageView favorite, boolean isFavourite, ProgressBar progressBar) {
+        progressBar.setVisibility(View.VISIBLE);
+        favorite.setVisibility(View.GONE);
+        List<Task<Void>> taskList = new ArrayList<>();
+
         DocumentReference doc = db.collection(USER_ACTIVITY).document(userID);
         String postID = posts.get(position).getId();
         if (isFavourite) {
-            doc.update(Collections.singletonMap("postsWishListed", FieldValue.arrayUnion(postID)))
+            taskList.add(doc.update(Collections.singletonMap("postsWishListed", FieldValue.arrayUnion(postID)))
                     .addOnSuccessListener(unused -> {
                         wishListedPosts.add(postID);
                         dataChanged.setValue(position);
-                    });
+                    }));
         } else {
-            doc.update(Collections.singletonMap("postsWishListed", FieldValue.arrayRemove(postID)))
+            taskList.add(doc.update(Collections.singletonMap("postsWishListed", FieldValue.arrayRemove(postID)))
                     .addOnSuccessListener(unused -> {
                         wishListedPosts.remove(postID);
                         dataChanged.setValue(position);
-                    });
+                    }));
         }
+        Tasks.whenAllSuccess(taskList).addOnSuccessListener(objects -> {
+            progressBar.setVisibility(View.GONE);
+            favorite.setVisibility(View.VISIBLE);
+        });
     }
 
     @Override
