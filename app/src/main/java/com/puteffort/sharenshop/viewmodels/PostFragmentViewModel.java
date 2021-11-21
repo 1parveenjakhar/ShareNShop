@@ -46,6 +46,7 @@ public class PostFragmentViewModel extends ViewModel {
     private final FirebaseFirestore db;
     private final FirebaseAuth auth;
     private PostInfo postInfo;
+
     private final MutableLiveData<Drawable> ownerImage = new MutableLiveData<>();
     private final MutableLiveData<String> ownerImageURL = new MutableLiveData<>();
 

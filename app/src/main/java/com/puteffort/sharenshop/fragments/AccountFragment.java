@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RadioButton;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -81,5 +82,8 @@ public class AccountFragment extends Fragment {
 
         binding.postsHistoryButton.setOnClickListener(view ->
                 ((MainActivity)requireActivity()).changeFragment(new HistoryContainerFragment()));
+
+        binding.profileButton.setOnClickListener(view ->
+                ((MainActivity)requireActivity()).changeFragment(new MyProfileFragment()));
     }
 }
