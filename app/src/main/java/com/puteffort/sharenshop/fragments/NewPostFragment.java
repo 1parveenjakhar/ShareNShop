@@ -14,7 +14,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -108,7 +107,6 @@ public class NewPostFragment extends Fragment {
         client.newCall(getRequest(gson.toJson(postInfo), SERVER_URL + "createNewPost")).enqueue(new Callback() {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                Log.d("a", "Exception while creating post = " + e.getMessage());
                 handler.post(() -> onPostFailure());
             }
             @Override
@@ -117,7 +115,6 @@ public class NewPostFragment extends Fragment {
                     handler.post(() -> onPostFailure());
                     return;
                 }
-                Log.d("a", "Response is = " + response + ", body = " + Objects.requireNonNull(response.body()).toString());
                 handler.post(() -> onPostSuccess());
             }
         });

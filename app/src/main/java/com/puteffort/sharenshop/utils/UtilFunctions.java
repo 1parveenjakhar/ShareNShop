@@ -23,7 +23,7 @@ public class UtilFunctions {
     public static final OkHttpClient client = new OkHttpClient();
     public static final Gson gson = new Gson();
 
-    public static final String SERVER_URL = "http://192.168.0.105:100/";
+    public static final String SERVER_URL = "http://143.244.142.48:100/";
     public static final int ERROR_CODE = 401, SUCCESS_CODE = 200;
 
     public static void showToast(Context context, String message) {

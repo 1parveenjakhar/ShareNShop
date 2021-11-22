@@ -94,6 +94,10 @@ public class HistoryFragmentViewModel extends ViewModel {
         allPosts.addAll(wishListedIds);
         allPosts.addAll(involvedIds);
 
+        if (allPosts.isEmpty()) {
+            setUpPosts();
+            return;
+        }
         db.collection(POST_INFO).whereIn("id", new ArrayList<>(allPosts)).get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                    for (QueryDocumentSnapshot docSnap: queryDocumentSnapshots) {

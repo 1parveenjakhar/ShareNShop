@@ -7,7 +7,9 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.puteffort.sharenshop.models.UserActivity;
+import com.puteffort.sharenshop.models.UserDeviceToken;
 import com.puteffort.sharenshop.models.UserProfile;
 
 import java.util.HashMap;
@@ -41,6 +43,8 @@ public class DBOperations {
                 .addOnSuccessListener(docSnap -> {
                     UserProfile userProfile = docSnap.toObject(UserProfile.class);
                     userProfileLiveData.setValue(userProfile);
+                    if (userProfile != null)
+                        setUpToken(userProfile.getId());
                 });
 
         db.collection(USER_ACTIVITY).document(Objects.requireNonNull(auth.getUid())).get()
@@ -48,6 +52,18 @@ public class DBOperations {
                     UserActivity userActivity = docSnap.toObject(UserActivity.class);
                     userActivityLiveData.setValue(userActivity);
                 });
+    }
+
+    private static void setUpToken(String userID) {
+        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                String token = task.getResult();
+                if (token != null) {
+                    db.collection(DBOperations.TOKEN).document(userID)
+                            .set(new UserDeviceToken(token));
+                }
+            }
+        });
     }
 
     public static LiveData<UserProfile> getUserProfile() {

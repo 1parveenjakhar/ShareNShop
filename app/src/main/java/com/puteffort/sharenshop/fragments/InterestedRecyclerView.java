@@ -25,10 +25,9 @@ import java.util.List;
 
 public class InterestedRecyclerView extends Fragment {
     private RecyclerView recyclerView;
-    private PostFragmentViewModel model;
+    PostFragmentViewModel model;
     private InterestedRecyclerViewAdapter adapter;
     private ProgressBar progressBar;
-    private boolean isUserPostOwner;
 
     public InterestedRecyclerView() {
         // Required empty public constructor
@@ -39,7 +38,6 @@ public class InterestedRecyclerView extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_interested_recycler_view, container, false);
         model = new ViewModelProvider(requireParentFragment()).get(PostFragmentViewModel.class);
-        isUserPostOwner = model.isUserPostOwner();
 
         recyclerView = view.findViewById(R.id.interestedRecyclerView);
         progressBar = view.findViewById(R.id.progressBar);
@@ -50,7 +48,7 @@ public class InterestedRecyclerView extends Fragment {
 
     @SuppressLint("NotifyDataSetChanged")
     private void addObservers() {
-        adapter = new InterestedRecyclerViewAdapter(this, isUserPostOwner, model.getUsersInterested());
+        adapter = new InterestedRecyclerViewAdapter(this, model.getUsersInterested());
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
@@ -87,13 +85,11 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     private final List<UserProfile> usersInterested;
     private final Context context;
     private final InterestedRecyclerView parentFragment;
-    private final boolean isUserPostOwner;
 
-    public InterestedRecyclerViewAdapter(InterestedRecyclerView parentFragment, boolean isUserPostOwner, List<UserProfile> usersInterested) {
+    public InterestedRecyclerViewAdapter(InterestedRecyclerView parentFragment, List<UserProfile> usersInterested) {
         this.usersInterested = usersInterested;
         this.parentFragment = parentFragment;
         this.context = parentFragment.requireContext();
-        this.isUserPostOwner = isUserPostOwner;
     }
 
     @NonNull
@@ -108,7 +104,7 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         UserProfile user = usersInterested.get(position);
         UserHolder userHolder = (UserHolder) holder;
 
-        if (isUserPostOwner) {
+        if (parentFragment.model.isUserPostOwner()) {
             userHolder.cross.setVisibility(View.VISIBLE);
             userHolder.tick.setVisibility(View.VISIBLE);
 

@@ -1,6 +1,7 @@
 package com.puteffort.sharenshop;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -16,6 +17,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.navigation.NavigationBarView;
 import com.puteffort.sharenshop.databinding.ActivityMainBinding;
+import com.puteffort.sharenshop.fragments.PostFragment;
 import com.puteffort.sharenshop.utils.DBOperations;
 import com.puteffort.sharenshop.viewmodels.MainActivityViewModel;
 
@@ -36,12 +38,23 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
         model = new ViewModelProvider(this).get(MainActivityViewModel.class);
 
         setListenersAndObservers();
+        if (getIntent() != null) {
+            onNewIntent(getIntent());
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         setOrientation();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent.getStringExtra("postID") != null) {
+            changeFragment(new PostFragment(intent.getStringExtra("postID")));
+        }
     }
 
     @SuppressLint("SourceLockedOrientationActivity")

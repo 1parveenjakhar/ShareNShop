@@ -3,7 +3,6 @@ package com.puteffort.sharenshop.viewmodels;
 import static com.puteffort.sharenshop.utils.DBOperations.COMMENT;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_DETAIL_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
-import static com.puteffort.sharenshop.utils.DBOperations.USER_ACTIVITY;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
 import static com.puteffort.sharenshop.utils.UtilFunctions.SERVER_URL;
 import static com.puteffort.sharenshop.utils.UtilFunctions.SUCCESS_CODE;
@@ -26,10 +25,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -39,7 +35,6 @@ import com.puteffort.sharenshop.fragments.InterestedRecyclerView;
 import com.puteffort.sharenshop.models.Comment;
 import com.puteffort.sharenshop.models.PostDetailInfo;
 import com.puteffort.sharenshop.models.PostInfo;
-import com.puteffort.sharenshop.models.PostStatus;
 import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.models.UserStatus;
 import com.puteffort.sharenshop.utils.DBOperations;
@@ -49,7 +44,6 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import okhttp3.Call;
@@ -102,16 +96,12 @@ public class PostFragmentViewModel extends ViewModel {
         this.postInfo = postInfo;
         this.ownerImage.setValue(ownerImage);
         postInfoLiveData.setValue(postInfo);
-        setIDSpecificDetails(postInfo.getId());
+        this.isUserPostOwner = postInfo.getOwnerID().equals(auth.getUid());
+        loadPostDetailInfo(postInfo.getId());
     }
 
     public void setPostInfo(String postID) {
         loadPostInfo(postID);
-        setIDSpecificDetails(postID);
-    }
-
-    public void setIDSpecificDetails(String postID) {
-        isUserPostOwner = postID.equals(auth.getUid());
         loadPostDetailInfo(postID);
     }
 
@@ -120,6 +110,7 @@ public class PostFragmentViewModel extends ViewModel {
                 .addOnSuccessListener(docSnap -> {
                     this.postInfo = docSnap.toObject(PostInfo.class);
                     postInfoLiveData.setValue(postInfo);
+                    this.isUserPostOwner = postInfo.getOwnerID().equals(auth.getUid());
 
                     db.collection(USER_PROFILE).document(postInfo.getOwnerID()).get()
                             .addOnSuccessListener(userSnap -> {
@@ -260,49 +251,66 @@ public class PostFragmentViewModel extends ViewModel {
 
     // Functions related to InterestedRecyclerView
     public void addUser(int position, ProgressBar progressBar) {
-        String userID = usersInterested.get(position).getId();
-        List<Task<Void>> tasks = new ArrayList<>();
+        try {
+            String json = new JSONObject()
+                    .put("postID", postInfo.getId())
+                    .put("userID", usersInterested.get(position).getId())
+                    .toString();
+            client.newCall(getRequest(json, SERVER_URL + "acceptUser")).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    handler.post(() -> interestedUserChangeFailure(progressBar));
+                }
 
-        // Updating status to UserActivity
-        tasks.add(db.collection(USER_ACTIVITY).document(userID)
-                .update(Collections.singletonMap("postsInvolved", FieldValue.arrayRemove(new PostStatus(postInfo.getId(), "Requested !")))));
-        tasks.add(db.collection(USER_ACTIVITY).document(userID)
-                .update(Collections.singletonMap("postsInvolved", FieldValue.arrayUnion(new PostStatus(postInfo.getId())))));
-
-        // Updating status to PostDetailInfo
-        tasks.add(db.collection(POST_DETAIL_INFO).document(postInfo.getId())
-                .update(Collections.singletonMap("usersInterested", FieldValue.arrayRemove(userID))));
-        tasks.add(db.collection(POST_DETAIL_INFO).document(postInfo.getId())
-                .update(Collections.singletonMap("usersAdded", FieldValue.arrayUnion(new UserStatus(userID)))));
-
-
-        Tasks.whenAllSuccess(tasks).addOnSuccessListener(results -> {
-            usersAdded.add(usersInterested.remove(position));
-            addedIndex.setValue(usersAdded.size() - 1);
-            interestedRemoveIndex.setValue(position);
-            // Setting to null to avoid wrong delete request in InterestedRecyclerView on recreate
-            interestedRemoveIndex.setValue(null);
-        }).addOnFailureListener(unused -> interestedUserChangeFailure(progressBar));
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) {
+                    if (response.code() != SUCCESS_CODE) {
+                        handler.post(() -> interestedUserChangeFailure(progressBar));
+                        return;
+                    }
+                    handler.post(() -> {
+                        usersAdded.add(usersInterested.remove(position));
+                        addedIndex.setValue(usersAdded.size() - 1);
+                        interestedRemoveIndex.setValue(position);
+                        // Setting to null to avoid wrong delete request in InterestedRecyclerView on recreate
+                        interestedRemoveIndex.setValue(null);
+                    });
+                }
+            });
+        } catch (JSONException e) {
+            interestedUserChangeFailure(progressBar);
+        }
     }
 
     public void removeUser(int position, ProgressBar progressBar) {
-        String userID = usersInterested.get(position).getId();
-        List<Task<Void>> tasks = new ArrayList<>();
+        try {
+            String json = new JSONObject()
+                    .put("postID", postInfo.getId())
+                    .put("userID", usersInterested.get(position).getId())
+                    .toString();
+            client.newCall(getRequest(json, SERVER_URL + "rejectUser")).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    handler.post(() -> interestedUserChangeFailure(progressBar));
+                }
 
-        // Updating status to UserActivity
-        tasks.add(db.collection(USER_ACTIVITY).document(userID)
-        .update(Collections.singletonMap("postsInvolved", FieldValue.arrayRemove(new PostStatus(postInfo.getId(), "Requested !")))));
-
-        // Updating status to PostDetailInfo
-        tasks.add(db.collection(POST_DETAIL_INFO).document(postInfo.getId())
-                .update(Collections.singletonMap("usersInterested", FieldValue.arrayRemove(userID))));
-
-        Tasks.whenAllSuccess(tasks).addOnSuccessListener(results -> {
-            usersInterested.remove(position);
-            interestedRemoveIndex.setValue(position);
-            // Setting to null to avoid wrong delete request in InterestedRecyclerView on recreate
-            interestedRemoveIndex.setValue(null);
-        }).addOnFailureListener(unused -> interestedUserChangeFailure(progressBar));
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) {
+                    if (response.code() != SUCCESS_CODE) {
+                        handler.post(() -> interestedUserChangeFailure(progressBar));
+                        return;
+                    }
+                    handler.post(() -> {
+                        usersInterested.remove(position);
+                        interestedRemoveIndex.setValue(position);
+                        // Setting to null to avoid wrong delete request in InterestedRecyclerView on recreate
+                        interestedRemoveIndex.setValue(null);
+                    });
+                }
+            });
+        } catch (JSONException e) {
+            interestedUserChangeFailure(progressBar);
+        }
     }
 
     private void interestedUserChangeFailure(ProgressBar progressBar) {
