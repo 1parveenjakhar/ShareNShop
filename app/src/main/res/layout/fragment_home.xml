@@ -20,6 +20,16 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"/>
 
+        <ImageView
+            android:id="@+id/notificationIconImageView"
+            android:layout_width="29dp"
+            android:layout_height="34dp"
+            android:layout_marginEnd="20dp"
+            app:layout_constraintBottom_toTopOf="@+id/sort_button"
+            app:layout_constraintEnd_toStartOf="@+id/searchView"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_baseline_notifications_24" />
+
         <androidx.appcompat.widget.SearchView
             android:id="@+id/searchView"
             android:layout_width="wrap_content"
