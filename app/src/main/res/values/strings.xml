@@ -100,6 +100,11 @@
     <string name="last_activity_filter_greater_than_1_year">greater than 1 year</string>
     <string name="to">To</string>
     <string name="from">From</string>
+    <string name="ask_for_final_confirmation">Ask for Final Confirmation</string>
+    <string name="user_accepted_the_final_confirmation">User accepted the final confirmation</string>
+    <string name="button_to_approve_user">Button to approve user</string>
+    <string name="button_to_reject_user">Button to reject user</string>
+    <string name="in_progress">In Progress ..</string>
     <string-array name="sort_tags">
         <item>"Amount"</item>
         <item>"People Required"</item>

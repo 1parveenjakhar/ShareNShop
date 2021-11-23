@@ -22,6 +22,8 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.DocumentReference;
@@ -178,11 +180,14 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
         String newStatus = statusMap.get(status);
 
         try {
+            String name = DBOperations.getUserProfile().getValue() == null
+                    ? "User" : DBOperations.getUserProfile().getValue().getName();
             String json = new JSONObject()
                     .put("post", gson.toJson(post))
                     .put("oldStatus", status)
                     .put("newStatus", statusMap.get(status))
                     .put("userID", userID)
+                    .put("userName", name)
                     .toString();
 
             client.newCall(getRequest(json, SERVER_URL + "changeStatus")).enqueue(new Callback() {
@@ -225,18 +230,13 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
         String postID = posts.get(position).getId();
         if (isFavourite) {
             taskList.add(doc.update(Collections.singletonMap("postsWishListed", FieldValue.arrayUnion(postID)))
-                    .addOnSuccessListener(unused -> {
-                        wishListedPosts.add(postID);
-                        dataChanged.setValue(position);
-                    }));
+                    .addOnSuccessListener(unused -> wishListedPosts.add(postID)));
         } else {
             taskList.add(doc.update(Collections.singletonMap("postsWishListed", FieldValue.arrayRemove(postID)))
-                    .addOnSuccessListener(unused -> {
-                        wishListedPosts.remove(postID);
-                        dataChanged.setValue(position);
-                    }));
+                    .addOnSuccessListener(unused -> wishListedPosts.remove(postID)));
         }
         Tasks.whenAllSuccess(taskList).addOnSuccessListener(objects -> {
+            dataChanged.setValue(position);
             progressBar.setVisibility(View.GONE);
             favorite.setVisibility(View.VISIBLE);
         });

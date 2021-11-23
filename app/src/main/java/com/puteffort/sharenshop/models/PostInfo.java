@@ -8,7 +8,7 @@ public class PostInfo {
     private String id;
     private int days, months, years, peopleRequired;
     private int amount;
-    private boolean accomplished;
+    private boolean accomplished, asked;
     private long lastActivity;
 
     public PostInfo() {
@@ -25,7 +25,7 @@ public class PostInfo {
         this.years = Integer.parseInt(years);
         this.peopleRequired = Integer.parseInt(peopleRequired);
         this.amount = Integer.parseInt(amount);
-        this.accomplished = false;
+        this.accomplished = this.asked = false;
     }
 
     @Override
@@ -105,13 +105,17 @@ public class PostInfo {
         this.amount = amount;
     }
 
-    public boolean isAccomplished() {
+    public boolean getAccomplished() {
         return accomplished;
     }
 
     public void setAccomplished(boolean accomplished) {
         this.accomplished = accomplished;
     }
+
+    public boolean getAsked() { return asked; }
+
+    public void setAsked(boolean asked) { this.asked = asked; }
 
     public String getId() {
         return id;

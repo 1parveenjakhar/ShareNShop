@@ -1,5 +1,6 @@
 package com.puteffort.sharenshop.fragments;
 
+import static com.puteffort.sharenshop.utils.DBOperations.INTERESTED;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
 import static com.puteffort.sharenshop.utils.UtilFunctions.getFormattedTime;
 
@@ -170,9 +171,11 @@ public class HomeFragment extends Fragment {
             db.collection(USER_PROFILE).document(post.getOwnerID()).get()
                     .addOnSuccessListener(docSnap -> {
                         if (docSnap != null) {
-                            Glide.with(context).load(docSnap.getString("imageURL"))
-                                    .error(R.drawable.default_person_icon)
-                                    .circleCrop().into(postHolder.image);
+                            try {
+                                Glide.with(context).load(docSnap.getString("imageURL"))
+                                        .error(R.drawable.default_person_icon)
+                                        .circleCrop().into(postHolder.image);
+                            } catch (Exception ignored) {}
                         }
                     });
 
@@ -182,7 +185,7 @@ public class HomeFragment extends Fragment {
 
             // Change button accordingly, as per status of the user towards the post
             postHolder.postStatus.setText(postsStatus.containsKey(post.getId())
-                    ? postsStatus.get(post.getId()) : "Interested ?");
+                    ? postsStatus.get(post.getId()) : INTERESTED);
         }
 
         @Override

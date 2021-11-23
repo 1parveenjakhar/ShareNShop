@@ -17,8 +17,9 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.navigation.NavigationBarView;
 import com.puteffort.sharenshop.databinding.ActivityMainBinding;
-import com.puteffort.sharenshop.fragments.PostFragment;
+import com.puteffort.sharenshop.fragments.HomeContainerFragment;
 import com.puteffort.sharenshop.utils.DBOperations;
+import com.puteffort.sharenshop.utils.UtilFunctions;
 import com.puteffort.sharenshop.viewmodels.MainActivityViewModel;
 
 public class MainActivity extends AppCompatActivity implements NavigationBarView.OnItemSelectedListener{
@@ -29,6 +30,7 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> UtilFunctions.showToast(this, "Exception: " + e.getMessage()));
         if (setOrientation()) return;
 
         // Load user details (UserProfile and UserActivity)
@@ -53,7 +55,7 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         if (intent.getStringExtra("postID") != null) {
-            changeFragment(new PostFragment(intent.getStringExtra("postID")));
+            changeFragment(new HomeContainerFragment(intent.getStringExtra("postID")));
         }
     }
 
@@ -82,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
 
     // Use in case it is needed to change fragment inside same tab
     public void changeFragment(Fragment fragment) {
-        applyFragmentTransaction(fragment, true);
+        applyFragmentTransaction(fragment, fragment.getClass() != HomeContainerFragment.class);
     }
 
     private void applyFragmentTransaction(Fragment fragment, boolean addToBackStack) {

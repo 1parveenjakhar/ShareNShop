@@ -1,5 +1,7 @@
 package com.puteffort.sharenshop.fragments;
 
+import static android.view.View.GONE;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Bundle;
@@ -25,6 +27,7 @@ import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel.RecyclerViewComment;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class CommentRecyclerView extends Fragment {
@@ -32,8 +35,6 @@ public class CommentRecyclerView extends Fragment {
     private PostFragmentViewModel model;
     private CommentRecyclerViewAdapter adapter;
     private ProgressBar progressBar;
-
-    public static final int EMPTY_LIST = -1;
 
     public CommentRecyclerView() {
         // Required empty public constructor
@@ -55,25 +56,18 @@ public class CommentRecyclerView extends Fragment {
 
     @SuppressLint("NotifyDataSetChanged")
     private void addObservers() {
-        adapter = new CommentRecyclerViewAdapter(requireContext(), model.getComments());
+        adapter = new CommentRecyclerViewAdapter(requireContext());
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
-
-        model.getCommentIndex().observe(getViewLifecycleOwner(), index -> {
-            // For loading data
-            if (index == null) {
+        model.getComments().observe(getViewLifecycleOwner(), comments -> {
+            if (comments == null) {
                 progressBar.setVisibility(View.VISIBLE);
-                adapter.notifyDataSetChanged();
                 return;
             }
-
-            if (index != EMPTY_LIST) {
-                // Insert only if index != -1
-                adapter.notifyItemInserted(index);
-            }
-            progressBar.setVisibility(View.GONE);
+            adapter.setComments(comments);
+            progressBar.setVisibility(GONE);
         });
     }
 
@@ -108,9 +102,17 @@ class CommentRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     private final List<RecyclerViewComment> comments;
     private final Context context;
 
-    public CommentRecyclerViewAdapter(Context context, List<RecyclerViewComment> comments) {
+    public CommentRecyclerViewAdapter(Context context) {
         this.context = context;
-        this.comments = comments;
+        this.comments = new ArrayList<>();
+    }
+
+    public void setComments(List<RecyclerViewComment> newComments) {
+        int previousSize = comments.size();
+        comments.clear();
+        comments.addAll(newComments);
+        notifyItemRangeRemoved(0, previousSize);
+        notifyItemRangeInserted(0, newComments.size());
     }
 
     @NonNull

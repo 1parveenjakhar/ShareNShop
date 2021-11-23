@@ -1,5 +1,7 @@
 package com.puteffort.sharenshop.fragments;
 
+import static android.view.View.GONE;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Bundle;
@@ -21,6 +23,7 @@ import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class InterestedRecyclerView extends Fragment {
@@ -48,29 +51,18 @@ public class InterestedRecyclerView extends Fragment {
 
     @SuppressLint("NotifyDataSetChanged")
     private void addObservers() {
-        adapter = new InterestedRecyclerViewAdapter(this, model.getUsersInterested());
+        adapter = new InterestedRecyclerViewAdapter(this);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
-        model.getInterestedIndex().observe(getViewLifecycleOwner(), index -> {
-            // For loading data
-            if (index == null) {
+        model.getUsersInterested().observe(getViewLifecycleOwner(), usersInterested -> {
+            if (usersInterested == null) {
                 progressBar.setVisibility(View.VISIBLE);
-                adapter.notifyDataSetChanged();
                 return;
             }
-
-            if (index != -1) {
-                // Insert at index, if list is not empty
-                adapter.notifyItemInserted(index);
-            }
-            progressBar.setVisibility(View.GONE);
-        });
-
-        model.getInterestedRemoveIndex().observe(getViewLifecycleOwner(), index -> {
-            if (index == null) return;
-            adapter.notifyItemRemoved(index);
+            adapter.setUsers(usersInterested);
+            progressBar.setVisibility(GONE);
         });
     }
 
@@ -86,16 +78,24 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     private final Context context;
     private final InterestedRecyclerView parentFragment;
 
-    public InterestedRecyclerViewAdapter(InterestedRecyclerView parentFragment, List<UserProfile> usersInterested) {
-        this.usersInterested = usersInterested;
+    public InterestedRecyclerViewAdapter(InterestedRecyclerView parentFragment) {
+        this.usersInterested = new ArrayList<>();
         this.parentFragment = parentFragment;
         this.context = parentFragment.requireContext();
+    }
+
+    public void setUsers(List<UserProfile> users) {
+        int previousSize = usersInterested.size();
+        usersInterested.clear();
+        usersInterested.addAll(users);
+        notifyItemRangeRemoved(0, previousSize);
+        notifyItemRangeInserted(0, users.size());
     }
 
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View rootView = LayoutInflater.from(context).inflate(R.layout.card_user_info_owner,parent,false);
+        View rootView = LayoutInflater.from(context).inflate(R.layout.card_interested_user,parent,false);
         return new UserHolder(rootView);
     }
 
@@ -103,6 +103,7 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         UserProfile user = usersInterested.get(position);
         UserHolder userHolder = (UserHolder) holder;
+
 
         if (parentFragment.model.isUserPostOwner()) {
             userHolder.cross.setVisibility(View.VISIBLE);
@@ -137,6 +138,11 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             tick = itemView.findViewById(R.id.tick);
             tickPB = itemView.findViewById(R.id.tickProgressBar);
             crossPB = itemView.findViewById(R.id.crossProgressBar);
+
+            tick.setVisibility(GONE);
+            cross.setVisibility(GONE);
+            tickPB.setVisibility(GONE);
+            crossPB.setVisibility(GONE);
         }
     }
 }

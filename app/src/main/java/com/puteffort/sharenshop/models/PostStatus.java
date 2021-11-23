@@ -1,5 +1,7 @@
 package com.puteffort.sharenshop.models;
 
+import com.puteffort.sharenshop.utils.DBOperations;
+
 public class PostStatus {
     private String postID, status;
 
@@ -8,7 +10,7 @@ public class PostStatus {
 
     public PostStatus(String postID) {
         this.postID = postID;
-        this.status = "Added";
+        this.status = DBOperations.ADDED;
     }
 
     public PostStatus(String postID, String status) {

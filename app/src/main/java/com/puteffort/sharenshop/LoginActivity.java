@@ -1,7 +1,6 @@
 package com.puteffort.sharenshop;
 
 import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
-import static com.puteffort.sharenshop.utils.UtilFunctions.ERROR_CODE;
 import static com.puteffort.sharenshop.utils.UtilFunctions.SERVER_URL;
 import static com.puteffort.sharenshop.utils.UtilFunctions.SUCCESS_CODE;
 import static com.puteffort.sharenshop.utils.UtilFunctions.client;
@@ -45,6 +44,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.databinding.ActivityLoginBinding;
 import com.puteffort.sharenshop.models.UserProfile;
+import com.puteffort.sharenshop.utils.UtilFunctions;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -71,7 +71,7 @@ public class LoginActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        super.onCreate(savedInstanceState);Thread.setDefaultUncaughtExceptionHandler((t, e) -> UtilFunctions.showToast(this, "Exception: " + e.getMessage()));
         if (setOrientation()) return;
 
         setTheme();

@@ -32,7 +32,7 @@
                         android:id="@+id/imageView"
                         android:layout_width="60dp"
                         android:layout_height="60dp"
-                        android:layout_marginStart="10dp"
+                        android:layout_margin="5dp"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintTop_toTopOf="parent"
                         app:circularflow_radiusInDP="12dp"

@@ -27,12 +27,18 @@ public class DBOperations {
     public final static String COMMENT = "Comment";
     public final static String TOKEN = "Token";
 
+    public final static String INTERESTED = "Interested ?";
+    public final static String REQUESTED = "Requested !";
+    public final static String FINAL_CONFIRMATION = "Final Confirmation ?";
+    public final static String ACCEPTED = "Accepted !";
+    public final static String ADDED = "Added";
+
     public final static Map<String, String> statusMap;
 
     static {
         statusMap = new HashMap<>();
-        statusMap.put("Interested ?", "Requested !");
-        statusMap.put("Final Confirmation ?", "Accepted !");
+        statusMap.put(INTERESTED, REQUESTED);
+        statusMap.put(FINAL_CONFIRMATION, ACCEPTED);
     }
 
     private static final MutableLiveData<UserProfile> userProfileLiveData = new MutableLiveData<>();

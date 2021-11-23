@@ -14,7 +14,7 @@ public class PostDetailInfo {
         this.comments = new ArrayList<>();
         this.usersInterested = new ArrayList<>();
         this.usersAdded = new ArrayList<>();
-        usersAdded.add(new UserStatus(userID, "Added"));
+        usersAdded.add(new UserStatus(userID));
     }
 
     public List<String> getComments() {

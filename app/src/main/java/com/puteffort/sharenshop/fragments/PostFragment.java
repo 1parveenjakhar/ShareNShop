@@ -86,7 +86,7 @@ public class PostFragment extends Fragment {
         binding.viewPager.setAdapter(new ViewPagerAdapter(this));
         new TabLayoutMediator(binding.tabLayout, binding.viewPager,
                 (tab, position) -> tab.setText(model.getFragmentTitle(position))).attach();
-        binding.viewPager.setCurrentItem(1);
+        binding.viewPager.setCurrentItem(model.getPreviousTab());
     }
 
     private void setObservers() {

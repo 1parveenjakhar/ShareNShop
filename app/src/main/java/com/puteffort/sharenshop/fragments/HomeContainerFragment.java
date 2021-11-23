@@ -14,9 +14,14 @@ import com.puteffort.sharenshop.interfaces.DualPanePostCommunicator;
 
 public class HomeContainerFragment extends Fragment implements DualPanePostCommunicator {
     private boolean isDualPaneSystem;
+    private String postID;
 
     public HomeContainerFragment() {
         // Required empty public constructor
+    }
+
+    public HomeContainerFragment(String postID) {
+        this.postID = postID;
     }
 
     @Override
@@ -24,6 +29,10 @@ public class HomeContainerFragment extends Fragment implements DualPanePostCommu
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home_container, container, false);
         isDualPaneSystem = view.findViewById(R.id.postFragment) != null;
+
+        if (postID != null) {
+            openPostFragment(new PostFragment(postID));
+        }
 
         return view;
     }
