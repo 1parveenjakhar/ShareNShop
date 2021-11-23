@@ -1,6 +1,7 @@
 package com.puteffort.sharenshop.utils;
 
 import android.content.Context;
+import android.content.Intent;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
@@ -25,6 +26,8 @@ public class UtilFunctions {
 
     public static final String SERVER_URL = "http://143.244.142.48:100/";
     public static final int ERROR_CODE = 401, SUCCESS_CODE = 200;
+
+    public static final String INTENT_TAG = "Notification-Receiver";
 
     public static void showToast(Context context, String message) {
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show();

@@ -110,4 +110,11 @@
         <item>"People Required"</item>
         <item>"Last Activity"</item>
     </string-array>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="notifications">Notifications</string>
+    <string name="notification_title">Notification Title</string>
+    <string name="notification_message">Notification Message</string>
+    <string name="unread_notification">Unread notification</string>
+    <string name="msgs">Msgs</string>
 </resources>

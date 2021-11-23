@@ -1,28 +1,39 @@
 package com.puteffort.sharenshop.models;
 
+import androidx.room.ColumnInfo;
+import androidx.room.Entity;
+import androidx.room.Ignore;
+import androidx.room.PrimaryKey;
+
+import com.puteffort.sharenshop.services.NotificationDatabase;
+
+@Entity(tableName = NotificationDatabase.NOTIFICATION_DB_NAME)
 public class Notification {
 
-    private String productName;
-    private String notifDescription;
+    @PrimaryKey(autoGenerate = true)
+    public int id;
 
-    public Notification(String productName, String notifDescription) {
-        this.productName = productName;
-        this.notifDescription = notifDescription;
+    @ColumnInfo
+    public String title;
+
+    @ColumnInfo
+    public String message;
+
+    @ColumnInfo
+    public String postID;
+
+    @ColumnInfo
+    public boolean markedAsRead;
+
+    public Notification() {
+
     }
 
-    public String getProductName() {
-        return productName;
-    }
-
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
-    public String getNotifDescription() {
-        return notifDescription;
-    }
-
-    public void setNotifDescription(String notifDescription) {
-        this.notifDescription = notifDescription;
+    @Ignore
+    public Notification(String title, String message, String postID) {
+        this.title = title;
+        this.message = message;
+        this.postID = postID;
+        this.markedAsRead = false;
     }
 }

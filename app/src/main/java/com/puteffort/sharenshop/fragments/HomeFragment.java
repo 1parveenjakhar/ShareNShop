@@ -25,7 +25,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentHomeBinding;
 import com.puteffort.sharenshop.interfaces.DualPanePostCommunicator;
@@ -87,11 +86,6 @@ public class HomeFragment extends Fragment {
             SortDialogFragment newFragment = new SortDialogFragment(model.getCheckedSort());
             newFragment.show(getChildFragmentManager(), "sort_dialog");
             newFragment.setOnSortClick(sortBy -> model.sortPosts(sortBy));
-        });
-
-        binding.notificationIconImageView.setOnClickListener(v -> {
-            NotificationRecyclerView notificationRecyclerView = new NotificationRecyclerView();
-            ((MainActivity)requireActivity()).changeFragment(notificationRecyclerView);
         });
 
     }

@@ -1,37 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:id="@+id/notificationLayout"
-    android:focusable="true"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:cardCornerRadius="25dp"
+    android:layout_margin="10dp"
+    android:elevation="8dp"
+    app:cardElevation="8dp"
     android:clickable="true"
-    android:background="#BCFFFFFF"
-    android:layout_margin="5dp">
+    android:focusable="true">
 
-    <TextView
-        android:id="@+id/productName"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        tools:text="@tools:sample/full_names"
-        android:textStyle="bold"
-        android:textColor="#121212"
-        android:padding="5dp" />
+        android:paddingHorizontal="25dp"
+        android:paddingVertical="10dp">
 
-    <TextView
-        android:id="@+id/notifDescription"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        tools:text="@tools:sample/full_names"
-        android:padding="5dp"
-        android:textColor="#121212" />
+        <TextView
+            android:id="@+id/notificationTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/unreadIcon"
+            android:text="@string/notification_title"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#DA686565"
-        android:padding="5dp" />
+        <ImageView
+            android:id="@+id/unreadIcon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:src="@drawable/unread_icon"
+            android:scaleX="0.5"
+            android:scaleY="0.5"
+            android:contentDescription="@string/unread_notification" />
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/notificationMessage"
+            app:layout_constraintTop_toBottomOf="@id/notificationTitle"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/notification_message"
+            android:layout_marginVertical="5dp"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+</androidx.cardview.widget.CardView>
