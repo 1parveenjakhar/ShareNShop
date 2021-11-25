@@ -17,6 +17,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -108,11 +109,10 @@ class CommentRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     public void setComments(List<RecyclerViewComment> newComments) {
-        int previousSize = comments.size();
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new CommentDiffCallBack(comments, newComments));
         comments.clear();
         comments.addAll(newComments);
-        notifyItemRangeRemoved(0, previousSize);
-        notifyItemRangeInserted(0, newComments.size());
+        diffResult.dispatchUpdatesTo(this);
     }
 
     @NonNull
@@ -140,6 +140,42 @@ class CommentRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public int getItemCount() {
         return comments.size();
     }
+
+
+    private static class CommentDiffCallBack extends DiffUtil.Callback {
+        private final List<RecyclerViewComment> newList, oldList;
+
+        public CommentDiffCallBack(List<RecyclerViewComment> oldList,
+                                List<RecyclerViewComment> newList) {
+            this.oldList = oldList;
+            this.newList = newList;
+        }
+
+        @Override
+        public int getOldListSize() {
+            return oldList.size();
+        }
+
+        @Override
+        public int getNewListSize() {
+            return newList.size();
+        }
+
+        @Override
+        public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+            return oldList.get(oldItemPosition).getComment().getId().equals(
+                    newList.get(newItemPosition).getComment().getId());
+        }
+
+        @Override
+        public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+            RecyclerViewComment oldItem = oldList.get(oldItemPosition);
+            RecyclerViewComment newItem = newList.get(newItemPosition);
+            return oldItem.getComment().isContentSame(newItem.getComment())
+                    && oldItem.getUserProfile().isContentSame(newItem.getUserProfile());
+        }
+    }
+
 
     static class CommentHolder extends RecyclerView.ViewHolder {
         TextView userName, comment;

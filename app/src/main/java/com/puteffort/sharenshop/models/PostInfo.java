@@ -28,8 +28,22 @@ public class PostInfo {
         this.accomplished = this.asked = false;
     }
 
+    public boolean isContentSame(PostInfo other) {
+        return title.equals(other.getTitle())
+                && description.equals(other.getDescription())
+                && ownerID.equals(other.getOwnerID())
+                && days == other.getDays()
+                && months == other.getMonths()
+                && years == other.getYears()
+                && peopleRequired == other.getPeopleRequired()
+                && amount == other.getAmount()
+                && accomplished == other.getAccomplished()
+                && asked == other.getAsked();
+    }
+
     @Override
     public boolean equals (Object post) {
+        if (post.getClass() != PostInfo.class) return false;
         return this.id.equals(((PostInfo)post).getId());
     }
 

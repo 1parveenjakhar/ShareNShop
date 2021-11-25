@@ -115,12 +115,14 @@
 
         <ProgressBar
             android:id="@+id/favouriteProgressBar"
-            style="@android:style/Widget.ProgressBar.Small"
+            style="?android:attr/progressBarStyleSmall"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:visibility="gone"
+            android:visibility="visible"
             app:layout_constraintEnd_toEndOf="@id/favouriteIcon"
-            app:layout_constraintTop_toTopOf="@id/favouriteIcon" />
+            app:layout_constraintTop_toTopOf="@id/favouriteIcon"
+            app:layout_constraintStart_toStartOf="@id/favouriteIcon"
+            app:layout_constraintBottom_toBottomOf="@id/favouriteIcon"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
             // A notification has been clicked
             Notification notification = (Notification) intent.getSerializableExtra("notification");
             model.markNotificationAsRead(notification);
-            changeFragment(new HomeContainerFragment(intent.getStringExtra("postID")));
+            changeFragment(new HomeContainerFragment(notification.postID));
         }
         else if (intent.getAction() != null && intent.getAction().equals(Intent.ACTION_VIEW)) {
             Log.i("Assistant Intent", intent.getData().toString());

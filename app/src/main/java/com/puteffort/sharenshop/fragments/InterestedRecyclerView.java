@@ -15,6 +15,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -85,11 +86,10 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     public void setUsers(List<UserProfile> users) {
-        int previousSize = usersInterested.size();
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new UserDiffCallBack(usersInterested, users));
         usersInterested.clear();
         usersInterested.addAll(users);
-        notifyItemRangeRemoved(0, previousSize);
-        notifyItemRangeInserted(0, users.size());
+        diffResult.dispatchUpdatesTo(this);
     }
 
     @NonNull
@@ -123,6 +123,39 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     public int getItemCount() {
         return usersInterested.size();
     }
+
+
+    private static class UserDiffCallBack extends DiffUtil.Callback {
+        private final List<UserProfile> newList, oldList;
+
+        public UserDiffCallBack(List<UserProfile> oldList,
+                                List<UserProfile> newList) {
+            this.oldList = oldList;
+            this.newList = newList;
+        }
+
+        @Override
+        public int getOldListSize() {
+            return oldList.size();
+        }
+
+        @Override
+        public int getNewListSize() {
+            return newList.size();
+        }
+
+        @Override
+        public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+            return oldList.get(oldItemPosition).getId().equals(
+                    newList.get(newItemPosition).getId());
+        }
+
+        @Override
+        public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+            return oldList.get(oldItemPosition).isContentSame(newList.get(newItemPosition));
+        }
+    }
+
 
     static class UserHolder extends RecyclerView.ViewHolder {
         TextView userName;

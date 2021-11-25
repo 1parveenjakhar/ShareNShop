@@ -32,6 +32,7 @@ public class HomeContainerFragment extends Fragment implements DualPanePostCommu
 
         if (postID != null) {
             openPostFragment(new PostFragment(postID));
+            postID = null;
         }
 
         return view;

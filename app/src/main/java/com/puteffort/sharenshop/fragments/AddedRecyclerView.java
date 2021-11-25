@@ -17,6 +17,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -120,11 +121,10 @@ class AddedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     }
 
     public void setUsers(List<PostFragmentViewModel.AddedUser> users) {
-        int previousSize = usersAdded.size();
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new UserDiffCallback(usersAdded, users));
         usersAdded.clear();
         usersAdded.addAll(users);
-        notifyItemRangeRemoved(0, previousSize);
-        notifyItemRangeInserted(0, users.size());
+        diffResult.dispatchUpdatesTo(this);
     }
 
     @NonNull
@@ -152,6 +152,42 @@ class AddedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     public int getItemCount() {
         return usersAdded.size();
     }
+
+
+    private static class UserDiffCallback extends DiffUtil.Callback {
+        private final List<PostFragmentViewModel.AddedUser> newList, oldList;
+
+        public UserDiffCallback(List<PostFragmentViewModel.AddedUser> oldList,
+                                List<PostFragmentViewModel.AddedUser> newList) {
+            this.oldList = oldList;
+            this.newList = newList;
+        }
+
+        @Override
+        public int getOldListSize() {
+            return oldList.size();
+        }
+
+        @Override
+        public int getNewListSize() {
+            return newList.size();
+        }
+
+        @Override
+        public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+            return oldList.get(oldItemPosition).getProfile().getId().equals(
+                    newList.get(newItemPosition).getProfile().getId());
+        }
+
+        @Override
+        public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+            PostFragmentViewModel.AddedUser oldItem = oldList.get(oldItemPosition);
+            PostFragmentViewModel.AddedUser newItem = newList.get(newItemPosition);
+            return oldItem.getStatus().equals(newItem.getStatus())
+                    && oldItem.getProfile().isContentSame(newItem.getProfile());
+        }
+    }
+
 
     static class UserHolder extends RecyclerView.ViewHolder {
         TextView userName;

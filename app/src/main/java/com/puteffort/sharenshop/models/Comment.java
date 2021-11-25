@@ -13,6 +13,12 @@ public class Comment {
         postedTime = System.currentTimeMillis();
     }
 
+    public boolean isContentSame(Comment other) {
+        return message.equals(other.getMessage())
+                && userID.equals(other.getUserID())
+                && postedTime == other.getPostedTime();
+    }
+
     public String getId() {
         return id;
     }

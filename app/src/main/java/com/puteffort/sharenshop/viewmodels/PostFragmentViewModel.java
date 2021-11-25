@@ -2,6 +2,7 @@ package com.puteffort.sharenshop.viewmodels;
 
 import static android.view.View.GONE;
 import static com.puteffort.sharenshop.utils.DBOperations.COMMENT;
+import static com.puteffort.sharenshop.utils.DBOperations.INTERESTED;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_DETAIL_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
@@ -466,7 +467,7 @@ public class PostFragmentViewModel extends ViewModel {
 
         public AddedUser(UserProfile profile, String status) {
             this.profile = profile;
-            this.status = status;
+            this.status = (status == null) ? INTERESTED : status;
         }
 
         public UserProfile getProfile() {
