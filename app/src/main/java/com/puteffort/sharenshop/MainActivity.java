@@ -1,15 +1,9 @@
 package com.puteffort.sharenshop;
 
-import static com.puteffort.sharenshop.utils.UtilFunctions.INTENT_TAG;
-
 import android.annotation.SuppressLint;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.MenuItem;
 
@@ -20,20 +14,17 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.navigation.NavigationBarView;
 import com.puteffort.sharenshop.databinding.ActivityMainBinding;
 import com.puteffort.sharenshop.fragments.HomeContainerFragment;
-import com.puteffort.sharenshop.interfaces.NotificationHandler;
 import com.puteffort.sharenshop.models.Notification;
-import com.puteffort.sharenshop.services.NotificationDatabase;
 import com.puteffort.sharenshop.utils.DBOperations;
 import com.puteffort.sharenshop.utils.UtilFunctions;
 import com.puteffort.sharenshop.viewmodels.MainActivityViewModel;
 
-public class MainActivity extends AppCompatActivity implements NavigationBarView.OnItemSelectedListener, NotificationHandler {
+public class MainActivity extends AppCompatActivity implements NavigationBarView.OnItemSelectedListener {
     private ActivityMainBinding binding;
     private MainActivityViewModel model;
     private NavigationBarView navBar;
@@ -57,27 +48,6 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        LocalBroadcastManager.getInstance(this).registerReceiver(mMessageReceiver, new IntentFilter(INTENT_TAG));
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
-    }
-
-    private final BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (intent.getStringExtra("postID") != null) {
-                model.increaseUnreadCount();
-            }
-        }
-    };
-
-    @Override
     protected void onResume() {
         super.onResume();
         setOrientation();
@@ -86,17 +56,10 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        if (intent.getStringExtra("postID") != null) {
+        if (intent.getSerializableExtra("notification") != null) {
             // A notification has been clicked
-            Notification notification = new Notification(intent.getStringExtra("title"),
-                    intent.getStringExtra("message"),
-                    intent.getStringExtra("postID"));
-            notification.markedAsRead = true;
-            model.updateNotification(notification);
-
-            AsyncTask.execute(() -> NotificationDatabase.getInstance(this).notificationDao()
-                    .updateNotification(notification));
-
+            Notification notification = (Notification) intent.getSerializableExtra("notification");
+            model.markNotificationAsRead(notification);
             changeFragment(new HomeContainerFragment(intent.getStringExtra("postID")));
         }
     }
@@ -119,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
         if (lastTab == -1) lastTab = R.id.homeMenuItem;
         navBar.setSelectedItemId(lastTab);
 
-        model.getUnreadNotificationsCount().observe(this, unreadCount -> {
+        model.getUnreadCount().observe(this, unreadCount -> {
             if (unreadCount == null) return;
             if (unreadCount == 0)
                 navBar.getOrCreateBadge(R.id.notificationItem).setVisible(false);
@@ -165,10 +128,5 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
             applyFragmentTransaction(model.getFragment(id), false);
         }
         return true;
-    }
-
-    @Override
-    public void reduceUnreadCount() {
-        model.reduceUnreadCount();
     }
 }

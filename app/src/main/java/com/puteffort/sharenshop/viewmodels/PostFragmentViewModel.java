@@ -200,19 +200,29 @@ public class PostFragmentViewModel extends ViewModel {
 
         db.collection(COMMENT).whereIn("id", commentIDs).orderBy("postedTime", Query.Direction.ASCENDING)
             .get().addOnSuccessListener(commentSnaps -> {
+                List<String> userIDs = new ArrayList<>();
+                Map<String, UserProfile> userMapping = new HashMap<>();
+
                 for (QueryDocumentSnapshot commentSnap: commentSnaps) {
-                    RecyclerViewComment recyclerViewComment = new RecyclerViewComment();
                     Comment comment = commentSnap.toObject(Comment.class);
-                    recyclerViewComment.setMessage(comment.getMessage());
-                    db.collection(USER_PROFILE).document(comment.getUserID()).get()
-                            .addOnSuccessListener(docSnap -> {
-                                UserProfile user = docSnap.toObject(UserProfile.class);
-                                if (user != null) {
-                                    recyclerViewComment.setName(user.getName());
-                                    recyclerViewComment.setImageURL(user.getImageURL());
-                                    comments.add(recyclerViewComment);
-                                    handler.post(() -> commentsLiveData.setValue(comments));
+                    comments.add(new RecyclerViewComment(comment));
+                    userIDs.add(comment.getUserID());
+                }
+
+                // Even though this check is not necessary, but still
+                if (!userIDs.isEmpty()) {
+                    db.collection(USER_PROFILE).whereIn("id", userIDs).get()
+                            .addOnSuccessListener(userSnaps -> {
+                                for (QueryDocumentSnapshot userSnap: userSnaps) {
+                                    UserProfile user = userSnap.toObject(UserProfile.class);
+                                    userMapping.put(user.getId(), user);
                                 }
+
+                                for (RecyclerViewComment comment: comments) {
+                                    comment.setUserProfile(userMapping.get(comment.getComment().getUserID()));
+                                }
+
+                                handler.post(() -> commentsLiveData.setValue(comments));
                             });
                 }
         });
@@ -245,7 +255,7 @@ public class PostFragmentViewModel extends ViewModel {
                     }
                     handler.post(() -> {
                         alertDialog.dismiss();
-                        comments.add(new RecyclerViewComment(comment.getMessage()));
+                        comments.add(new RecyclerViewComment(comment));
                         commentsLiveData.setValue(comments);
                         showToast(context, "Commented successfully :)");
                     });
@@ -365,6 +375,11 @@ public class PostFragmentViewModel extends ViewModel {
         });
     }
 
+    public boolean areAllRequiredAdded() {
+        if (postDetailInfoLiveData.getValue() == null) return true; // This way we are not showing accept/reject buttons
+        return postInfo.getPeopleRequired() == postDetailInfoLiveData.getValue().getUsersAdded().size();
+    }
+
     public LiveData<List<UserProfile>> getUsersInterested() {
         return usersInterestedLiveData;
     }
@@ -415,40 +430,33 @@ public class PostFragmentViewModel extends ViewModel {
     }
 
     public static class RecyclerViewComment {
-        private String name, message, imageURL;
-        public RecyclerViewComment() {}
+        private final Comment comment;
+        private UserProfile userProfile;
 
-        public RecyclerViewComment(String message) {
-            this.message = message;
+        public RecyclerViewComment(Comment comment) {
+            this.comment = comment;
             UserProfile user = DBOperations.getUserProfile().getValue();
             if (user != null) {
-                name = user.getName();
-                imageURL = user.getImageURL();
+                this.userProfile = user;
             }
         }
 
-        public String getName() {
-            return name;
+        @NonNull
+        @Override
+        public String toString() {
+            return comment.getMessage() + "->" + userProfile.getName();
         }
 
-        public void setName(String name) {
-            this.name = name;
+        public Comment getComment() {
+            return comment;
         }
 
-        public String getMessage() {
-            return message;
+        public UserProfile getUserProfile() {
+            return userProfile;
         }
 
-        public void setMessage(String message) {
-            this.message = message;
-        }
-
-        public String getImageURL() {
-            return imageURL;
-        }
-
-        public void setImageURL(String imageURL) {
-            this.imageURL = imageURL;
+        public void setUserProfile(UserProfile userProfile) {
+            this.userProfile = userProfile;
         }
     }
 

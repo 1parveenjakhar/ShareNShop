@@ -128,12 +128,12 @@ class CommentRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         CommentHolder commentHolder = (CommentHolder) holder;
 
 
-        Glide.with(context).load(comment.getImageURL())
+        Glide.with(context).load(comment.getUserProfile().getImageURL())
                 .error(R.drawable.default_person_icon)
                 .circleCrop().into(commentHolder.userImage);
 
-        commentHolder.userName.setText(comment.getName());
-        commentHolder.comment.setText(comment.getMessage());
+        commentHolder.userName.setText(comment.getUserProfile().getName());
+        commentHolder.comment.setText(comment.getComment().getMessage());
     }
 
     @Override

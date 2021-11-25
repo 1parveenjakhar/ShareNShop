@@ -1,57 +1,39 @@
 package com.puteffort.sharenshop.viewmodels;
 
 import android.app.Application;
-import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Looper;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import com.puteffort.sharenshop.interfaces.NotificationDao;
 import com.puteffort.sharenshop.models.Notification;
-import com.puteffort.sharenshop.services.NotificationDatabase;
+import com.puteffort.sharenshop.services.NotificationRepository;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class NotificationFragmentViewModel extends AndroidViewModel {
-    private final List<Notification> notifications;
-    private final MutableLiveData<List<Notification>> notificationsLiveData;
-    private NotificationDao notificationDao;
-    private final Handler handler;
+    private final MutableLiveData<List<Notification>> notifications;
+    private NotificationRepository notificationRepository;
 
     public NotificationFragmentViewModel(@NonNull Application application) {
         super(application);
-        notifications = new ArrayList<>();
-        notificationsLiveData = new MutableLiveData<>();
-        handler = new Handler(Looper.getMainLooper());
+        notifications = new MutableLiveData<>();
 
-        new Thread(this::loadNotifications).start();
+        addObservers();
     }
 
-    private void loadNotifications() {
-        notificationDao = NotificationDatabase.getInstance(getApplication()).notificationDao();
-        notifications.addAll(notificationDao.getAllNotifications());
-        Collections.reverse(notifications);
-        handler.post(() -> notificationsLiveData.setValue(notifications));
+    private void addObservers() {
+        notificationRepository = NotificationRepository.getInstance(getApplication());
+        notificationRepository.getNotifications().observeForever(this.notifications::setValue);
     }
 
-    public void updateNotification(int index) {
-        AsyncTask.execute(() -> {
-            Notification notification = notifications.get(index);
-            notification.markedAsRead = true;
-            notificationDao.updateNotification(notification);
-            handler.post(() -> notificationsLiveData.setValue(notifications));
-        });
+    public void markNotificationAsRead(int index) {
+        notificationRepository.markNotificationAsRead(index);
     }
-
 
     public LiveData<List<Notification>> getNotifications() {
-        return notificationsLiveData;
+        return notifications;
     }
 
 }

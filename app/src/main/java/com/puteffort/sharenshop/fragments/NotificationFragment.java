@@ -17,7 +17,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.interfaces.DualPanePostCommunicator;
-import com.puteffort.sharenshop.interfaces.NotificationHandler;
 import com.puteffort.sharenshop.models.Notification;
 import com.puteffort.sharenshop.viewmodels.NotificationFragmentViewModel;
 
@@ -72,8 +71,7 @@ public class NotificationFragment extends Fragment {
     private void openPostFragment(int position) {
         Notification notification = Objects.requireNonNull(model.getNotifications().getValue()).get(position);
         if (!notification.markedAsRead) {
-            model.updateNotification(position);
-            ((NotificationHandler)requireActivity()).reduceUnreadCount();
+            model.markNotificationAsRead(position);
         }
 
         PostFragment postFragment = new PostFragment(notification.postID);
