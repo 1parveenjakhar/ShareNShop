@@ -7,11 +7,13 @@ import androidx.room.PrimaryKey;
 
 import com.puteffort.sharenshop.services.NotificationDatabase;
 
+import java.io.Serializable;
+
 @Entity(tableName = NotificationDatabase.NOTIFICATION_DB_NAME)
-public class Notification {
+public class Notification implements Serializable {
 
     @PrimaryKey(autoGenerate = true)
-    public int id;
+    public long id;
 
     @ColumnInfo
     public String title;
@@ -35,5 +37,14 @@ public class Notification {
         this.message = message;
         this.postID = postID;
         this.markedAsRead = false;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Notification that = (Notification) o;
+        return id == that.id;
     }
 }

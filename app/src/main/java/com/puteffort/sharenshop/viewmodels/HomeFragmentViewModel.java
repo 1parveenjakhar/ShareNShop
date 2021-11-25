@@ -346,15 +346,15 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
         switch (sortBy) {
             case "Amount":
                 sortSelected = 0;
-                Collections.sort(posts, (p1, p2) -> p1.getAmount() - p2.getAmount());
+                Collections.sort(posts, (p1, p2) -> p2.getAmount() - p1.getAmount());
                 break;
             case "People Required":
                 sortSelected = 1;
-                Collections.sort(posts, (p1, p2) -> p1.getPeopleRequired() - p2.getPeopleRequired());
+                Collections.sort(posts, (p1, p2) -> p2.getPeopleRequired() - p1.getPeopleRequired());
                 break;
             case "Last Activity":
                 sortSelected = 2;
-                Collections.sort(posts, (p1, p2) -> (int)(p1.getLastActivity() - p2.getLastActivity()));
+                Collections.sort(posts, (p1, p2) -> (int)(p2.getLastActivity() - p1.getLastActivity()));
                 break;
             case "DEFAULTS":
                 sortSelected = -1;

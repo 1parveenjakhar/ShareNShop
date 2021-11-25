@@ -105,7 +105,7 @@ class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         UserHolder userHolder = (UserHolder) holder;
 
 
-        if (parentFragment.model.isUserPostOwner()) {
+        if (parentFragment.model.isUserPostOwner() && !parentFragment.model.areAllRequiredAdded()) {
             userHolder.cross.setVisibility(View.VISIBLE);
             userHolder.tick.setVisibility(View.VISIBLE);
 

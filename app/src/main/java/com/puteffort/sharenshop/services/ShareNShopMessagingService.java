@@ -1,7 +1,5 @@
 package com.puteffort.sharenshop.services;
 
-import static com.puteffort.sharenshop.utils.UtilFunctions.INTENT_TAG;
-
 import android.annotation.SuppressLint;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -13,7 +11,6 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -24,11 +21,11 @@ import com.puteffort.sharenshop.models.Notification;
 import java.util.Map;
 
 public class ShareNShopMessagingService extends FirebaseMessagingService {
-    private LocalBroadcastManager broadcaster;
+    private NotificationRepository notificationRepository;
 
     @Override
     public void onCreate() {
-        broadcaster = LocalBroadcastManager.getInstance(this);
+        notificationRepository = NotificationRepository.getInstance(this);
     }
 
 
@@ -38,7 +35,6 @@ public class ShareNShopMessagingService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         String sender = remoteMessage.getFrom();
-        Log.d("notification", "Got a notification !");
         if (sender != null) {
             String topic = sender.substring("/topics/".length());
             Map<String, String> data = remoteMessage.getData();
@@ -46,24 +42,14 @@ public class ShareNShopMessagingService extends FirebaseMessagingService {
             Log.d("notification", "Topic = " + topic);
             Log.d("notification", "Got data = " + data);
 
-            String postID = data.get("postID");
             String title = data.get("title");
             String message = data.get("message");
-            Notification notification = new Notification(title, message, postID);
-            NotificationDatabase.getInstance(this).notificationDao().addNotification(notification);
-
-            // For updating notification icon
-            Intent intent = new Intent(INTENT_TAG);
-            intent.putExtra("postID", postID);
-            intent.putExtra("title", title);
-            intent.putExtra("message", message);
-            broadcaster.sendBroadcast(intent);
+            Notification notification = new Notification(title, message, data.get("postID"));
+            notificationRepository.addNotification(notification);
 
             // For opening new ACTIVITY
-            intent = new Intent(this, MainActivity.class);
-            intent.putExtra("postID", postID);
-            intent.putExtra("title", title);
-            intent.putExtra("message", message);
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.putExtra("notification", notification);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             @SuppressLint("UnspecifiedImmutableFlag")
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);

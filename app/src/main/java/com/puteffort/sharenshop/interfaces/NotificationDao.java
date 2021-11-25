@@ -16,7 +16,7 @@ public interface NotificationDao {
     List<Notification> getAllNotifications();
 
     @Insert
-    void addNotification(Notification notification);
+    long addNotification(Notification notification);
 
     @Update
     void updateNotification(Notification notification);
