@@ -15,6 +15,9 @@
         android:theme="@style/Theme.ShareNShop"
         android:usesCleartextTraffic="true"
         tools:targetApi="m">
+        <meta-data
+            android:name="com.google.android.actions"
+            android:resource="@xml/actions" />
 
         <service
             android:name=".services.ShareNShopMessagingService"
@@ -26,7 +29,18 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="false" />
+            android:exported="true" >
+            <intent-filter
+                android:autoVerify="true"
+                tools:targetApi="m">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="sharenshop.page.link"
+                    android:scheme="https" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".SignUpActivity"
             android:exported="false" />

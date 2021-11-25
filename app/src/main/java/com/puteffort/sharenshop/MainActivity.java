@@ -9,8 +9,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
@@ -86,6 +88,8 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        if(intent == null)
+            return;
         if (intent.getStringExtra("postID") != null) {
             // A notification has been clicked
             Notification notification = new Notification(intent.getStringExtra("title"),
@@ -98,6 +102,26 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
                     .updateNotification(notification));
 
             changeFragment(new HomeContainerFragment(intent.getStringExtra("postID")));
+        }
+        else if (intent.getAction().equals(Intent.ACTION_VIEW)) {
+            Log.i("Assistant Intent", intent.getData().toString());
+            this.handleDeepLink(intent.getData());
+        }
+    }
+
+    private void handleDeepLink(Uri data) {
+        if(data.getPath().equals("/open")) {
+            String featureType = data.getQueryParameter("featureName");
+            if(featureType == null) {
+                featureType = "";
+            }
+            navigateToActivity(featureType);
+        }
+    }
+
+    private void navigateToActivity(String featureType) {
+        if(featureType.equals("profile")) {
+            applyFragmentTransaction(model.getFragment(R.id.accountMenuItem), false);
         }
     }
 

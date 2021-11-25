@@ -1,0 +1,17 @@
+<?xml version ="1.0" encoding ="utf-8"?><!--  Learn More about how to use App Actions: https://developer.android.com/guide/actions/index.html -->
+<actions>
+        <action intentName="actions.intent.OPEN_APP_FEATURE">
+            <fulfillment urlTemplate="https://sharenshop.page.link/open{?featureName}">
+                <parameter-mapping
+                    intentParameter="feature"
+                    urlParameter="featureName" />
+            </fulfillment>
+            <parameter name="feature">
+                <entity-set-reference entitySetId="FeaturesEntitySet"/>
+            </parameter>
+        </action>
+    <entity-set entitySetId="FeaturesEntitySet">
+        <entity name="Profile"
+            identifier="profile"/>
+    </entity-set>
+</actions>
