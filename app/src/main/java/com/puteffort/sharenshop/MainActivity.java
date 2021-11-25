@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
@@ -45,9 +44,7 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
         model = new ViewModelProvider(this).get(MainActivityViewModel.class);
 
         setListenersAndObservers();
-        if (getIntent() != null) {
-            onNewIntent(getIntent());
-        }
+        onNewIntent(getIntent());
     }
 
     @Override
@@ -67,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
             model.markNotificationAsRead(notification);
             changeFragment(new HomeContainerFragment(intent.getStringExtra("postID")));
         }
-        else if (intent.getAction().equals(Intent.ACTION_VIEW)) {
+        else if (intent.getAction() != null && intent.getAction().equals(Intent.ACTION_VIEW)) {
             Log.i("Assistant Intent", intent.getData().toString());
             this.handleDeepLink(intent.getData());
         }
@@ -85,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
 
     private void navigateToActivity(String featureType) {
         if(featureType.equals("profile")) {
-            applyFragmentTransaction(model.getFragment(R.id.accountMenuItem), false);
+            changeFragment(R.id.accountMenuItem);
         }
     }
 
