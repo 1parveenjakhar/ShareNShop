@@ -3,13 +3,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".fragments.HomeContainerFragment">
+    tools:context=".fragments.NotificationContainerFragment">
 
     <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/historyFragment"
+        android:id="@+id/notificationFragment"
         android:layout_height="match_parent"
         android:layout_width="match_parent"
-        android:name="com.puteffort.sharenshop.fragments.HistoryFragment"
-        tools:layout="@layout/fragment_history"/>
+        android:name="com.puteffort.sharenshop.fragments.NotificationFragment"
+        tools:layout="@layout/fragment_notification"/>
 
 </FrameLayout>

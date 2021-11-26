@@ -1,12 +1,18 @@
 package com.puteffort.sharenshop.fragments;
 
-import static com.puteffort.sharenshop.utils.DBOperations.POST_DETAIL_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
-import static com.puteffort.sharenshop.utils.DBOperations.USER_ACTIVITY;
 import static com.puteffort.sharenshop.utils.DBOperations.getUniqueID;
+import static com.puteffort.sharenshop.utils.UtilFunctions.ERROR_CODE;
+import static com.puteffort.sharenshop.utils.UtilFunctions.SERVER_URL;
+import static com.puteffort.sharenshop.utils.UtilFunctions.SUCCESS_CODE;
+import static com.puteffort.sharenshop.utils.UtilFunctions.client;
+import static com.puteffort.sharenshop.utils.UtilFunctions.getRequest;
+import static com.puteffort.sharenshop.utils.UtilFunctions.gson;
 import static com.puteffort.sharenshop.utils.UtilFunctions.showToast;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,17 +23,19 @@ import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.functions.FirebaseFunctions;
 import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentNewPostBinding;
-import com.puteffort.sharenshop.models.PostDetailInfo;
 import com.puteffort.sharenshop.models.PostInfo;
-import com.puteffort.sharenshop.models.PostStatus;
 
-import java.util.Collections;
+import java.io.IOException;
 import java.util.Objects;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 // Does not require a ViewModel
 // A user can bear that much data loss
@@ -35,6 +43,8 @@ public class NewPostFragment extends Fragment {
     private FragmentNewPostBinding binding;
     private FirebaseFirestore db;
     private FirebaseAuth auth;
+    private FirebaseFunctions firebaseFunctions;
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     public NewPostFragment() {
         // Required empty public constructor
@@ -74,12 +84,11 @@ public class NewPostFragment extends Fragment {
             showToast(requireContext(), getString(R.string.new_post_people_error));
         } else {
             String userID = Objects.requireNonNull(FirebaseAuth.getInstance()).getUid();
-            createNewPost(new PostInfo(title, userID, days, months, years, people, amount),
-                    new PostDetailInfo(description, userID), userID);
+            createNewPost(new PostInfo(title, description, userID, days, months, years, people, amount));
         }
     }
 
-    private void createNewPost(PostInfo postInfo, PostDetailInfo postDetailInfo, String userID) {
+    private void createNewPost(PostInfo postInfo) {
         binding.progressBar.setVisibility(View.VISIBLE);
 
         if (db == null)
@@ -87,30 +96,28 @@ public class NewPostFragment extends Fragment {
         if (auth == null) {
             auth = FirebaseAuth.getInstance();
         }
+        if (firebaseFunctions == null) {
+            firebaseFunctions = FirebaseFunctions.getInstance();
+        }
 
         String id = getUniqueID(POST_INFO);
         postInfo.setId(id);
         postInfo.setLastActivity(System.currentTimeMillis());
-        postDetailInfo.setId(id);
 
-        // Adding PostInfo
-        db.collection(POST_INFO).document(id).set(postInfo)
-                .addOnSuccessListener(post -> {
-                    // Adding PostDetailInfo
-                    db.collection(POST_DETAIL_INFO).document(id)
-                            .set(postDetailInfo)
-                            .addOnSuccessListener(postDetail -> {
-                                // Adding post to users db
-                                db.collection(USER_ACTIVITY).document(userID)
-                                        .update(Collections.singletonMap("postsCreated", FieldValue.arrayUnion(id)));
-                                db.collection(USER_ACTIVITY).document(userID)
-                                        .update(Collections.singletonMap("postsInvolved", FieldValue.arrayUnion(new PostStatus(id))))
-                                        .addOnSuccessListener(unused -> onPostSuccess())
-                                        .addOnFailureListener(unused -> onPostFailure());
-                            })
-                            .addOnFailureListener(exception -> onPostFailure());
-                    })
-                .addOnFailureListener(exception -> onPostFailure());
+        client.newCall(getRequest(gson.toJson(postInfo), SERVER_URL + "createNewPost")).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                handler.post(() -> onPostFailure());
+            }
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
+                if (response.code() != SUCCESS_CODE) {
+                    handler.post(() -> onPostFailure());
+                    return;
+                }
+                handler.post(() -> onPostSuccess());
+            }
+        });
     }
 
     private void onPostSuccess() {

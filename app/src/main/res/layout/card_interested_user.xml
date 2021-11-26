@@ -48,9 +48,8 @@
             app:layout_constraintBottom_toBottomOf="@id/userName"
             app:circularflow_radiusInDP="12dp"
             android:layout_marginHorizontal="10dp"
-            android:contentDescription="@string/picture_of_post_owner"
+            android:contentDescription="@string/button_to_reject_user"
             android:src="@drawable/cross_icon"
-            android:visibility="gone"
             android:clickable="true"
             android:focusable="true"/>
 
@@ -62,9 +61,8 @@
             app:layout_constraintTop_toTopOf="@id/userName"
             app:layout_constraintBottom_toBottomOf="@id/userName"
             app:circularflow_radiusInDP="12dp"
-            android:contentDescription="@string/picture_of_post_owner"
+            android:contentDescription="@string/button_to_approve_user"
             android:src="@drawable/tick_icon"
-            android:visibility="gone"
             android:clickable="true"
             android:focusable="true"/>
 
@@ -76,7 +74,6 @@
             app:layout_constraintEnd_toEndOf="@id/cross"
             app:layout_constraintTop_toTopOf="@id/cross"
             app:layout_constraintBottom_toBottomOf="@id/cross"
-            android:visibility="invisible"
             style="?android:attr/progressBarStyleSmall"/>
         <ProgressBar
             android:id="@+id/tickProgressBar"
@@ -86,7 +83,6 @@
             app:layout_constraintEnd_toEndOf="@id/tick"
             app:layout_constraintTop_toTopOf="@id/tick"
             app:layout_constraintBottom_toBottomOf="@id/tick"
-            android:visibility="invisible"
             style="?android:attr/progressBarStyleSmall"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

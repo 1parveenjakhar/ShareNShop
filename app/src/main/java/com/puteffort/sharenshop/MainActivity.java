@@ -1,9 +1,12 @@
 package com.puteffort.sharenshop;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
@@ -14,12 +17,16 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.navigation.NavigationBarView;
 import com.puteffort.sharenshop.databinding.ActivityMainBinding;
+import com.puteffort.sharenshop.fragments.HomeContainerFragment;
+import com.puteffort.sharenshop.models.Notification;
 import com.puteffort.sharenshop.utils.DBOperations;
+import com.puteffort.sharenshop.utils.UtilFunctions;
 import com.puteffort.sharenshop.viewmodels.MainActivityViewModel;
 
-public class MainActivity extends AppCompatActivity implements NavigationBarView.OnItemSelectedListener{
+public class MainActivity extends AppCompatActivity implements NavigationBarView.OnItemSelectedListener {
     private ActivityMainBinding binding;
     private MainActivityViewModel model;
     private NavigationBarView navBar;
@@ -27,6 +34,7 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> UtilFunctions.showToast(this, "Exception: " + e.getMessage()));
         if (setOrientation()) return;
 
         // Load user details (UserProfile and UserActivity)
@@ -36,12 +44,46 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
         model = new ViewModelProvider(this).get(MainActivityViewModel.class);
 
         setListenersAndObservers();
+        onNewIntent(getIntent());
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         setOrientation();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if(intent == null)
+            return;
+        if (intent.getSerializableExtra("notification") != null) {
+            // A notification has been clicked
+            Notification notification = (Notification) intent.getSerializableExtra("notification");
+            model.markNotificationAsRead(notification);
+            changeFragment(new HomeContainerFragment(notification.postID));
+        }
+        else if (intent.getAction() != null && intent.getAction().equals(Intent.ACTION_VIEW)) {
+            Log.i("Assistant Intent", intent.getData().toString());
+            this.handleDeepLink(intent.getData());
+        }
+    }
+
+    private void handleDeepLink(Uri data) {
+        if(data.getPath().equals("/open")) {
+            String featureType = data.getQueryParameter("featureName");
+            if(featureType == null) {
+                featureType = "";
+            }
+            navigateToActivity(featureType);
+        }
+    }
+
+    private void navigateToActivity(String featureType) {
+        if(featureType.equals("profile")) {
+            changeFragment(R.id.accountMenuItem);
+        }
     }
 
     @SuppressLint("SourceLockedOrientationActivity")
@@ -54,12 +96,24 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     }
 
     private void setListenersAndObservers() {
+        // Do not remove this cast, as it will crash the app in tablet mode
         navBar = ((NavigationBarView)binding.bottomNav);
         navBar.setOnItemSelectedListener(this);
 
         int lastTab = model.getLastSelectedTab();
         if (lastTab == -1) lastTab = R.id.homeMenuItem;
         navBar.setSelectedItemId(lastTab);
+
+        model.getUnreadCount().observe(this, unreadCount -> {
+            if (unreadCount == null) return;
+            if (unreadCount == 0)
+                navBar.getOrCreateBadge(R.id.notificationItem).setVisible(false);
+            else {
+                BadgeDrawable badge = navBar.getOrCreateBadge(R.id.notificationItem);
+                badge.setVisible(true);
+                badge.setNumber(unreadCount);
+            }
+        });
     }
 
     // Use if need to change the tab i.e. delete all fragments in stack
@@ -69,7 +123,7 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
 
     // Use in case it is needed to change fragment inside same tab
     public void changeFragment(Fragment fragment) {
-        applyFragmentTransaction(fragment, true);
+        applyFragmentTransaction(fragment, fragment.getClass() != HomeContainerFragment.class);
     }
 
     private void applyFragmentTransaction(Fragment fragment, boolean addToBackStack) {

@@ -1,14 +1,17 @@
 package com.puteffort.sharenshop.models;
 
+import com.puteffort.sharenshop.utils.DBOperations;
+
 public class UserStatus {
     private String userID, status;
 
     public UserStatus() {
+
     }
 
     public UserStatus(String userID) {
         this.userID = userID;
-        this.status = "Added";
+        this.status = DBOperations.ADDED;
     }
 
     public UserStatus(String userID, String status) {

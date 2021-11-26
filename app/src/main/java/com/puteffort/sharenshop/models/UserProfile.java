@@ -52,6 +52,12 @@ public class UserProfile {
         this.authLinked = authLinked;
     }
 
+    public boolean isContentSame(UserProfile other) {
+        return name.equals(other.getName())
+                && email.equals(other.getEmail())
+                && imageURL.equals(other.getImageURL());
+    }
+
     public void setValues(UserProfile userProfile) {
         this.id = userProfile.getId();
         this.name = userProfile.getName();

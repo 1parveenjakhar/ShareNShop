@@ -14,29 +14,19 @@ import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.interfaces.DualPanePostCommunicator;
 import com.puteffort.sharenshop.models.PostInfo;
 
-public class HomeContainerFragment extends Fragment implements DualPanePostCommunicator {
+public class NotificationContainerFragment extends Fragment implements DualPanePostCommunicator {
     private boolean isDualPaneSystem;
-    private String postID;
     private String currentlyOpenedPost;
 
-    public HomeContainerFragment() {
+    public NotificationContainerFragment() {
         // Required empty public constructor
-    }
-
-    public HomeContainerFragment(String postID) {
-        this.postID = postID;
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_home_container, container, false);
+        View view = inflater.inflate(R.layout.fragment_notification_container, container, false);
         isDualPaneSystem = view.findViewById(R.id.postFragment) != null;
-
-        if (postID != null) {
-            openPostFragment(postID);
-            postID = null;
-        }
 
         return view;
     }
@@ -46,7 +36,7 @@ public class HomeContainerFragment extends Fragment implements DualPanePostCommu
         PostFragment postFragment = new PostFragment(postInfo, ownerImage);
         if (isDualPaneSystem) {
             if (currentlyOpenedPost != null
-                && currentlyOpenedPost.equals(postInfo.getId()))
+                    && currentlyOpenedPost.equals(postInfo.getId()))
                 return; // no need to open fragment in that case
 
             getChildFragmentManager().beginTransaction()
@@ -63,7 +53,7 @@ public class HomeContainerFragment extends Fragment implements DualPanePostCommu
         PostFragment postFragment = new PostFragment(postID);
         if (isDualPaneSystem) {
             if (currentlyOpenedPost != null
-                && currentlyOpenedPost.equals(postID))
+                    && currentlyOpenedPost.equals(postID))
                 return;
 
             getChildFragmentManager().beginTransaction()

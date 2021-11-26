@@ -21,7 +21,6 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
-import com.google.firebase.auth.EmailAuthCredential;
 import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -30,7 +29,6 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.databinding.ActivitySignUpBinding;
-import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.utils.UtilFunctions;
 
 import java.util.Map;
@@ -49,7 +47,7 @@ public class SignUpActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        super.onCreate(savedInstanceState);Thread.setDefaultUncaughtExceptionHandler((t, e) -> UtilFunctions.showToast(this, "Exception: " + e.getMessage()));
         if (setOrientation()) return;
 
         setContentView(R.layout.activity_sign_up);
@@ -158,17 +156,14 @@ public class SignUpActivity extends AppCompatActivity {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         DocumentReference userProfileRef = db.collection(USER_PROFILE).document(currentUser.getUid());
 
-        userProfileRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                if(task.isSuccessful()){
-                    DocumentSnapshot document = task.getResult();
-                    if(document.exists()){
-                        Map<String, Object> data = document.getData(); //fetching data
-                        data.put(isAuthLinkedField,true); // changing value
-                        userProfileRef.update(data); // updating
-                        Log.i(TAG,"Linkage successful. Updating on the firestore, authLinkedField");
-                    }
+        userProfileRef.get().addOnCompleteListener(task -> {
+            if(task.isSuccessful()){
+                DocumentSnapshot document = task.getResult();
+                if(document.exists()){
+                    Map<String, Object> data = document.getData(); //fetching data
+                    data.put(isAuthLinkedField,true); // changing value
+                    userProfileRef.update(data); // updating
+                    Log.i(TAG,"Linkage successful. Updating on the firestore, authLinkedField");
                 }
             }
         });

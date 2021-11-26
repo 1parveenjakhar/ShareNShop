@@ -9,4 +9,7 @@
     <item android:id="@+id/accountMenuItem"
         android:title="@string/account"
         android:icon="@drawable/account_icon"/>
+    <item android:id="@+id/notificationItem"
+        android:icon="@drawable/ic_baseline_notifications_24"
+        android:title="@string/msgs" />
 </menu>

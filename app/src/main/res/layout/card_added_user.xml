@@ -33,10 +33,22 @@
             android:textStyle="bold"
             android:textSize="15sp"
             android:layout_marginStart="20dp"
+            android:layout_marginEnd="5dp"
             app:layout_constraintStart_toEndOf="@id/userImage"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/tick"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>
+
+        <ImageView
+            android:id="@+id/tick"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/userName"
+            app:layout_constraintBottom_toBottomOf="@id/userName"
+            app:circularflow_radiusInDP="12dp"
+            android:contentDescription="@string/user_accepted_the_final_confirmation"
+            android:src="@drawable/success_icon"/>
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

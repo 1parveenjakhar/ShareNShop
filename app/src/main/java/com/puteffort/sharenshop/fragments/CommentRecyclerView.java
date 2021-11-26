@@ -1,5 +1,7 @@
 package com.puteffort.sharenshop.fragments;
 
+import static android.view.View.GONE;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Bundle;
@@ -15,6 +17,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -25,6 +28,7 @@ import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel.RecyclerViewComment;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class CommentRecyclerView extends Fragment {
@@ -32,8 +36,6 @@ public class CommentRecyclerView extends Fragment {
     private PostFragmentViewModel model;
     private CommentRecyclerViewAdapter adapter;
     private ProgressBar progressBar;
-
-    public static final int EMPTY_LIST = -1;
 
     public CommentRecyclerView() {
         // Required empty public constructor
@@ -55,25 +57,18 @@ public class CommentRecyclerView extends Fragment {
 
     @SuppressLint("NotifyDataSetChanged")
     private void addObservers() {
-        adapter = new CommentRecyclerViewAdapter(requireContext(), model.getComments());
+        adapter = new CommentRecyclerViewAdapter(requireContext());
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
 
-
-        model.getCommentIndex().observe(getViewLifecycleOwner(), index -> {
-            // For loading data
-            if (index == null) {
+        model.getComments().observe(getViewLifecycleOwner(), comments -> {
+            if (comments == null) {
                 progressBar.setVisibility(View.VISIBLE);
-                adapter.notifyDataSetChanged();
                 return;
             }
-
-            if (index != EMPTY_LIST) {
-                // Insert only if index != -1
-                adapter.notifyItemInserted(index);
-            }
-            progressBar.setVisibility(View.GONE);
+            adapter.setComments(comments);
+            progressBar.setVisibility(GONE);
         });
     }
 
@@ -108,9 +103,16 @@ class CommentRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     private final List<RecyclerViewComment> comments;
     private final Context context;
 
-    public CommentRecyclerViewAdapter(Context context, List<RecyclerViewComment> comments) {
+    public CommentRecyclerViewAdapter(Context context) {
         this.context = context;
-        this.comments = comments;
+        this.comments = new ArrayList<>();
+    }
+
+    public void setComments(List<RecyclerViewComment> newComments) {
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new CommentDiffCallBack(comments, newComments));
+        comments.clear();
+        comments.addAll(newComments);
+        diffResult.dispatchUpdatesTo(this);
     }
 
     @NonNull
@@ -126,18 +128,54 @@ class CommentRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         CommentHolder commentHolder = (CommentHolder) holder;
 
 
-        Glide.with(context).load(comment.getImageURL())
+        Glide.with(context).load(comment.getUserProfile().getImageURL())
                 .error(R.drawable.default_person_icon)
                 .circleCrop().into(commentHolder.userImage);
 
-        commentHolder.userName.setText(comment.getName());
-        commentHolder.comment.setText(comment.getMessage());
+        commentHolder.userName.setText(comment.getUserProfile().getName());
+        commentHolder.comment.setText(comment.getComment().getMessage());
     }
 
     @Override
     public int getItemCount() {
         return comments.size();
     }
+
+
+    private static class CommentDiffCallBack extends DiffUtil.Callback {
+        private final List<RecyclerViewComment> newList, oldList;
+
+        public CommentDiffCallBack(List<RecyclerViewComment> oldList,
+                                List<RecyclerViewComment> newList) {
+            this.oldList = oldList;
+            this.newList = newList;
+        }
+
+        @Override
+        public int getOldListSize() {
+            return oldList.size();
+        }
+
+        @Override
+        public int getNewListSize() {
+            return newList.size();
+        }
+
+        @Override
+        public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+            return oldList.get(oldItemPosition).getComment().getId().equals(
+                    newList.get(newItemPosition).getComment().getId());
+        }
+
+        @Override
+        public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+            RecyclerViewComment oldItem = oldList.get(oldItemPosition);
+            RecyclerViewComment newItem = newList.get(newItemPosition);
+            return oldItem.getComment().isContentSame(newItem.getComment())
+                    && oldItem.getUserProfile().isContentSame(newItem.getUserProfile());
+        }
+    }
+
 
     static class CommentHolder extends RecyclerView.ViewHolder {
         TextView userName, comment;

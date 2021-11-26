@@ -1,5 +1,6 @@
 package com.puteffort.sharenshop.fragments;
 
+import static android.view.View.GONE;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
 import static com.puteffort.sharenshop.utils.UtilFunctions.getFormattedTime;
 
@@ -19,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -31,10 +33,8 @@ import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.utils.DBOperations;
 import com.puteffort.sharenshop.viewmodels.HomeFragmentViewModel;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 
 public class HomeFragment extends Fragment {
     private FragmentHomeBinding binding;
@@ -66,11 +66,8 @@ public class HomeFragment extends Fragment {
 
         binding.postsRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.postsRecyclerView.setHasFixedSize(true);
-        recyclerViewAdapter = new HomeRecyclerViewAdapter(requireContext(),
-                model.getPosts().getValue(),
-                model.getWishListedPosts(),
-                model.getPostsStatus(),
-                this);
+        recyclerViewAdapter = new HomeRecyclerViewAdapter(requireContext(), this);
+
         binding.postsRecyclerView.setAdapter(recyclerViewAdapter);
         binding.swipeRefreshPostList.setOnRefreshListener(DBOperations::getUserDetails);
         binding.swipeRefreshPostList.setRefreshing(true);
@@ -90,35 +87,22 @@ public class HomeFragment extends Fragment {
 
     @SuppressLint("NotifyDataSetChanged")
     private void addObservers() {
-        model.getDataAdded().observe(requireActivity(), index -> recyclerViewAdapter.notifyItemInserted(index));
-        model.getDataChanged().observe(requireActivity(), index -> recyclerViewAdapter.notifyItemChanged(index));
-        model.getDataRemoved().observe(requireActivity(), index -> recyclerViewAdapter.notifyItemRemoved(index));
+        model.isDataUpdating().observe(getViewLifecycleOwner(),
+                dataUpdating -> binding.progressBar.setVisibility(dataUpdating ? View.VISIBLE : GONE));
 
-        model.getPosts().observe(requireActivity(), unused -> recyclerViewAdapter.notifyDataSetChanged());
-        model.areUserDetailsChanged().observe(requireActivity(), detailsChanged -> {
-            if (detailsChanged) {
-                recyclerViewAdapter.notifyDataSetChanged();
-            }
-        });
-
-        model.isDataUpdating().observe(requireActivity(),
-                dataUpdating -> binding.progressBar.setVisibility(dataUpdating ? View.VISIBLE : View.GONE));
-
-        DBOperations.getUserActivity().observe(requireActivity(), userActivity -> {
-            if (userActivity == null) return;
+        model.getPosts().observe(getViewLifecycleOwner(), posts -> {
+            if (posts == null) return;
             binding.swipeRefreshPostList.setRefreshing(false);
-            model.changeUserDetails(userActivity);
+            recyclerViewAdapter.setPosts(posts);
         });
     }
 
     private void openPostFragment(int position, Drawable postOwnerImage) {
-        PostFragment postFragment =
-                new PostFragment(Objects.requireNonNull(model.getPosts().getValue()).get(position), postOwnerImage);
-        ((DualPanePostCommunicator)requireParentFragment()).openPostFragment(postFragment);
+        ((DualPanePostCommunicator)requireParentFragment()).openPostFragment(recyclerViewAdapter.getPost(position), postOwnerImage);
     }
 
-    public void changeFavourite(int position, boolean isFavourite) {
-        model.changePostFavourite(position, isFavourite);
+    public void changeFavourite(int position, ImageView favorite, boolean isFavourite, ProgressBar progressBar) {
+        model.changePostFavourite(position, favorite, isFavourite, progressBar);
     }
 
     public void changeStatus(int position, Button status, ProgressBar progressBar) {
@@ -128,19 +112,27 @@ public class HomeFragment extends Fragment {
     private static class HomeRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         private final Context context;
         private final HomeFragment homeFragment;
-        private final List<PostInfo> postsInfo;
-        private final Set<String> wishListedPosts;
-        private final Map<String, String> postsStatus;
+        private final List<HomeFragmentViewModel.RecyclerViewPost> posts;
         private final FirebaseFirestore db;
 
-        public HomeRecyclerViewAdapter(Context context, List<PostInfo> postsInfo, Set<String> wishListedPosts, Map<String, String> postsStatus, HomeFragment homeFragment) {
+        public HomeRecyclerViewAdapter(Context context, HomeFragment homeFragment) {
             this.context = context;
-            this.postsInfo = postsInfo;
-            this.wishListedPosts = wishListedPosts;
-            this.postsStatus = postsStatus;
+            this.posts = new ArrayList<>();
             this.homeFragment = homeFragment;
             db = FirebaseFirestore.getInstance();
         }
+
+        public void setPosts(List<HomeFragmentViewModel.RecyclerViewPost> newPosts) {
+            DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new PostDiffCallback(posts, newPosts));
+            posts.clear();
+            posts.addAll(newPosts);
+            diffResult.dispatchUpdatesTo(this);
+        }
+
+        public PostInfo getPost(int position) {
+            return posts.get(position).getPostInfo();
+        }
+
 
         @NonNull
         @Override
@@ -152,7 +144,8 @@ public class HomeFragment extends Fragment {
         @SuppressLint("DefaultLocale")
         @Override
         public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-            PostInfo post = postsInfo.get(position);
+            HomeFragmentViewModel.RecyclerViewPost recyclerViewPost = posts.get(position);
+            PostInfo post = recyclerViewPost.getPostInfo();
             PostHolder postHolder = (PostHolder) holder;
 
             postHolder.title.setText(post.getTitle());
@@ -163,32 +156,68 @@ public class HomeFragment extends Fragment {
             db.collection(USER_PROFILE).document(post.getOwnerID()).get()
                     .addOnSuccessListener(docSnap -> {
                         if (docSnap != null) {
-                            Glide.with(context).load(docSnap.getString("imageURL"))
-                                    .error(R.drawable.default_person_icon)
-                                    .circleCrop().into(postHolder.image);
+                            try {
+                                Glide.with(context).load(docSnap.getString("imageURL"))
+                                        .error(R.drawable.default_person_icon)
+                                        .circleCrop().into(postHolder.image);
+                            } catch (Exception ignored) {}
                         }
                     });
 
-            postHolder.isFavourite = wishListedPosts.contains(post.getId());
-            int icon = postHolder.isFavourite ? R.drawable.filled_star_icon : R.drawable.unfilled_star_icon;
+            int icon = recyclerViewPost.isFavourite() ? R.drawable.filled_star_icon : R.drawable.unfilled_star_icon;
             postHolder.favorite.setImageResource(icon);
+            postHolder.isFavourite = recyclerViewPost.isFavourite();
 
             // Change button accordingly, as per status of the user towards the post
-            postHolder.postStatus.setText(postsStatus.containsKey(post.getId())
-                    ? postsStatus.get(post.getId()) : "Interested ?");
+            postHolder.postStatus.setText(recyclerViewPost.getStatus());
         }
 
         @Override
         public int getItemCount() {
-            return postsInfo.size();
+            return posts.size();
         }
 
-        class PostHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+        private static class PostDiffCallback extends DiffUtil.Callback {
+            private final List<HomeFragmentViewModel.RecyclerViewPost> newList, oldList;
+
+            public PostDiffCallback(List<HomeFragmentViewModel.RecyclerViewPost> oldList,
+                                    List<HomeFragmentViewModel.RecyclerViewPost> newList) {
+                this.oldList = oldList;
+                this.newList = newList;
+            }
+
+            @Override
+            public int getOldListSize() {
+                return oldList.size();
+            }
+
+            @Override
+            public int getNewListSize() {
+                return newList.size();
+            }
+
+            @Override
+            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                return oldList.get(oldItemPosition).getPostInfo().getId().equals(
+                        newList.get(newItemPosition).getPostInfo().getId());
+            }
+
+            @Override
+            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                HomeFragmentViewModel.RecyclerViewPost oldItem = oldList.get(oldItemPosition);
+                HomeFragmentViewModel.RecyclerViewPost newItem = newList.get(newItemPosition);
+                return oldItem.getStatus().equals(newItem.getStatus())
+                        && oldItem.isFavourite() == newItem.isFavourite()
+                        && oldItem.getPostInfo().isContentSame(newItem.getPostInfo());
+            }
+        }
+
+        private class PostHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
             TextView title, amount, time, people;
             ImageView image, favorite;
             Button postStatus;
             boolean isFavourite = false;
-            ProgressBar progressBar;
+            ProgressBar statusProgressBar, favouriteProgressBar;
 
             public PostHolder(@NonNull View itemView) {
                 super(itemView);
@@ -201,15 +230,18 @@ public class HomeFragment extends Fragment {
                 image = itemView.findViewById(R.id.imageView);
                 favorite = itemView.findViewById(R.id.favouriteIcon);
                 postStatus = itemView.findViewById(R.id.postStatusButton);
-                progressBar = itemView.findViewById(R.id.statusProgressBar);
+                favouriteProgressBar = itemView.findViewById(R.id.favouriteProgressBar);
+                statusProgressBar = itemView.findViewById(R.id.statusProgressBar);
+                statusProgressBar.setVisibility(GONE);
+                favouriteProgressBar.setVisibility(GONE);
 
                 favorite.setOnClickListener(view -> {
                     isFavourite = !isFavourite;
-                    homeFragment.changeFavourite(getAdapterPosition(), isFavourite);
+                    homeFragment.changeFavourite(getAdapterPosition(), favorite, isFavourite, favouriteProgressBar);
                 });
                 postStatus.setOnClickListener(view -> {
                     if (DBOperations.statusMap.containsKey(postStatus.getText().toString())) {
-                        homeFragment.changeStatus(getAdapterPosition(), postStatus, progressBar);
+                        homeFragment.changeStatus(getAdapterPosition(), postStatus, statusProgressBar);
                     }
                 });
             }

@@ -100,27 +100,21 @@
     <string name="last_activity_filter_greater_than_1_year">greater than 1 year</string>
     <string name="to">To</string>
     <string name="from">From</string>
+    <string name="ask_for_final_confirmation">Ask for Final Confirmation</string>
+    <string name="user_accepted_the_final_confirmation">User accepted the final confirmation</string>
+    <string name="button_to_approve_user">Button to approve user</string>
+    <string name="button_to_reject_user">Button to reject user</string>
+    <string name="in_progress">In Progress ..</string>
     <string-array name="sort_tags">
         <item>"Amount"</item>
         <item>"People Required"</item>
         <item>"Last Activity"</item>
     </string-array>
-    <!-- Preference Titles -->
-    <string name="messages_header">Messages</string>
-    <string name="sync_header">Sync</string>
-
-    <!-- Messages Preferences -->
-    <string name="signature_title">Your signature</string>
-    <string name="reply_title">Default reply action</string>
-
-    <!-- Sync Preferences -->
-    <string name="sync_title">Sync email periodically</string>
-    <string name="attachment_title">Download incoming attachments</string>
-    <string name="attachment_summary_on">Automatically download attachments for incoming emails
-    </string>
-    <string name="attachment_summary_off">Only download attachments when manually requested</string>
-<!-- TODO: Remove or change this placeholder text -->
+    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="forgot_password">Forgot Password?</string>
-    <string name="reset_link_mailed">Reset link mailed!</string>
+    <string name="notifications">Notifications</string>
+    <string name="notification_title">Notification Title</string>
+    <string name="notification_message">Notification Message</string>
+    <string name="unread_notification">Unread notification</string>
+    <string name="msgs">Msgs</string>
 </resources>
