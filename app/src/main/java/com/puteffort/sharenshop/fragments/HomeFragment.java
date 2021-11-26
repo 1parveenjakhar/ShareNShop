@@ -98,9 +98,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void openPostFragment(int position, Drawable postOwnerImage) {
-        PostFragment postFragment =
-                new PostFragment(recyclerViewAdapter.getPost(position), postOwnerImage);
-        ((DualPanePostCommunicator)requireParentFragment()).openPostFragment(postFragment);
+        ((DualPanePostCommunicator)requireParentFragment()).openPostFragment(recyclerViewAdapter.getPost(position), postOwnerImage);
     }
 
     public void changeFavourite(int position, ImageView favorite, boolean isFavourite, ProgressBar progressBar) {

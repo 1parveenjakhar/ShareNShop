@@ -74,9 +74,7 @@ public class NotificationFragment extends Fragment {
         if (!notification.markedAsRead) {
             model.markNotificationAsRead(position);
         }
-
-        PostFragment postFragment = new PostFragment(notification.postID);
-        ((DualPanePostCommunicator)requireParentFragment()).openPostFragment(postFragment);
+        ((DualPanePostCommunicator)requireParentFragment()).openPostFragment(notification.postID);
     }
 
     private static class NotificationRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {

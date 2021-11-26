@@ -1,7 +1,10 @@
 package com.puteffort.sharenshop.interfaces;
 
-import com.puteffort.sharenshop.fragments.PostFragment;
+import android.graphics.drawable.Drawable;
+
+import com.puteffort.sharenshop.models.PostInfo;
 
 public interface DualPanePostCommunicator {
-    void openPostFragment(PostFragment postFragment);
+    void openPostFragment(PostInfo postInfo, Drawable ownerImage);
+    void openPostFragment(String postID);
 }

@@ -34,7 +34,6 @@ import com.puteffort.sharenshop.viewmodels.HistoryFragmentViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class HistoryFragment extends Fragment {
     private FragmentHistoryBinding binding;
@@ -107,9 +106,7 @@ public class HistoryFragment extends Fragment {
     }
 
     private void openPostFragment(int position, Drawable postOwnerImage) {
-        PostFragment postFragment =
-                new PostFragment(Objects.requireNonNull(model.getPosts().getValue()).get(position), postOwnerImage);
-        ((DualPanePostCommunicator)requireParentFragment()).openPostFragment(postFragment);
+        ((DualPanePostCommunicator)requireParentFragment()).openPostFragment(recyclerViewAdapter.getPost(position), postOwnerImage);
     }
 
     private void removeFavourite(int position, ProgressBar favProgress, ImageView favIcon) {
@@ -134,6 +131,10 @@ public class HistoryFragment extends Fragment {
             this.posts.clear();
             this.posts.addAll(posts);
             diffResult.dispatchUpdatesTo(this);
+        }
+
+        PostInfo getPost(int position) {
+            return posts.get(position);
         }
 
         @NonNull
