@@ -279,6 +279,7 @@ public class LoginActivity extends AppCompatActivity {
                 final Boolean LINKING = true;
                 intent.putExtra(IS_LINKING, LINKING);
                 Log.i(TAG, "Logged using Google. Asking for Email & Password to sync....");
+
                 startActivity(intent);
                 finish();
             }
