@@ -11,10 +11,13 @@ import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.databinding.DataBindingUtil;
@@ -25,6 +28,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.textfield.TextInputLayout;
@@ -37,6 +41,7 @@ import com.puteffort.sharenshop.databinding.ActivityLoginBinding;
 import com.puteffort.sharenshop.models.UserActivity;
 import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.utils.DBOperations;
+import com.puteffort.sharenshop.utils.UtilFunctions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,10 +76,10 @@ public class LoginActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
         if (mAuth.getCurrentUser() != null) {
-            Log.i(TAG,"User already logged-in. Starting Dashboard...");
+            Log.i(TAG, "User already logged-in. Starting Dashboard...");
             handleSuccessfulAuthentication();
         } else {
-            Log.i(TAG,"User NOT logged-in. Starting Authentication...");
+            Log.i(TAG, "User NOT logged-in. Starting Authentication...");
             GoogleSignInOptions gso = new GoogleSignInOptions
                     .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                     .requestIdToken(getString(R.string.default_web_client_id))
@@ -113,7 +118,7 @@ public class LoginActivity extends AppCompatActivity {
     private void addListeners() {
         //Sign-in button
         binding.signInButton.setOnClickListener(view -> {
-            Log.i(TAG,"Sign-in button clicked!");
+            Log.i(TAG, "Sign-in button clicked!");
             //Read email & password
             String emailId = Objects.requireNonNull(editEmailAddress.getEditText()).getText().toString();
             String password = Objects.requireNonNull(binding.password.getEditText()).getText().toString();
@@ -137,6 +142,32 @@ public class LoginActivity extends AppCompatActivity {
 
         //Google-button
         binding.googleSignUpButton.setOnClickListener(view -> googleAuthLauncher.launch(mSignInClient.getSignInIntent()));
+
+        binding.forgotPasswordButton.setOnClickListener(v -> {
+            EditText editTextEmail = Objects.requireNonNull(binding.emailAddress).getEditText();
+            String emailAddress = editTextEmail.getText().toString();
+
+            if (!UtilFunctions.isEmailValid(emailAddress)) {
+                editTextEmail.setError("Invalid email!");
+            } else {
+                editTextEmail.setError(null);
+
+                FirebaseAuth auth = FirebaseAuth.getInstance();
+                auth.sendPasswordResetEmail(emailAddress)
+                        .addOnCompleteListener(task -> {
+                            if (task.isSuccessful()) {
+                                binding.forgotPasswordButton.setText(R.string.reset_link_mailed);
+                                binding.forgotPasswordButton.setClickable(false);
+                                binding.forgotPasswordButton.setAlpha(0.5F);
+                                binding.emailAddress.setError(null);
+                                Log.d(TAG, "Password reset email sent!");
+                            }else{
+                                String msg = task.getException().getMessage();
+                                binding.emailAddress.setError(msg);
+                            }
+                        });
+            }
+        });
     }
 
     private final ActivityResultLauncher<Intent> googleAuthLauncher = registerForActivityResult(
@@ -186,39 +217,39 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void handleSuccessfulAuthentication(int signInMethod) {
-        Log.i(TAG,"Handling successful authentication...");
+        Log.i(TAG, "Handling successful authentication...");
 
         // Checking if current user exists in DB
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         DocumentReference docRef = db.collection(USER_PROFILE).document(currentUser.getUid());
         docRef.get().addOnSuccessListener(documentSnapshot -> {
-                if (documentSnapshot.exists()) {
-                    Log.i(TAG,"User already added. Not adding new one!");
-                    handleSuccessfulAuthentication();
-                } else {
-                    Tasks.whenAllSuccess(addNewUserToFireStore(db, docRef))
-                            .addOnSuccessListener(results -> {
-                                // Sync Login methods only if new user added successfully
-                                // Else can give error
-                                syncLoginMethods(signInMethod);
-                            });
-                }
-            });
+            if (documentSnapshot.exists()) {
+                Log.i(TAG, "User already added. Not adding new one!");
+                handleSuccessfulAuthentication();
+            } else {
+                Tasks.whenAllSuccess(addNewUserToFireStore(db, docRef))
+                        .addOnSuccessListener(results -> {
+                            // Sync Login methods only if new user added successfully
+                            // Else can give error
+                            syncLoginMethods(signInMethod);
+                        });
+            }
+        });
     }
 
     private List<Task<Void>> addNewUserToFireStore(FirebaseFirestore db, DocumentReference docRef) {
         String email = currentUser.getEmail();
         String name = currentUser.getDisplayName();
         String Uid = currentUser.getUid();
-        UserProfile userProfile = new UserProfile(name,email,"",Uid);
+        UserProfile userProfile = new UserProfile(name, email, "", Uid);
 
         List<Task<Void>> tasks = new ArrayList<>();
         tasks.add(docRef.set(userProfile));
         tasks.add(
-            // Adding UserActivity for new user
-            db.collection(DBOperations.USER_ACTIVITY).document(Uid).set(new UserActivity(Uid))
-                    .addOnSuccessListener(unused -> Log.i(TAG,"New User info added in profile...")));
+                // Adding UserActivity for new user
+                db.collection(DBOperations.USER_ACTIVITY).document(Uid).set(new UserActivity(Uid))
+                        .addOnSuccessListener(unused -> Log.i(TAG, "New User info added in profile...")));
         return tasks;
     }
 
@@ -232,22 +263,22 @@ public class LoginActivity extends AppCompatActivity {
             if (isAuthLinked == null) return;
 
             if (isAuthLinked) {
-                Log.i(TAG,"Auth already linked!");
-                Toast.makeText(this,"isAuthLinked = true!", Toast.LENGTH_LONG).show();
+                Log.i(TAG, "Auth already linked!");
+                Toast.makeText(this, "isAuthLinked = true!", Toast.LENGTH_LONG).show();
                 handleSuccessfulAuthentication();
                 return;
             }
 
             //Both auth providers are not linked
-            Log.i(TAG,"Auth NOT linked!");
+            Log.i(TAG, "Auth NOT linked!");
             if (signInMethod == SIGN_IN_USING_EMAIL) {
                 //ask for google sign-in
             } else if (signInMethod == SIGN_IN_USING_GOOGLE) {
                 //ask for email sign-in
                 Intent intent = new Intent(LoginActivity.this, SignUpActivity.class);
                 final Boolean LINKING = true;
-                intent.putExtra(IS_LINKING,LINKING);
-                Log.i(TAG,"Logged using Google. Asking for Email & Password to sync....");
+                intent.putExtra(IS_LINKING, LINKING);
+                Log.i(TAG, "Logged using Google. Asking for Email & Password to sync....");
                 startActivity(intent);
                 finish();
             }
@@ -262,9 +293,9 @@ public class LoginActivity extends AppCompatActivity {
         DocumentReference userProfileRef = db.collection(USER_PROFILE).document(currentUser.getUid());
 
         userProfileRef.get().addOnCompleteListener(task -> {
-            if(task.isSuccessful()){
+            if (task.isSuccessful()) {
                 DocumentSnapshot document = task.getResult();
-                if(document.exists()){
+                if (document.exists()) {
                     UserProfile userProfile = document.toObject(UserProfile.class);
 
                     // DB operations are async functions, hence using live data to notify observer
@@ -282,4 +313,5 @@ public class LoginActivity extends AppCompatActivity {
     private void handleFailedAuthentication(Exception exception) {
         showToast(this, exception.getMessage());
     }
+
 }
