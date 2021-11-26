@@ -81,5 +81,8 @@ public class AccountFragment extends Fragment {
 
         binding.postsHistoryButton.setOnClickListener(view ->
                 ((MainActivity)requireActivity()).changeFragment(new HistoryContainerFragment()));
+
+        binding.profileButton.setOnClickListener(view ->
+                ((MainActivity)requireActivity()).changeFragment(new MyProfileFragment()));
     }
 }

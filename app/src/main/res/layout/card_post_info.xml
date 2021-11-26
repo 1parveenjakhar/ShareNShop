@@ -25,7 +25,9 @@
             app:layout_constraintTop_toTopOf="parent"
             app:circularflow_radiusInDP="12dp"
             android:contentDescription="@string/picture_of_post_owner"
-            android:src="@drawable/default_person_icon"/>
+            android:src="@drawable/default_person_icon"
+            android:focusable="true"
+            android:clickable="true"/>
 
         <TextView
             android:id="@+id/postTitle"

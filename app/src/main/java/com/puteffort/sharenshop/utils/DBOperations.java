@@ -45,12 +45,14 @@ public class DBOperations {
     private static final MutableLiveData<UserActivity> userActivityLiveData = new MutableLiveData<>();
 
     public static void getUserDetails() {
-        db.collection(USER_PROFILE).document(Objects.requireNonNull(auth.getUid())).get()
-                .addOnSuccessListener(docSnap -> {
-                    UserProfile userProfile = docSnap.toObject(UserProfile.class);
-                    userProfileLiveData.setValue(userProfile);
-                    if (userProfile != null)
-                        setUpToken(userProfile.getId());
+        db.collection(USER_PROFILE).document(Objects.requireNonNull(auth.getUid()))
+                .addSnapshotListener((docSnap, error) -> {
+                    if (error == null && docSnap != null) {
+                        UserProfile userProfile = docSnap.toObject(UserProfile.class);
+                        userProfileLiveData.setValue(userProfile);
+                        if (userProfile != null)
+                            setUpToken(userProfile.getId());
+                    }
                 });
 
         db.collection(USER_ACTIVITY).document(Objects.requireNonNull(auth.getUid())).get()

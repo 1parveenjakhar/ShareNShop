@@ -109,6 +109,10 @@ public class HistoryFragment extends Fragment {
         ((DualPanePostCommunicator)requireParentFragment()).openPostFragment(recyclerViewAdapter.getPost(position), postOwnerImage);
     }
 
+    private void openUserFragment(int position) {
+        ((DualPanePostCommunicator)requireParentFragment()).openUserFragment(recyclerViewAdapter.getPost(position).getOwnerID());
+    }
+
     private void removeFavourite(int position, ProgressBar favProgress, ImageView favIcon) {
         model.removeFavourite(position, favProgress, favIcon);
     }
@@ -223,8 +227,10 @@ public class HistoryFragment extends Fragment {
                 favorite = itemView.findViewById(R.id.favouriteIcon);
                 favProgress = itemView.findViewById(R.id.favProgress);
 
-                favorite.setOnClickListener(view ->
-                        historyFragment.removeFavourite(getAdapterPosition(), favProgress, favorite));
+                image.setOnClickListener(view ->
+                        historyFragment.openUserFragment(getAdapterPosition()));
+
+                favorite.setOnClickListener(view -> historyFragment.removeFavourite(getAdapterPosition(), favProgress, favorite));
             }
 
             @Override

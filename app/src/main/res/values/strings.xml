@@ -117,4 +117,15 @@
     <string name="notification_message">Notification Message</string>
     <string name="unread_notification">Unread notification</string>
     <string name="msgs">Msgs</string>
+    <string name="example_gmail_com">example@gmail.com</string>
+    <string name="your_name">Your Name</string>
+    <string name="name_">Name:</string>
+    <string name="email_">Email:</string>
+    <string name="your_email_email_com">youremail@email.com</string>
+    <string name="new_password">New Password:</string>
+    <string name="current_password">Current Password:</string>
+    <string name="update_profile">Update Profile</string>
+    <string name="reset">Reset</string>
+    <string name="forgot_password">Forget Password?</string>
+    <string name="reset_link_mailed">Reset Link mailed !</string>
 </resources>

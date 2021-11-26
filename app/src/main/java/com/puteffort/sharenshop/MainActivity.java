@@ -151,4 +151,17 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
         }
         return true;
     }
+
+    @Override
+    public void onBackPressed() {
+        Fragment fragment = model.getFragment(model.getLastSelectedTab());
+        try {
+            if (fragment.getChildFragmentManager().getBackStackEntryCount() > 0)
+                fragment.getChildFragmentManager().popBackStackImmediate();
+            else
+                super.onBackPressed();
+        } catch (Exception e) {
+            super.onBackPressed();
+        }
+    }
 }
