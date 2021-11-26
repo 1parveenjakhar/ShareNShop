@@ -19,7 +19,9 @@ import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.navigation.NavigationBarView;
 import com.puteffort.sharenshop.databinding.ActivityMainBinding;
+import com.puteffort.sharenshop.fragments.HistoryContainerFragment;
 import com.puteffort.sharenshop.fragments.HomeContainerFragment;
+import com.puteffort.sharenshop.fragments.MyProfileFragment;
 import com.puteffort.sharenshop.models.Notification;
 import com.puteffort.sharenshop.utils.DBOperations;
 import com.puteffort.sharenshop.utils.UtilFunctions;
@@ -74,6 +76,7 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
             if(featureType == null) {
                 featureType = "";
             }
+
             navigateToActivity(featureType);
         }
     }
@@ -87,11 +90,16 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
                 changeFragment(R.id.newPostMenuItem);
                 break;
             case "notifications":
-                changeFragment(R.id.notificationFragment);
+                changeFragment(R.id.notificationItem);
                 break;
             case "my profile":
-                // TODO: Need to change to my profile fragment
+                changeFragment(new MyProfileFragment());
                 break;
+            case "history":
+                changeFragment(new HistoryContainerFragment());
+                break;
+            default:
+                changeFragment(R.id.homeMenuItem);
         }
     }
 
