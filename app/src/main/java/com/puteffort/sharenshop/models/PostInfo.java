@@ -50,9 +50,7 @@ public class PostInfo {
     @NonNull
     @Override
     public String toString() {
-        return "PostInfo{" +
-                "title='" + title + '\'' +
-                '}';
+        return title + "->" + id + "->" + ownerID;
     }
 
     public String getDescription() {

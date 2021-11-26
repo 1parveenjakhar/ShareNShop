@@ -4,7 +4,6 @@ import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_ACTIVITY;
 
 import android.annotation.SuppressLint;
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
@@ -29,6 +28,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class HistoryFragmentViewModel extends ViewModel {
     private final FirebaseFirestore db;
@@ -46,6 +46,7 @@ public class HistoryFragmentViewModel extends ViewModel {
     private final MutableLiveData<List<PostInfo>> postsLiveData = new MutableLiveData<>();
 
     private final Handler handler;
+    private final ReentrantLock Lock;
 
     public HistoryFragmentViewModel() {
         db = FirebaseFirestore.getInstance();
@@ -57,15 +58,16 @@ public class HistoryFragmentViewModel extends ViewModel {
         chipNumbers.add(1); // Default selected chip
 
         handler = new Handler(Looper.getMainLooper());
+        Lock = new ReentrantLock();
 
         loadData();
     }
 
     public void loadData() {
-        DBOperations.getUserDetails();
         DBOperations.getUserActivity().observeForever(userActivity -> {
             postsLiveData.setValue(null);
             if (userActivity != null) {
+                Lock.lock();
                 createdIds.clear();
                 createdIds.addAll(userActivity.getPostsCreated());
 
@@ -98,24 +100,26 @@ public class HistoryFragmentViewModel extends ViewModel {
                        idToPostMapping.put(postInfo.getId(), postInfo);
                    }
                    setUpPosts();
-                });
+                })
+                .addOnFailureListener(error -> Lock.unlock());
     }
 
     private void setUpPosts() {
         posts.clear();
 
-        AsyncTask.execute(() -> {
-            Set<String> tmpIDs = new HashSet<>();
-            for (int chipNum: chipNumbers)
-                tmpIDs.addAll(idArray.get(chipNum));
-            for (String id: tmpIDs)
-                posts.add(idToPostMapping.get(id));
-            handler.post(() -> postsLiveData.setValue(posts));
-        });
+        Set<String> tmpIDs = new HashSet<>();
+        for (int chipNum: chipNumbers)
+            tmpIDs.addAll(idArray.get(chipNum));
+        for (String id: tmpIDs)
+            posts.add(idToPostMapping.get(id));
+
+        Lock.unlock();
+        handler.post(() -> postsLiveData.setValue(posts));
     }
 
     @SuppressLint("NonConstantResourceId")
-    public synchronized void changeData(int chipNum, boolean isChecked) {
+    public void changeData(int chipNum, boolean isChecked) {
+        Lock.lock();
         postsLiveData.setValue(null);
         if (isChecked) {
             chipNumbers.add(chipNum);
