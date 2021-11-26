@@ -6,7 +6,6 @@ import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
@@ -65,7 +64,6 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
             changeFragment(new HomeContainerFragment(notification.postID));
         }
         else if (intent.getAction() != null && intent.getAction().equals(Intent.ACTION_VIEW)) {
-            Log.i("Assistant Intent", intent.getData().toString());
             this.handleDeepLink(intent.getData());
         }
     }
@@ -81,8 +79,19 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     }
 
     private void navigateToActivity(String featureType) {
-        if(featureType.equals("profile")) {
-            changeFragment(R.id.accountMenuItem);
+        switch (featureType) {
+            case "account":
+                changeFragment(R.id.accountMenuItem);
+                break;
+            case "new post":
+                changeFragment(R.id.newPostMenuItem);
+                break;
+            case "notifications":
+                changeFragment(R.id.notificationFragment);
+                break;
+            case "my profile":
+                // TODO: Need to change to my profile fragment
+                break;
         }
     }
 

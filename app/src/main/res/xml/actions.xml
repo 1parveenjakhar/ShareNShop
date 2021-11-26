@@ -11,7 +11,13 @@
             </parameter>
         </action>
     <entity-set entitySetId="FeaturesEntitySet">
-        <entity name="Profile"
-            identifier="profile"/>
+        <entity name="Account"
+            identifier="account"/>
+        <entity name="New post"
+            identifier="new post"/>
+        <entity name="Notifications"
+            identifier="notifications"/>
+        <entity name="My Profile"
+            identifier="my profile"/>
     </entity-set>
 </actions>

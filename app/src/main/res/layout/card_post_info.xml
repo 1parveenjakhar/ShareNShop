@@ -60,7 +60,8 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@id/postTime"
             app:layout_constraintBottom_toBottomOf="@id/postTime"
-            android:textSize="15sp"
+            android:textSize="17sp"
+            android:paddingVertical="10dp"
             android:gravity="center"/>
 
         <TextView
@@ -72,7 +73,8 @@
             app:layout_constraintEnd_toStartOf="@id/postPeople"
             app:layout_constraintStart_toEndOf="@id/postAmount"
             app:layout_constraintTop_toBottomOf="@id/postTitle"
-            android:textSize="15sp"
+            android:textSize="17sp"
+            android:paddingVertical="10dp"
             android:gravity="center"/>
 
         <TextView
@@ -84,7 +86,8 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/postTime"
             app:layout_constraintBottom_toBottomOf="@id/postTime"
-            android:textSize="15sp"
+            android:textSize="17sp"
+            android:paddingVertical="10dp"
             android:gravity="center"/>
 
         <Button

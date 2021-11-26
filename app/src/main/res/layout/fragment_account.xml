@@ -41,6 +41,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="20dp"
+                    android:textSize="20sp"
                     android:text="@string/light_theme" />
 
                 <RadioButton
@@ -48,6 +49,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="20dp"
+                    android:textSize="20sp"
                     android:text="@string/dark_theme" />
 
                 <RadioButton
@@ -55,6 +57,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="20dp"
+                    android:textSize="20sp"
                     android:text="@string/system_default" />
 
             </RadioGroup>
@@ -69,7 +72,7 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/themeOptions"
-                android:background="@drawable/gradient_long_button_bg"
+                android:background="@drawable/account_fragment_button"
                 app:backgroundTint="@null" />
 
             <Button
@@ -79,10 +82,10 @@
                 android:layout_marginHorizontal="25dp"
                 android:layout_marginTop="25dp"
                 android:text="@string/posts_history"
+                android:background="@drawable/account_fragment_button"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/profileButton"
-                android:background="@drawable/gradient_long_button_bg"
                 app:backgroundTint="@null" />
 
             <Button
@@ -91,15 +94,16 @@
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="25dp"
                 android:layout_marginVertical="25dp"
+                android:background="#F36767"
+                android:stateListAnimator="@null"
                 android:text="@string/logout"
-                android:textStyle="bold"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
                 android:textSize="25sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/postsHistoryButton"
+                app:backgroundTint="@null"
                 app:layout_constraintBottom_toBottomOf="parent"
-                android:background="@drawable/gradient_long_button_bg"
-                app:backgroundTint="@null" />
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
