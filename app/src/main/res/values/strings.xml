@@ -117,4 +117,6 @@
     <string name="notification_message">Notification Message</string>
     <string name="unread_notification">Unread notification</string>
     <string name="msgs">Msgs</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="reset_link_mailed">Reset link mailed!</string>
 </resources>
