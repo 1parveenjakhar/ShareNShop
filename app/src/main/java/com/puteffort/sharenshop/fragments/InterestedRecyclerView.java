@@ -72,110 +72,124 @@ public class InterestedRecyclerView extends Fragment {
         if (isUserAdded) model.addUser(position, progressBar);
         else model.removeUser(position, progressBar);
     }
-}
 
-class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    private final List<UserProfile> usersInterested;
-    private final Context context;
-    private final InterestedRecyclerView parentFragment;
-
-    public InterestedRecyclerViewAdapter(InterestedRecyclerView parentFragment) {
-        this.usersInterested = new ArrayList<>();
-        this.parentFragment = parentFragment;
-        this.context = parentFragment.requireContext();
+    private void openUserFragment(int position) {
+        ((PostFragment)requireParentFragment()).openUserFragment(adapter.getUser(position));
     }
 
-    public void setUsers(List<UserProfile> users) {
-        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new UserDiffCallBack(usersInterested, users));
-        usersInterested.clear();
-        usersInterested.addAll(users);
-        diffResult.dispatchUpdatesTo(this);
-    }
+    private static class InterestedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+        private final List<UserProfile> usersInterested;
+        private final Context context;
+        private final InterestedRecyclerView parentFragment;
 
-    @NonNull
-    @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View rootView = LayoutInflater.from(context).inflate(R.layout.card_interested_user,parent,false);
-        return new UserHolder(rootView);
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-        UserProfile user = usersInterested.get(position);
-        UserHolder userHolder = (UserHolder) holder;
-
-
-        if (parentFragment.model.isUserPostOwner() && !parentFragment.model.areAllRequiredAdded()) {
-            userHolder.cross.setVisibility(View.VISIBLE);
-            userHolder.tick.setVisibility(View.VISIBLE);
-
-            userHolder.cross.setOnClickListener(view -> parentFragment.addUser(false, position, userHolder.crossPB));
-            userHolder.tick.setOnClickListener(view -> parentFragment.addUser(true, position, userHolder.tickPB));
+        public InterestedRecyclerViewAdapter(InterestedRecyclerView parentFragment) {
+            this.usersInterested = new ArrayList<>();
+            this.parentFragment = parentFragment;
+            this.context = parentFragment.requireContext();
         }
 
-        userHolder.userName.setText(user.getName());
-        Glide.with(context).load(user.getImageURL())
-                .error(R.drawable.default_person_icon)
-                .circleCrop().into(userHolder.userImage);
-    }
+        void setUsers(List<UserProfile> users) {
+            DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new UserDiffCallBack(usersInterested, users));
+            usersInterested.clear();
+            usersInterested.addAll(users);
+            diffResult.dispatchUpdatesTo(this);
+        }
 
-    @Override
-    public int getItemCount() {
-        return usersInterested.size();
-    }
+        UserProfile getUser(int position) {
+            return usersInterested.get(position);
+        }
 
-
-    private static class UserDiffCallBack extends DiffUtil.Callback {
-        private final List<UserProfile> newList, oldList;
-
-        public UserDiffCallBack(List<UserProfile> oldList,
-                                List<UserProfile> newList) {
-            this.oldList = oldList;
-            this.newList = newList;
+        @NonNull
+        @Override
+        public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View rootView = LayoutInflater.from(context).inflate(R.layout.card_interested_user,parent,false);
+            return new UserHolder(rootView);
         }
 
         @Override
-        public int getOldListSize() {
-            return oldList.size();
+        public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+            UserProfile user = usersInterested.get(position);
+            UserHolder userHolder = (UserHolder) holder;
+
+
+            if (parentFragment.model.isUserPostOwner() && !parentFragment.model.areAllRequiredAdded()) {
+                userHolder.cross.setVisibility(View.VISIBLE);
+                userHolder.tick.setVisibility(View.VISIBLE);
+
+                userHolder.cross.setOnClickListener(view -> parentFragment.addUser(false, position, userHolder.crossPB));
+                userHolder.tick.setOnClickListener(view -> parentFragment.addUser(true, position, userHolder.tickPB));
+            }
+
+            userHolder.userName.setText(user.getName());
+            Glide.with(context).load(user.getImageURL())
+                    .error(R.drawable.default_person_icon)
+                    .circleCrop().into(userHolder.userImage);
         }
 
         @Override
-        public int getNewListSize() {
-            return newList.size();
+        public int getItemCount() {
+            return usersInterested.size();
         }
 
-        @Override
-        public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-            return oldList.get(oldItemPosition).getId().equals(
-                    newList.get(newItemPosition).getId());
+
+        private static class UserDiffCallBack extends DiffUtil.Callback {
+            private final List<UserProfile> newList, oldList;
+
+            public UserDiffCallBack(List<UserProfile> oldList,
+                                    List<UserProfile> newList) {
+                this.oldList = oldList;
+                this.newList = newList;
+            }
+
+            @Override
+            public int getOldListSize() {
+                return oldList.size();
+            }
+
+            @Override
+            public int getNewListSize() {
+                return newList.size();
+            }
+
+            @Override
+            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                return oldList.get(oldItemPosition).getId().equals(
+                        newList.get(newItemPosition).getId());
+            }
+
+            @Override
+            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                return oldList.get(oldItemPosition).isContentSame(newList.get(newItemPosition));
+            }
         }
 
-        @Override
-        public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-            return oldList.get(oldItemPosition).isContentSame(newList.get(newItemPosition));
-        }
-    }
 
+        private class UserHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+            TextView userName;
+            ImageView userImage, cross, tick;
+            ProgressBar tickPB, crossPB;
 
-    static class UserHolder extends RecyclerView.ViewHolder {
-        TextView userName;
-        ImageView userImage, cross, tick;
-        ProgressBar tickPB, crossPB;
+            public UserHolder(@NonNull View itemView) {
+                super(itemView);
+                itemView.setOnClickListener(this);
 
-        public UserHolder(@NonNull View itemView) {
-            super(itemView);
+                userName = itemView.findViewById(R.id.userName);
+                userImage = itemView.findViewById(R.id.userImage);
+                cross = itemView.findViewById(R.id.cross);
+                tick = itemView.findViewById(R.id.tick);
+                tickPB = itemView.findViewById(R.id.tickProgressBar);
+                crossPB = itemView.findViewById(R.id.crossProgressBar);
 
-            userName = itemView.findViewById(R.id.userName);
-            userImage = itemView.findViewById(R.id.userImage);
-            cross = itemView.findViewById(R.id.cross);
-            tick = itemView.findViewById(R.id.tick);
-            tickPB = itemView.findViewById(R.id.tickProgressBar);
-            crossPB = itemView.findViewById(R.id.crossProgressBar);
+                tick.setVisibility(GONE);
+                cross.setVisibility(GONE);
+                tickPB.setVisibility(GONE);
+                crossPB.setVisibility(GONE);
+            }
 
-            tick.setVisibility(GONE);
-            cross.setVisibility(GONE);
-            tickPB.setVisibility(GONE);
-            crossPB.setVisibility(GONE);
+            @Override
+            public void onClick(View v) {
+                parentFragment.openUserFragment(getAdapterPosition());
+            }
         }
     }
 }

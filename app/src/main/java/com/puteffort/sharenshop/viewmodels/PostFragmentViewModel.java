@@ -17,6 +17,7 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -409,8 +410,11 @@ public class PostFragmentViewModel extends ViewModel {
     public int getPreviousTab() {
         return previousTab;
     }
+    public void setPreviousTab(int tab) {
+        previousTab = tab;
+    }
     public Fragment getFragment(int position) {
-        previousTab = position;
+        Log.d("viewpager", "Setting tab = " + previousTab);
         switch (position) {
             case 0: return interestedRecyclerView;
             case 1: return commentRecyclerView;

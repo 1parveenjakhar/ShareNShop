@@ -18,9 +18,12 @@ import androidx.viewpager2.adapter.FragmentStateAdapter;
 import com.bumptech.glide.Glide;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
+import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentPostBinding;
+import com.puteffort.sharenshop.interfaces.DualPanePostCommunicator;
 import com.puteffort.sharenshop.models.PostInfo;
+import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel;
 
 public class PostFragment extends Fragment {
@@ -87,6 +90,11 @@ public class PostFragment extends Fragment {
         new TabLayoutMediator(binding.tabLayout, binding.viewPager,
                 (tab, position) -> tab.setText(model.getFragmentTitle(position))).attach();
         binding.viewPager.setCurrentItem(model.getPreviousTab());
+
+        binding.imageView.setOnClickListener(view -> {
+            if (postInfo == null) return;
+            openUserFragment(postInfo.getOwnerID());
+        });
     }
 
     private void setObservers() {
@@ -109,6 +117,19 @@ public class PostFragment extends Fragment {
         });
     }
 
+    protected void openUserFragment(UserProfile user) {
+        if (getParentFragment() == null)
+            ((MainActivity)requireActivity()).changeFragment(new MyProfileFragment(user));
+        else
+            ((DualPanePostCommunicator)requireParentFragment()).openUserFragment(user);
+    }
+    protected void openUserFragment(String userID) {
+        if (getParentFragment() == null)
+            ((MainActivity)requireActivity()).changeFragment(new MyProfileFragment(userID));
+        else
+            ((DualPanePostCommunicator)requireParentFragment()).openUserFragment(userID);
+    }
+
     private class ViewPagerAdapter extends FragmentStateAdapter {
         public ViewPagerAdapter(Fragment fragment){
             super(fragment);
@@ -124,5 +145,11 @@ public class PostFragment extends Fragment {
         public Fragment createFragment(int position) {
             return model.getFragment(position);
         }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        model.setPreviousTab(binding.viewPager.getCurrentItem());
     }
 }

@@ -101,11 +101,15 @@ public class HomeFragment extends Fragment {
         ((DualPanePostCommunicator)requireParentFragment()).openPostFragment(recyclerViewAdapter.getPost(position), postOwnerImage);
     }
 
-    public void changeFavourite(int position, ImageView favorite, boolean isFavourite, ProgressBar progressBar) {
+    private void openUserFragment(int position) {
+        ((DualPanePostCommunicator)requireParentFragment()).openUserFragment(recyclerViewAdapter.getPost(position).getOwnerID());
+    }
+
+    private void changeFavourite(int position, ImageView favorite, boolean isFavourite, ProgressBar progressBar) {
         model.changePostFavourite(position, favorite, isFavourite, progressBar);
     }
 
-    public void changeStatus(int position, Button status, ProgressBar progressBar) {
+    private void changeStatus(int position, Button status, ProgressBar progressBar) {
         model.changeStatus(position, status, progressBar);
     }
 
@@ -234,6 +238,9 @@ public class HomeFragment extends Fragment {
                 statusProgressBar = itemView.findViewById(R.id.statusProgressBar);
                 statusProgressBar.setVisibility(GONE);
                 favouriteProgressBar.setVisibility(GONE);
+
+                image.setOnClickListener(view ->
+                        homeFragment.openUserFragment(getAdapterPosition()));
 
                 favorite.setOnClickListener(view -> {
                     isFavourite = !isFavourite;
