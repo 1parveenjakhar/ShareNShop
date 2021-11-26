@@ -12,6 +12,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -90,11 +91,10 @@ public class NotificationFragment extends Fragment {
         }
 
         void setNotifications(List<Notification> newNotifications) {
-            int previousSize = notifications.size();
+            DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new NotificationDiffCallback(notifications, newNotifications));
             notifications.clear();
             notifications.addAll(newNotifications);
-            notifyItemRangeRemoved(0, previousSize);
-            notifyItemRangeInserted(0, newNotifications.size());
+            diffResult.dispatchUpdatesTo(this);
         }
 
         @NonNull
@@ -120,6 +120,41 @@ public class NotificationFragment extends Fragment {
             return notifications.size();
         }
 
+        private static class NotificationDiffCallback extends DiffUtil.Callback {
+            private final List<Notification> newList, oldList;
+
+            public NotificationDiffCallback(List<Notification> oldList,
+                                    List<Notification> newList) {
+                this.oldList = oldList;
+                this.newList = newList;
+            }
+
+            @Override
+            public int getOldListSize() {
+                return oldList.size();
+            }
+
+            @Override
+            public int getNewListSize() {
+                return newList.size();
+            }
+
+            @Override
+            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                return oldList.get(oldItemPosition).id == newList.get(newItemPosition).id;
+            }
+
+            @Override
+            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                Notification oldItem = oldList.get(oldItemPosition);
+                Notification newItem = newList.get(newItemPosition);
+                return oldItem.title.equals(newItem.title)
+                        && oldItem.message.equals(newItem.message)
+                        && oldItem.markedAsRead == newItem.markedAsRead
+                        && oldItem.postID.equals(newItem.postID);
+            }
+        }
+
         class NotificationHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
             TextView title, message;
             ImageView icon;
@@ -135,6 +170,7 @@ public class NotificationFragment extends Fragment {
 
             @Override
             public void onClick(View v) {
+                icon.setVisibility(View.GONE);
                 notificationFragment.openPostFragment(getAdapterPosition());
             }
         }

@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -28,8 +29,10 @@ import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentHistoryBinding;
 import com.puteffort.sharenshop.interfaces.DualPanePostCommunicator;
 import com.puteffort.sharenshop.models.PostInfo;
+import com.puteffort.sharenshop.utils.DBOperations;
 import com.puteffort.sharenshop.viewmodels.HistoryFragmentViewModel;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -61,7 +64,7 @@ public class HistoryFragment extends Fragment {
         recyclerViewAdapter = new HistoryRecyclerViewAdapter(requireContext(), this);
         binding.postsRecyclerView.setAdapter(recyclerViewAdapter);
 
-        binding.swipeRefreshHistory.setOnRefreshListener(() -> model.loadData());
+        binding.swipeRefreshHistory.setOnRefreshListener(DBOperations::getUserDetails);
 
         for (int i = 0; i < binding.chips.getChildCount(); i++) {
             ((Chip)binding.chips.getChildAt(i)).setOnCheckedChangeListener((chip, isChecked) -> {
@@ -93,23 +96,13 @@ public class HistoryFragment extends Fragment {
     @SuppressLint("NotifyDataSetChanged")
     private void addObservers() {
         model.getPosts().observe(getViewLifecycleOwner(), posts -> {
-            recyclerViewAdapter.setPosts(posts);
             if (posts == null) {
                 binding.progressBar.setVisibility(View.VISIBLE);
-            } else {
-                binding.progressBar.setVisibility(View.INVISIBLE);
-                binding.swipeRefreshHistory.setRefreshing(false);
+                return;
             }
-            recyclerViewAdapter.notifyDataSetChanged();
-        });
-
-        model.getModifyIndex().observe(getViewLifecycleOwner(), index -> {
-            if (index == null) return;
-            recyclerViewAdapter.notifyItemChanged(index);
-        });
-        model.getDeleteIndex().observe(getViewLifecycleOwner(), index -> {
-            if (index == null) return;
-            recyclerViewAdapter.notifyItemRemoved(index);
+            binding.progressBar.setVisibility(View.INVISIBLE);
+            binding.swipeRefreshHistory.setRefreshing(false);
+            recyclerViewAdapter.setPosts(posts);
         });
     }
 
@@ -119,24 +112,28 @@ public class HistoryFragment extends Fragment {
         ((DualPanePostCommunicator)requireParentFragment()).openPostFragment(postFragment);
     }
 
-    private void removeFavourite(int position, ProgressBar favProgress) {
-        model.removeFavourite(position, favProgress);
+    private void removeFavourite(int position, ProgressBar favProgress, ImageView favIcon) {
+        model.removeFavourite(position, favProgress, favIcon);
     }
 
     private static class HistoryRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-        private List<PostInfo> posts;
+        private final List<PostInfo> posts;
         private final Context context;
         private final HistoryFragment historyFragment;
         private final FirebaseFirestore db;
 
         public HistoryRecyclerViewAdapter(Context context, HistoryFragment historyFragment) {
             this.context = context;
+            this.posts = new ArrayList<>();
             this.historyFragment = historyFragment;
             db = FirebaseFirestore.getInstance();
         }
 
         void setPosts(List<PostInfo> posts) {
-            this.posts = posts;
+            DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new HistoryDiffCallback(this.posts, posts));
+            this.posts.clear();
+            this.posts.addAll(posts);
+            diffResult.dispatchUpdatesTo(this);
         }
 
         @NonNull
@@ -174,8 +171,38 @@ public class HistoryFragment extends Fragment {
 
         @Override
         public int getItemCount() {
-            if (posts == null) return 0;
             return posts.size();
+        }
+
+        private static class HistoryDiffCallback extends DiffUtil.Callback {
+            private final List<PostInfo> newList, oldList;
+
+            public HistoryDiffCallback(List<PostInfo> oldList,
+                                    List<PostInfo> newList) {
+                this.oldList = oldList;
+                this.newList = newList;
+            }
+
+            @Override
+            public int getOldListSize() {
+                return oldList.size();
+            }
+
+            @Override
+            public int getNewListSize() {
+                return newList.size();
+            }
+
+            @Override
+            public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+                return oldList.get(oldItemPosition).getId().equals(
+                        newList.get(newItemPosition).getId());
+            }
+
+            @Override
+            public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+                return oldList.get(oldItemPosition).isContentSame(newList.get(newItemPosition));
+            }
         }
 
         class PostHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
@@ -195,7 +222,8 @@ public class HistoryFragment extends Fragment {
                 favorite = itemView.findViewById(R.id.favouriteIcon);
                 favProgress = itemView.findViewById(R.id.favProgress);
 
-                favorite.setOnClickListener(view -> historyFragment.removeFavourite(getAdapterPosition(), favProgress));
+                favorite.setOnClickListener(view ->
+                        historyFragment.removeFavourite(getAdapterPosition(), favProgress, favorite));
             }
 
             @Override
