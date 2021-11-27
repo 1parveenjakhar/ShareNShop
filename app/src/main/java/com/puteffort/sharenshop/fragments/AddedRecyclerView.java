@@ -53,6 +53,9 @@ public class AddedRecyclerView extends Fragment {
         finalButton = view.findViewById(R.id.finalButton);
         buttonProgressBar = view.findViewById(R.id.buttonProgressBar);
 
+        progressBar.setVisibility(GONE);
+        buttonProgressBar.setVisibility(GONE);
+
         setUpComponents();
         addObservers();
 

@@ -57,6 +57,8 @@ public class NewPostFragment extends Fragment {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_new_post, container, false);
         binding.postButton.setOnClickListener(this::handlePostListener);
 
+        binding.progressBar.setVisibility(View.GONE);
+
         return binding.getRoot();
     }
 

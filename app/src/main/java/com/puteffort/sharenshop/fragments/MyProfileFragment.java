@@ -43,6 +43,8 @@ public class MyProfileFragment extends Fragment {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_my_profile, container, false);
         model = new ViewModelProvider(this).get(MyProfileFragmentViewModel.class);
 
+        binding.progressBar.setVisibility(View.GONE);
+
         setUpComponents();
         addObservers();
 

@@ -46,6 +46,8 @@ public class InterestedRecyclerView extends Fragment {
         recyclerView = view.findViewById(R.id.interestedRecyclerView);
         progressBar = view.findViewById(R.id.progressBar);
 
+        progressBar.setVisibility(GONE);
+
         addObservers();
         return view;
     }

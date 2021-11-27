@@ -116,7 +116,6 @@
     <string name="notification_title">Notification Title</string>
     <string name="notification_message">Notification Message</string>
     <string name="unread_notification">Unread notification</string>
-    <string name="msgs">Msgs</string>
     <string name="example_gmail_com">example@gmail.com</string>
     <string name="your_name">Your Name</string>
     <string name="name_">Name:</string>

@@ -50,6 +50,9 @@ public class CommentRecyclerView extends Fragment {
 
         recyclerView = view.findViewById(R.id.commentRecyclerView);
         progressBar = view.findViewById(R.id.progressBar);
+
+        progressBar.setVisibility(GONE);
+
         view.findViewById(R.id.addCommentButton).setOnClickListener(this::createComment);
 
         addObservers();
