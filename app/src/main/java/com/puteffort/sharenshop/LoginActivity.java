@@ -12,19 +12,16 @@ import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.databinding.DataBindingUtil;
 import androidx.lifecycle.MutableLiveData;
 
-import com.cometchat.pro.core.AppSettings;
 import com.cometchat.pro.core.CometChat;
 import com.cometchat.pro.exceptions.CometChatException;
 import com.cometchat.pro.models.User;
@@ -34,7 +31,6 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.textfield.TextInputLayout;
@@ -48,6 +44,7 @@ import com.puteffort.sharenshop.models.UserActivity;
 import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.utils.Constants;
 import com.puteffort.sharenshop.utils.DBOperations;
+import com.puteffort.sharenshop.utils.Messenger;
 import com.puteffort.sharenshop.utils.UtilFunctions;
 
 import java.util.ArrayList;
@@ -338,41 +335,17 @@ public class LoginActivity extends AppCompatActivity {
     private void handleSuccessfulAuthentication() {
 
         //Initiate messenger
-        init_messenger();
-
-        //Loggin in chat
-        String UID = mAuth.getCurrentUser().getUid();
-
-        CometChat.login(UID, Constants.authKey, new CometChat.CallbackListener<User>() {
-            @Override
-            public void onSuccess(User user) {
-                showToast(activity, "Chat login succesful: "+user.getName());
-                Log.d(TAG, "Login Successful : " + user.toString());
-            }
-
-            @Override
-            public void onError(CometChatException e) {
-                showToast(activity, "Chat login failed: "+e.getMessage());
-            }
-        });
+        Messenger.init(this);
+        Messenger.login(mAuth.getCurrentUser().getUid(),this);
+        startMessenger(this);
 
         //startActivity(new Intent(getApplicationContext(), MainActivity.class));
-        startActivity(new Intent(this,CometChatUI.class));
+        //startActivity(new Intent(this, CometChatUI.class));
         finish();
     }
 
-    private void init_messenger() {
-        AppSettings appSettings=new AppSettings.AppSettingsBuilder().subscribePresenceForAllUsers().setRegion(Constants.region).build();
-        CometChat.init(this, Constants.appId,appSettings, new CometChat.CallbackListener<String>() {
-            @Override
-            public void onSuccess(String successMessage) {
-                Log.d(TAG, "Initialization completed successfully");
-            }
-            @Override
-            public void onError(CometChatException e) {
-                Log.d(TAG, "Initialization failed with exception: " + e.getMessage());
-            }
-        });
+    private void startMessenger(LoginActivity loginActivity) {
+        startActivity(new Intent(this, CometChatUI.class));
     }
 
     private void handleFailedAuthentication(Exception exception) {
