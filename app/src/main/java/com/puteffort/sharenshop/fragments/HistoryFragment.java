@@ -50,6 +50,8 @@ public class HistoryFragment extends Fragment {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_history, container, false);
         model = new ViewModelProvider(requireActivity()).get(HistoryFragmentViewModel.class);
 
+        binding.progressBar.setVisibility(View.GONE);
+
         setUpComponents();
         addObservers();
 
@@ -226,6 +228,8 @@ public class HistoryFragment extends Fragment {
                 image = itemView.findViewById(R.id.imageView);
                 favorite = itemView.findViewById(R.id.favouriteIcon);
                 favProgress = itemView.findViewById(R.id.favProgress);
+
+                favProgress.setVisibility(View.GONE);
 
                 image.setOnClickListener(view ->
                         historyFragment.openUserFragment(getAdapterPosition()));

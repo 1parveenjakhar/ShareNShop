@@ -55,6 +55,8 @@ public class HomeFragment extends Fragment {
         // Setting width of searchView only after layout has been inflated
         view.getViewTreeObserver().addOnGlobalLayoutListener(() -> binding.searchView.setMaxWidth(view.getWidth() - 70));
 
+        binding.progressBar.setVisibility(GONE);
+
         setUpComponents();
         addObservers();
 

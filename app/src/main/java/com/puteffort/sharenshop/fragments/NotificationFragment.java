@@ -44,6 +44,8 @@ public class NotificationFragment extends Fragment {
         recyclerView = view.findViewById(R.id.notificationsRecyclerView);
         progressBar = view.findViewById(R.id.progressBar);
 
+        progressBar.setVisibility(View.GONE);
+
         setUpComponents();
         addObservers();
 
