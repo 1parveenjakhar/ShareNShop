@@ -3,7 +3,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        jcenter() // Warning: this repository is going to shut down soon
+        maven {
+            url "https://dl.cloudsmith.io/public/cometchat/cometchat-pro-android/maven/"
+        }
     }
 }
 rootProject.name = "ShareNShop"

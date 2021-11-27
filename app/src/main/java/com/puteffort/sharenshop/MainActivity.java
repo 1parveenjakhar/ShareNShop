@@ -23,6 +23,7 @@ import com.puteffort.sharenshop.fragments.HistoryContainerFragment;
 import com.puteffort.sharenshop.fragments.HomeContainerFragment;
 import com.puteffort.sharenshop.fragments.MyProfileFragment;
 import com.puteffort.sharenshop.models.Notification;
+import com.puteffort.sharenshop.utils.Constants;
 import com.puteffort.sharenshop.utils.DBOperations;
 import com.puteffort.sharenshop.utils.UtilFunctions;
 import com.puteffort.sharenshop.viewmodels.MainActivityViewModel;
@@ -31,6 +32,7 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     private ActivityMainBinding binding;
     private MainActivityViewModel model;
     private NavigationBarView navBar;
+    private String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
         setListenersAndObservers();
         onNewIntent(getIntent());
     }
+
 
     @Override
     protected void onResume() {

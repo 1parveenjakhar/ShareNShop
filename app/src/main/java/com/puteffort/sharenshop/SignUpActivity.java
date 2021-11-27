@@ -17,6 +17,9 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
 
+import com.cometchat.pro.core.CometChat;
+import com.cometchat.pro.exceptions.CometChatException;
+import com.cometchat.pro.models.User;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
@@ -29,6 +32,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.databinding.ActivitySignUpBinding;
+import com.puteffort.sharenshop.utils.Constants;
 import com.puteffort.sharenshop.utils.UtilFunctions;
 
 import java.util.Map;
@@ -290,13 +294,10 @@ public class SignUpActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         // Sign in success, update UI with the signed-in user's information
 
-
-                        //FirebaseUser user = mAuth.getCurrentUser();
-                        //User-registered....updating firebase user-name
                         Toast.makeText(SignUpActivity.this, "Authentication successful!.",
                                 Toast.LENGTH_LONG).show();
-                        updateUserName(userName);
 
+                        updateUserName(userName);
                     } else {
                         // If sign in fails, display a message to the user.
                         //Log.w(TAG, "createUserWithEmail:failure", task.getException());
@@ -304,6 +305,26 @@ public class SignUpActivity extends AppCompatActivity {
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    private void createMessengerUser() {
+
+        FirebaseUser firebaseUser = mAuth.getCurrentUser();
+        User user = new User();
+        user.setUid(firebaseUser.getUid());
+        user.setName(firebaseUser.getDisplayName());
+
+        CometChat.createUser(user, Constants.authKey, new CometChat.CallbackListener<User>() {
+            @Override
+            public void onSuccess(User user) {
+                Log.d("createUser", user.toString());
+            }
+
+            @Override
+            public void onError(CometChatException e) {
+                Log.e("createUser", e.getMessage());
+            }
+        });
     }
 
     private void updateUserName(String userName) {
@@ -318,7 +339,7 @@ public class SignUpActivity extends AppCompatActivity {
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         Log.d(TAG, "User name updated.");
-
+                        createMessengerUser();
                         // Its time to say good bye to this activity
                         binding.progressBar.setVisibility(View.INVISIBLE);
                         finish();

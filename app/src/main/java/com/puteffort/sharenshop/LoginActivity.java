@@ -4,6 +4,7 @@ import static com.puteffort.sharenshop.utils.UtilFunctions.isEmailValid;
 import static com.puteffort.sharenshop.utils.UtilFunctions.showToast;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -23,6 +24,10 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.databinding.DataBindingUtil;
 import androidx.lifecycle.MutableLiveData;
 
+import com.cometchat.pro.core.AppSettings;
+import com.cometchat.pro.core.CometChat;
+import com.cometchat.pro.exceptions.CometChatException;
+import com.cometchat.pro.models.User;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -40,6 +45,7 @@ import com.google.firebase.firestore.*;
 import com.puteffort.sharenshop.databinding.ActivityLoginBinding;
 import com.puteffort.sharenshop.models.UserActivity;
 import com.puteffort.sharenshop.models.UserProfile;
+import com.puteffort.sharenshop.utils.Constants;
 import com.puteffort.sharenshop.utils.DBOperations;
 import com.puteffort.sharenshop.utils.UtilFunctions;
 
@@ -64,11 +70,14 @@ public class LoginActivity extends AppCompatActivity {
 
     private TextInputLayout editEmailAddress;
     private FirebaseUser currentUser;
+    private Activity activity;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (setOrientation()) return;
+
+        this.activity = this;
 
         setTheme();
         binding = DataBindingUtil.setContentView(this, R.layout.activity_login);
@@ -161,7 +170,7 @@ public class LoginActivity extends AppCompatActivity {
                                 binding.forgotPasswordButton.setAlpha(0.5F);
                                 binding.emailAddress.setError(null);
                                 Log.d(TAG, "Password reset email sent!");
-                            }else{
+                            } else {
                                 String msg = task.getException().getMessage();
                                 binding.emailAddress.setError(msg);
                             }
@@ -238,6 +247,25 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    private void createMessengerUser() {
+        FirebaseUser firebaseUser = mAuth.getCurrentUser();
+        User user = new User();
+        user.setUid(firebaseUser.getUid());
+        user.setName(firebaseUser.getDisplayName());
+
+        CometChat.createUser(user, Constants.authKey, new CometChat.CallbackListener<User>() {
+            @Override
+            public void onSuccess(User user) {
+                Log.d("createUser", user.toString());
+            }
+
+            @Override
+            public void onError(CometChatException e) {
+                Log.e("createUser", e.getMessage());
+            }
+        });
+    }
+
     private List<Task<Void>> addNewUserToFireStore(FirebaseFirestore db, DocumentReference docRef) {
         String email = currentUser.getEmail();
         String name = currentUser.getDisplayName();
@@ -307,8 +335,42 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void handleSuccessfulAuthentication() {
-        startActivity(new Intent(this, MainActivity.class));
+
+        //Initiate messenger
+        init_messenger();
+
+        //Loggin in chat
+        String UID = mAuth.getCurrentUser().getUid();
+
+        CometChat.login(UID, Constants.authKey, new CometChat.CallbackListener<User>() {
+            @Override
+            public void onSuccess(User user) {
+                showToast(activity, "Chat login succesful: "+user.getName());
+                Log.d(TAG, "Login Successful : " + user.toString());
+            }
+
+            @Override
+            public void onError(CometChatException e) {
+                showToast(activity, "Chat login failed: "+e.getMessage());
+            }
+        });
+
+        startActivity(new Intent(getApplicationContext(), MainActivity.class));
         finish();
+    }
+
+    private void init_messenger() {
+        AppSettings appSettings=new AppSettings.AppSettingsBuilder().subscribePresenceForAllUsers().setRegion(Constants.region).build();
+        CometChat.init(this, Constants.appId,appSettings, new CometChat.CallbackListener<String>() {
+            @Override
+            public void onSuccess(String successMessage) {
+                Log.d(TAG, "Initialization completed successfully");
+            }
+            @Override
+            public void onError(CometChatException e) {
+                Log.d(TAG, "Initialization failed with exception: " + e.getMessage());
+            }
+        });
     }
 
     private void handleFailedAuthentication(Exception exception) {
