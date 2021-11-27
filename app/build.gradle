@@ -13,6 +13,8 @@ android {
         versionCode 1
         versionName "1.0"
 
+        manifestPlaceholders = [file_provider: "com.puteffort.sharenshop"]
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -30,6 +32,8 @@ android {
         viewBinding true
         dataBinding true
     }
+    compileSdkVersion 30
+    buildToolsVersion '30.0.2'
 }
 
 dependencies {
@@ -71,6 +75,7 @@ dependencies {
     annotationProcessor "androidx.room:room-compiler:$room_version"
 
     implementation 'com.cometchat:pro-android-chat-sdk:3.0.1'
+    implementation project(path: ':uikit')
 }
 
 apply plugin: 'com.google.gms.google-services'
