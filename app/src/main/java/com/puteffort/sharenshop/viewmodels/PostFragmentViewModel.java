@@ -1,11 +1,15 @@
 package com.puteffort.sharenshop.viewmodels;
 
 import static android.view.View.GONE;
+import static com.puteffort.sharenshop.utils.DBOperations.ACCEPTED;
+import static com.puteffort.sharenshop.utils.DBOperations.ADDED;
 import static com.puteffort.sharenshop.utils.DBOperations.COMMENT;
+import static com.puteffort.sharenshop.utils.DBOperations.FINAL_CONFIRMATION;
 import static com.puteffort.sharenshop.utils.DBOperations.INTERESTED;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_DETAIL_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
+import static com.puteffort.sharenshop.utils.DBOperations.getUserProfile;
 import static com.puteffort.sharenshop.utils.UtilFunctions.SERVER_URL;
 import static com.puteffort.sharenshop.utils.UtilFunctions.SUCCESS_CODE;
 import static com.puteffort.sharenshop.utils.UtilFunctions.client;
@@ -13,11 +17,11 @@ import static com.puteffort.sharenshop.utils.UtilFunctions.getRequest;
 import static com.puteffort.sharenshop.utils.UtilFunctions.gson;
 import static com.puteffort.sharenshop.utils.UtilFunctions.showToast;
 
+import android.app.Application;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -25,14 +29,15 @@ import android.widget.ProgressBar;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.fragments.AddedRecyclerView;
 import com.puteffort.sharenshop.fragments.CommentRecyclerView;
 import com.puteffort.sharenshop.fragments.InterestedRecyclerView;
@@ -51,12 +56,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class PostFragmentViewModel extends ViewModel {
+public class PostFragmentViewModel extends AndroidViewModel {
     private final FirebaseFirestore db;
     private final FirebaseAuth auth;
     private PostInfo postInfo;
@@ -83,7 +89,8 @@ public class PostFragmentViewModel extends ViewModel {
     private final Handler handler;
     private int previousTab = 1;
 
-    public PostFragmentViewModel() {
+    public PostFragmentViewModel(@NonNull Application application) {
+        super(application);
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
         postInfoLiveData = new MutableLiveData<>(postInfo);
@@ -340,35 +347,57 @@ public class PostFragmentViewModel extends ViewModel {
     }
 
     // Functions related to AddedRecyclerView
-    public void askForFinalConfirmation(ProgressBar progressBar, Button button, String originalText) {
-        // Ask only if not asked earlier
-        if (button.getText().equals(originalText)) {
-            try {
-                progressBar.setVisibility(View.VISIBLE);
-                button.setText("");
+    public void askForFinalConfirmation(ProgressBar progressBar, Button button) {
+        String originalText = button.getText().toString();
+        if (originalText.trim().isEmpty()) return;
+
+        System.out.println("Button text = " + originalText);
+
+        try {
+            String json = null, requestLink = null;
+            if (originalText.equals(getApplication().getString(R.string.ask_for_final_confirmation))) {
+                // Owner want to ask for final confirmation
 
                 List<String> addedIDs = new ArrayList<>();
-                for (AddedUser user: usersAdded) addedIDs.add(user.getProfile().getId());
-                String json = new JSONObject()
+                for (AddedUser user : usersAdded) {
+                    if (user.getStatus().equals(ADDED)) // sending notifications to added users only
+                        addedIDs.add(user.getProfile().getId());
+                }
+                json = new JSONObject()
                         .put("post", gson.toJson(postInfo))
                         .put("users", gson.toJson(addedIDs))
                         .toString();
-
-                client.newCall(getRequest(json, SERVER_URL + "askForFinalConfirmation"))
-                        .enqueue(new Callback() {
-                            @Override
-                            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                                onAskRequestCompletion(progressBar, button, originalText);
-                            }
-                            @Override
-                            public void onResponse(@NonNull Call call, @NonNull Response response) {
-                                onAskRequestCompletion(progressBar, button,
-                                        response.code() == SUCCESS_CODE ? "In Progress .." : originalText);
-                            }
-                        });
-            } catch (Exception e) {
-                onAskRequestCompletion(progressBar, button, originalText);
+                requestLink = "askForFinalConfirmation";
+            } else if (originalText.equals(getApplication().getString(R.string.want_to_accept))) {
+                json = new JSONObject()
+                        .put("post", gson.toJson(postInfo))
+                        .put("oldStatus", FINAL_CONFIRMATION)
+                        .put("newStatus", ACCEPTED)
+                        .put("userID", auth.getUid())
+                        .put("userName", Objects.requireNonNull(getUserProfile().getValue()).getName())
+                        .toString();
+                requestLink = "changeStatus";
             }
+
+            if (json == null) return;
+            button.setText("");
+            progressBar.setVisibility(View.VISIBLE);
+
+            client.newCall(getRequest(json, SERVER_URL + requestLink))
+                    .enqueue(new Callback() {
+                        @Override
+                        public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                            onAskRequestCompletion(progressBar, button, originalText);
+                        }
+
+                        @Override
+                        public void onResponse(@NonNull Call call, @NonNull Response response) {
+                            onAskRequestCompletion(progressBar, button,
+                                    response.code() == SUCCESS_CODE ? "In Progress .." : originalText);
+                        }
+                    });
+        } catch (Exception e) {
+            onAskRequestCompletion(progressBar, button, originalText);
         }
     }
     private void onAskRequestCompletion(ProgressBar progressBar, Button button, String text) {
@@ -414,7 +443,6 @@ public class PostFragmentViewModel extends ViewModel {
         previousTab = tab;
     }
     public Fragment getFragment(int position) {
-        Log.d("viewpager", "Setting tab = " + previousTab);
         switch (position) {
             case 0: return interestedRecyclerView;
             case 1: return commentRecyclerView;
@@ -481,6 +509,12 @@ public class PostFragmentViewModel extends ViewModel {
 
         public String getStatus() {
             return status;
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return profile.getName() + "->" + status;
         }
     }
 }

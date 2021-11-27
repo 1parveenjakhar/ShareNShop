@@ -128,4 +128,6 @@
     <string name="reset">Reset</string>
     <string name="forgot_password">Forget Password?</string>
     <string name="reset_link_mailed">Reset Link mailed !</string>
+
+    <string name="want_to_accept">Want to Accept ?</string>
 </resources>

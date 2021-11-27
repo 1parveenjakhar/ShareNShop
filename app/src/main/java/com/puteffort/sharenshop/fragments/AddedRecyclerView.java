@@ -2,6 +2,8 @@ package com.puteffort.sharenshop.fragments;
 
 import static android.view.View.GONE;
 import static com.puteffort.sharenshop.utils.DBOperations.ACCEPTED;
+import static com.puteffort.sharenshop.utils.DBOperations.ADDED;
+import static com.puteffort.sharenshop.utils.DBOperations.FINAL_CONFIRMATION;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -22,6 +24,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.google.firebase.auth.FirebaseAuth;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.models.UserProfile;
@@ -30,6 +33,7 @@ import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class AddedRecyclerView extends Fragment {
     private RecyclerView recyclerView;
@@ -64,7 +68,7 @@ public class AddedRecyclerView extends Fragment {
         buttonProgressBar.setVisibility(GONE);
         finalButton.setVisibility(GONE);
         finalButton.setOnClickListener(buttonView ->
-                model.askForFinalConfirmation(buttonProgressBar, finalButton, getString(R.string.ask_for_final_confirmation)));
+                model.askForFinalConfirmation(buttonProgressBar, finalButton));
 
         adapter = new AddedRecyclerViewAdapter(requireContext(), this);
         recyclerView.setHasFixedSize(true);
@@ -89,13 +93,21 @@ public class AddedRecyclerView extends Fragment {
                 if (postInfo == null) return;
                 if (postDetailInfo.getUsersAdded().size() == postInfo.getPeopleRequired()) { // if requirement is complete
                     if (!postInfo.getAsked()) { // owner has not asked for final confirmation
-                        finalButton.setVisibility(model.isUserPostOwner() ? View.VISIBLE : GONE);
+                        if (model.isUserPostOwner()) {
+                            finalButton.setVisibility(View.VISIBLE);
+                            finalButton.setText(R.string.ask_for_final_confirmation);
+                        } else
+                            finalButton.setVisibility(GONE);
                     } else { // already asked
                         finalButton.setVisibility(View.VISIBLE);
                         if (areAllAccepted(postDetailInfo.getUsersAdded())) {
                             finalButton.setText("Completed 🤩🥳");
                         } else {
-                            finalButton.setText(R.string.in_progress);
+                            // To owner and if user has already accepted, show In Progress
+                            if (model.isUserPostOwner() || getUserStatus().equals(ACCEPTED))
+                                finalButton.setText(R.string.in_progress);
+                            else // to normal user show confirm button
+                                finalButton.setText(R.string.want_to_accept);
                         }
                     }
                 }
@@ -103,6 +115,15 @@ public class AddedRecyclerView extends Fragment {
         });
     }
 
+    private String getUserStatus() {
+        String userID = FirebaseAuth.getInstance().getUid();
+
+        for (PostFragmentViewModel.AddedUser user: Objects.requireNonNull(model.getUsersAdded().getValue())) {
+            if (user.getProfile().getId().equals(userID))
+                return user.getStatus();
+        }
+        return ADDED;
+    }
     private boolean areAllAccepted(List<UserStatus> users) {
         for (UserStatus user: users) {
             if (!user.getStatus().equals(ACCEPTED))
@@ -127,6 +148,7 @@ public class AddedRecyclerView extends Fragment {
         }
 
         void setUsers(List<PostFragmentViewModel.AddedUser> users) {
+            System.out.println("New users = " + users);
             DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new UserDiffCallback(usersAdded, users));
             usersAdded.clear();
             usersAdded.addAll(users);

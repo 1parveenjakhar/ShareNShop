@@ -2,7 +2,6 @@ package com.puteffort.sharenshop.fragments;
 
 import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.getUniqueID;
-import static com.puteffort.sharenshop.utils.UtilFunctions.ERROR_CODE;
 import static com.puteffort.sharenshop.utils.UtilFunctions.SERVER_URL;
 import static com.puteffort.sharenshop.utils.UtilFunctions.SUCCESS_CODE;
 import static com.puteffort.sharenshop.utils.UtilFunctions.client;
@@ -24,7 +23,6 @@ import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.functions.FirebaseFunctions;
 import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentNewPostBinding;
@@ -43,7 +41,6 @@ public class NewPostFragment extends Fragment {
     private FragmentNewPostBinding binding;
     private FirebaseFirestore db;
     private FirebaseAuth auth;
-    private FirebaseFunctions firebaseFunctions;
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     public NewPostFragment() {
@@ -96,13 +93,9 @@ public class NewPostFragment extends Fragment {
         if (auth == null) {
             auth = FirebaseAuth.getInstance();
         }
-        if (firebaseFunctions == null) {
-            firebaseFunctions = FirebaseFunctions.getInstance();
-        }
 
         String id = getUniqueID(POST_INFO);
         postInfo.setId(id);
-        postInfo.setLastActivity(System.currentTimeMillis());
 
         client.newCall(getRequest(gson.toJson(postInfo), SERVER_URL + "createNewPost")).enqueue(new Callback() {
             @Override

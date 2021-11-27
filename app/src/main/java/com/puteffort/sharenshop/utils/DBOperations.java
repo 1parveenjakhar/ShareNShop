@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.puteffort.sharenshop.models.UserActivity;
 import com.puteffort.sharenshop.models.UserDeviceToken;
@@ -33,6 +34,8 @@ public class DBOperations {
     public final static String ACCEPTED = "Accepted !";
     public final static String ADDED = "Added";
 
+    private static ListenerRegistration profileListener = null, activityListener = null;
+
     public final static Map<String, String> statusMap;
 
     static {
@@ -45,7 +48,8 @@ public class DBOperations {
     private static final MutableLiveData<UserActivity> userActivityLiveData = new MutableLiveData<>();
 
     public static void getUserDetails() {
-        db.collection(USER_PROFILE).document(Objects.requireNonNull(auth.getUid()))
+        if (profileListener != null) profileListener.remove();
+        profileListener = db.collection(USER_PROFILE).document(Objects.requireNonNull(auth.getUid()))
                 .addSnapshotListener((docSnap, error) -> {
                     if (error == null && docSnap != null) {
                         UserProfile userProfile = docSnap.toObject(UserProfile.class);
@@ -55,10 +59,13 @@ public class DBOperations {
                     }
                 });
 
-        db.collection(USER_ACTIVITY).document(Objects.requireNonNull(auth.getUid())).get()
-                .addOnSuccessListener(docSnap -> {
-                    UserActivity userActivity = docSnap.toObject(UserActivity.class);
-                    userActivityLiveData.setValue(userActivity);
+        if (activityListener != null) activityListener.remove();
+        activityListener = db.collection(USER_ACTIVITY).document(Objects.requireNonNull(auth.getUid()))
+                .addSnapshotListener((docSnap, error) -> {
+                    if (error == null && docSnap != null) {
+                        UserActivity userActivity = docSnap.toObject(UserActivity.class);
+                        userActivityLiveData.setValue(userActivity);
+                    }
                 });
     }
 
