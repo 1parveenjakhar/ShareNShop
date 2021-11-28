@@ -16,7 +16,7 @@
     <!--    Strings related to NewPostFragment-->
     <string name="new_post_title_error">Please provide a title!</string>
     <string name="new_post_amount_error">Please add some amount!</string>
-    <string name="new_post_days_error">Please mention no of days!</string>
+    <string name="new_post_days_error">Please mention no of days/months/years!</string>
     <string name="new_post_months_error">Please mention no of months!</string>
     <string name="new_post_years_error">Please mention no of years!</string>
     <string name="new_post_people_error">Please mention people requirement!</string>

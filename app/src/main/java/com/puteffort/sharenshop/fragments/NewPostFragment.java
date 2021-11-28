@@ -78,17 +78,19 @@ public class NewPostFragment extends Fragment {
 
         if (TextUtils.isEmpty(title)) {
             showToast(requireContext(), getString(R.string.new_post_title_error));
-        } else if (TextUtils.isEmpty(days)) {
+        } else if (TextUtils.isEmpty(days) && TextUtils.isEmpty(months) && TextUtils.isEmpty(years)) {
             showToast(requireContext(), getString(R.string.new_post_days_error));
-        } else if (TextUtils.isEmpty(months)) {
-            showToast(requireContext(), getString(R.string.new_post_months_error));
-        } else if (TextUtils.isEmpty(years)) {
-            showToast(requireContext(), getString(R.string.new_post_years_error));
         } else if (TextUtils.isEmpty(amount)) {
             showToast(requireContext(), getString(R.string.new_post_amount_error));
         } else if (TextUtils.isEmpty(people)) {
             showToast(requireContext(), getString(R.string.new_post_people_error));
         } else {
+            if(TextUtils.isEmpty(days))
+                days = "0";
+            if(TextUtils.isEmpty(months))
+                months = "0";
+            if(TextUtils.isEmpty(years))
+                years = "0";
             String userID = Objects.requireNonNull(FirebaseAuth.getInstance()).getUid();
             createNewPost(new PostInfo(title, description, userID, days, months, years, people, amount));
         }
