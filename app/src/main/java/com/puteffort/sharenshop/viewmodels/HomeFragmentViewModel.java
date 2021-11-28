@@ -28,6 +28,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.models.PostStatus;
@@ -47,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -72,6 +74,9 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
 
     private final Handler handler;
     private String previousSearch = "";
+    private ListenerRegistration listener = null;
+
+    private final ReentrantLock LOCK = new ReentrantLock();
 
     public HomeFragmentViewModel() {
         originalPosts = new ArrayList<>();
@@ -119,9 +124,12 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
     }
     private void fetchPosts(Set<String> wishListedPosts, Map<String, String> postsStatus) {
         originalPosts.clear();
-        db.collection(POST_INFO)
+
+        if (listener != null) listener.remove();
+        listener = db.collection(POST_INFO)
                 .addSnapshotListener((value, error) -> {
                     if (error == null && value != null) {
+                        LOCK.lock();
                         for (DocumentChange docChange: value.getDocumentChanges()) {
                             DocumentChange.Type type = docChange.getType();
                             PostInfo postInfo = docChange.getDocument().toObject(PostInfo.class);
@@ -138,6 +146,7 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
                             }
                         }
                         onQueryTextChange(previousSearch);
+                        LOCK.unlock();
                     } else {
                         // Database Error
                         handler.post(() -> dataUpdating.setValue(false));

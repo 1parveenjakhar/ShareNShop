@@ -26,6 +26,8 @@ public class PostInfo {
         this.peopleRequired = Integer.parseInt(peopleRequired);
         this.amount = Integer.parseInt(amount);
         this.accomplished = this.asked = false;
+
+        this.lastActivity = System.currentTimeMillis();
     }
 
     public boolean isContentSame(PostInfo other) {
