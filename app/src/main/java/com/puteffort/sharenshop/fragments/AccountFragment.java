@@ -21,6 +21,7 @@ import com.puteffort.sharenshop.LoginActivity;
 import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentAccountBinding;
+import com.puteffort.sharenshop.utils.Messenger;
 
 public class AccountFragment extends Fragment {
     private FragmentAccountBinding binding;
@@ -65,6 +66,7 @@ public class AccountFragment extends Fragment {
     private void addListeners() {
         binding.logoutButton.setOnClickListener(view -> {
             mAuth.signOut();
+            Messenger.logout();
             startActivity(new Intent(requireContext(), LoginActivity.class));
             requireActivity().finish();
         });

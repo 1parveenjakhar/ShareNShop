@@ -13,14 +13,20 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 
+import com.cometchat.pro.constants.CometChatConstants;
+import com.cometchat.pro.core.CometChat;
+import com.cometchat.pro.exceptions.CometChatException;
+import com.cometchat.pro.models.Group;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.MainActivity;
@@ -105,6 +111,7 @@ public class NewPostFragment extends Fragment {
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 handler.post(() -> onPostFailure());
             }
+
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) {
                 if (response.code() != SUCCESS_CODE) {
@@ -117,14 +124,38 @@ public class NewPostFragment extends Fragment {
     }
 
     private void onPostSuccess(PostInfo postInfo) {
-        Messenger.createGroup(postInfo);
+        createGroup(postInfo);
         showToast(requireContext(), getString(R.string.new_post_post_successful));
-        ((MainActivity)requireActivity()).changeFragment(R.id.homeMenuItem);
+        ((MainActivity) requireActivity()).changeFragment(R.id.homeMenuItem);
+    }
+
+    private void createGroup(PostInfo postInfo) {
+        String GUID = postInfo.getId();
+        String groupName = postInfo.getTitle();
+        String groupType = CometChatConstants.GROUP_TYPE_PRIVATE;
+        String password = "";
+
+        Group new_group = new Group(GUID, groupName, groupType, password);
+        new_group.setOwner(postInfo.getOwnerID());
+        new_group.setDescription(postInfo.getDescription());
+        new_group.setScope(CometChatConstants.SCOPE_PARTICIPANT);
+
+        CometChat.createGroup(new_group, new CometChat.CallbackListener<Group>() {
+            @Override
+            public void onSuccess(Group group) {
+                Log.d("GroupCreated", "Group created successfully: " + group.toString());
+            }
+
+            @Override
+            public void onError(CometChatException e) {
+                Log.d("GroupCreated", "Group creation failed with exception: " + e.getMessage());
+            }
+        });
     }
 
     private void onPostSuccess() {
         showToast(requireContext(), getString(R.string.new_post_post_successful));
-        ((MainActivity)requireActivity()).changeFragment(R.id.homeMenuItem);
+        ((MainActivity) requireActivity()).changeFragment(R.id.homeMenuItem);
     }
 
     private void onPostFailure() {

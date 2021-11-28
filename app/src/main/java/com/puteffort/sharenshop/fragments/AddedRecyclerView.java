@@ -9,6 +9,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,6 +30,7 @@ import com.bumptech.glide.Glide;
 import com.cometchat.pro.constants.CometChatConstants;
 import com.cometchat.pro.core.CometChat;
 import com.cometchat.pro.exceptions.CometChatException;
+import com.cometchat.pro.models.Group;
 import com.cometchat.pro.models.GroupMember;
 import com.cometchat.pro.uikit.ui_components.cometchat_ui.CometChatUI;
 import com.google.firebase.auth.FirebaseAuth;
@@ -87,7 +89,7 @@ public class AddedRecyclerView extends Fragment {
         finalButton.setOnClickListener(buttonView -> {
             String originalText = finalButton.getText().toString();
             if (originalText.equals(CHAT_NOW)) {
-                openChat(postDetailInfo, postInfo);
+                openChat();
             } else
                 model.askForFinalConfirmation(buttonProgressBar, finalButton);
         });
@@ -98,33 +100,10 @@ public class AddedRecyclerView extends Fragment {
         recyclerView.setAdapter(adapter);
     }
 
-    private void openChat(PostDetailInfo postDetailInfo, PostInfo postInfo) {
-        //Adding members first
-        List<UserStatus> usersAdded = postDetailInfo.getUsersAdded();
-        List<GroupMember> members = new ArrayList<>();
-
-        for(UserStatus userStatus:usersAdded){
-            String UID = userStatus.getUserID();
-
-            if(!UID.equals(postInfo.getOwnerID()))
-                members.add(new GroupMember(UID, CometChatConstants.SCOPE_PARTICIPANT));
-        }
-
-        String GUID = postInfo.getId();
-
-        CometChat.addMembersToGroup(GUID, members, null, new CometChat.CallbackListener<HashMap<String, String>>(){
-            @Override
-            public void onSuccess(HashMap<String, String> successMap) {
-                startActivity(new Intent(requireContext(),CometChatUI.class));
-            }
-
-            @Override
-            public void onError(CometChatException e) {
-                Toast.makeText(requireContext(), e.getMessage().toString(), Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(requireContext(),CometChatUI.class));
-            }
-        });
+    private void openChat() {
+        startActivity(new Intent(requireContext(),CometChatUI.class));
     }
+
 
     @SuppressLint({"NotifyDataSetChanged", "SetTextI18n"})
     private void addObservers() {

@@ -22,9 +22,11 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -33,6 +35,10 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.cometchat.pro.constants.CometChatConstants;
+import com.cometchat.pro.core.CometChat;
+import com.cometchat.pro.exceptions.CometChatException;
+import com.cometchat.pro.models.GroupMember;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
@@ -47,6 +53,7 @@ import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.models.UserStatus;
 import com.puteffort.sharenshop.utils.DBOperations;
+import com.puteffort.sharenshop.utils.Messenger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -302,7 +309,9 @@ public class PostFragmentViewModel extends AndroidViewModel {
                     }
                     handler.post(() -> {
                         UserProfile profile = usersInterested.remove(position);
-                        usersAdded.add(new AddedUser(profile, statusMap.get(profile.getId())));
+                        AddedUser addedUser = new AddedUser(profile, statusMap.get(profile.getId()));
+                        usersAdded.add(addedUser);
+                        addUserToGroupChat(postInfo,addedUser.getProfile().getId());
                         usersInterestedLiveData.setValue(usersInterested);
                         usersAddedLiveData.setValue(usersAdded);
                     });
@@ -312,6 +321,27 @@ public class PostFragmentViewModel extends AndroidViewModel {
             interestedUserChangeFailure(progressBar);
         }
     }
+
+    private void addUserToGroupChat(PostInfo postInfo, String userId) {
+        String GUID = postInfo.getId();
+
+        List<GroupMember> members = new ArrayList<>();
+        GroupMember groupMember = new GroupMember(userId, CometChatConstants.SCOPE_PARTICIPANT);
+        members.add(groupMember);
+
+        CometChat.addMembersToGroup(GUID, members, null, new CometChat.CallbackListener<HashMap<String, String>>(){
+            @Override
+            public void onSuccess(HashMap<String, String> successMap) {
+                Log.d("AddUser","User added: " + groupMember.getName());
+            }
+
+            @Override
+            public void onError(CometChatException e) {
+                Log.e("AddUser","User add failed: " + e.getMessage().toString());
+            }
+        });
+    }
+
     public void removeUser(int position, ProgressBar progressBar) {
         try {
             String json = new JSONObject()

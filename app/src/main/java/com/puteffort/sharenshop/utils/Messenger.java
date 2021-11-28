@@ -23,6 +23,7 @@ import com.cometchat.pro.uikit.ui_settings.enums.ConversationMode;
 import com.cometchat.pro.uikit.ui_settings.enums.GroupMode;
 import com.cometchat.pro.uikit.ui_settings.enums.UserMode;
 import com.puteffort.sharenshop.LoginActivity;
+import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.fragments.AddedRecyclerView;
 import com.puteffort.sharenshop.models.PostDetailInfo;
 import com.puteffort.sharenshop.models.PostInfo;
@@ -121,26 +122,17 @@ public class Messenger {
     }
 
 
-    public static void createGroup(PostInfo postInfo) {
-        String GUID = postInfo.getId();
-        String groupName = postInfo.getTitle();
-        String groupType = CometChatConstants.GROUP_TYPE_PRIVATE ;
-        String password = "";
-
-        Group new_group = new Group(GUID, groupName, groupType, password);
-        new_group.setOwner(postInfo.getOwnerID());
-        new_group.setDescription(postInfo.getDescription());
-        new_group.setScope(CometChatConstants.SCOPE_ADMIN);
-
-        CometChat.createGroup(new_group, new CometChat.CallbackListener<Group>(){
+    public static void logout() {
+        CometChat.logout(new CometChat.CallbackListener<String>() {
             @Override
-            public void onSuccess(Group group) {
-                //Log.d(TAG, "Group created successfully: " + group.toString());
+            public void onSuccess(String successMessage) {
+                //Log.d(TAG, "Logout completed successfully");
             }
             @Override
             public void onError(CometChatException e) {
-                //Log.d(TAG, "Group creation failed with exception: " + e.getMessage());
+                //Log.d(TAG, "Logout failed with exception: " + e.getMessage());
             }
         });
     }
+
 }
