@@ -337,10 +337,9 @@ public class LoginActivity extends AppCompatActivity {
         //Initiate messenger
         Messenger.init(this);
         Messenger.login(mAuth.getCurrentUser().getUid(),this);
-        startMessenger(this);
+        //startMessenger(this);
 
-        //startActivity(new Intent(getApplicationContext(), MainActivity.class));
-        //startActivity(new Intent(this, CometChatUI.class));
+        startActivity(new Intent(getApplicationContext(), MainActivity.class));
         finish();
     }
 
