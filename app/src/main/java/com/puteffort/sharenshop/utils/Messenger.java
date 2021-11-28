@@ -54,7 +54,7 @@ public class Messenger {
         UIKitSettings.conversations(true); // recent conversations
         UIKitSettings.calls(false);
         UIKitSettings.users(false);
-        UIKitSettings.userSettings(false);
+        UIKitSettings.userSettings(true);
 
         //Call settings
         UIKitSettings.userAudioCall(true);
@@ -75,8 +75,8 @@ public class Messenger {
         UIKitSettings. joinOrLeaveGroup(true);
         UIKitSettings.allowDeleteGroups(true);
         UIKitSettings.viewGroupMembers(true);
-        UIKitSettings.allowAddMembers(true);
-        UIKitSettings.allowModeratorToDeleteMemberMessages(false);
+        UIKitSettings.allowAddMembers(false);
+        UIKitSettings.allowModeratorToDeleteMemberMessages(true);
         UIKitSettings.kickMember(true);
         UIKitSettings.banMember(true);
         UIKitSettings.groupNotifications(true);
