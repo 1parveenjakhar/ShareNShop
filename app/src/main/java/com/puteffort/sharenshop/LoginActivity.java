@@ -187,7 +187,10 @@ public class LoginActivity extends AppCompatActivity {
                     // Authenticating Google user with firebase
                     AuthCredential credential = GoogleAuthProvider.getCredential(account.getIdToken(), null);
                     mAuth.signInWithCredential(credential)
-                            .addOnSuccessListener(this, authResult -> handleSuccessfulAuthentication(SIGN_IN_USING_GOOGLE))
+                            .addOnSuccessListener(this, authResult -> {
+                                createMessengerUser();
+                                handleSuccessfulAuthentication(SIGN_IN_USING_GOOGLE);
+                            })
                             .addOnFailureListener(this, this::handleFailedAuthentication);
                 } catch (ApiException apiException) {
                     handleFailedAuthentication(apiException);
@@ -226,9 +229,11 @@ public class LoginActivity extends AppCompatActivity {
     private void handleSuccessfulAuthentication(int signInMethod) {
         Log.i(TAG, "Handling successful authentication...");
 
-        // Checking if current user exists in DB
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        Messenger.login(currentUser.getUid(),this);
+        // Checking if current user exists in DB
         DocumentReference docRef = db.collection(USER_PROFILE).document(currentUser.getUid());
         docRef.get().addOnSuccessListener(documentSnapshot -> {
             if (documentSnapshot.exists()) {

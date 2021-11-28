@@ -75,7 +75,7 @@ public class Messenger {
         UIKitSettings. joinOrLeaveGroup(true);
         UIKitSettings.allowDeleteGroups(true);
         UIKitSettings.viewGroupMembers(true);
-        UIKitSettings.allowAddMembers(false);
+        UIKitSettings.allowAddMembers(true);
         UIKitSettings.allowModeratorToDeleteMemberMessages(true);
         UIKitSettings.kickMember(true);
         UIKitSettings.banMember(true);
