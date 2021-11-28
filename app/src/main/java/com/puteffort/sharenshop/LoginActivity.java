@@ -78,6 +78,7 @@ public class LoginActivity extends AppCompatActivity {
         this.activity = this;
 
         setTheme();
+        Messenger.init(this);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_login);
         editEmailAddress = Objects.requireNonNull(binding.emailAddress);
 
@@ -340,7 +341,7 @@ public class LoginActivity extends AppCompatActivity {
     private void handleSuccessfulAuthentication() {
 
         //Initiate messenger
-        Messenger.init(this);
+        //Messenger.init(this);
         Messenger.login(mAuth.getCurrentUser().getUid(),this);
         //startMessenger(this);
 
