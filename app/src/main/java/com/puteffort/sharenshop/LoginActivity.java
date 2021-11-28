@@ -274,7 +274,8 @@ public class LoginActivity extends AppCompatActivity {
         String email = currentUser.getEmail();
         String name = currentUser.getDisplayName();
         String Uid = currentUser.getUid();
-        UserProfile userProfile = new UserProfile(name, email, "", Uid);
+        String imgURL = Objects.requireNonNull(currentUser.getPhotoUrl()).toString();
+        UserProfile userProfile = new UserProfile(name, email, imgURL, Uid);
 
         List<Task<Void>> tasks = new ArrayList<>();
         tasks.add(docRef.set(userProfile));
