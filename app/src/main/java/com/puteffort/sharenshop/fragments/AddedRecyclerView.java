@@ -7,6 +7,7 @@ import static com.puteffort.sharenshop.utils.DBOperations.FINAL_CONFIRMATION;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,6 +16,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -24,14 +26,22 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.cometchat.pro.constants.CometChatConstants;
+import com.cometchat.pro.core.CometChat;
+import com.cometchat.pro.exceptions.CometChatException;
+import com.cometchat.pro.models.GroupMember;
+import com.cometchat.pro.uikit.ui_components.cometchat_ui.CometChatUI;
 import com.google.firebase.auth.FirebaseAuth;
 import com.puteffort.sharenshop.R;
+import com.puteffort.sharenshop.models.PostDetailInfo;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.models.UserStatus;
+import com.puteffort.sharenshop.utils.Messenger;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -41,6 +51,10 @@ public class AddedRecyclerView extends Fragment {
     private AddedRecyclerViewAdapter adapter;
     private ProgressBar progressBar, buttonProgressBar;
     private Button finalButton;
+
+    private String CHAT_NOW = "Chat \uD83D\uDCAC";
+    private PostDetailInfo postDetailInfo;
+    private PostInfo postInfo;
 
     public AddedRecyclerView() {
         // Required empty public constructor
@@ -70,13 +84,46 @@ public class AddedRecyclerView extends Fragment {
         progressBar.setVisibility(View.VISIBLE);
         buttonProgressBar.setVisibility(GONE);
         finalButton.setVisibility(GONE);
-        finalButton.setOnClickListener(buttonView ->
-                model.askForFinalConfirmation(buttonProgressBar, finalButton));
+        finalButton.setOnClickListener(buttonView -> {
+            String originalText = finalButton.getText().toString();
+            if (originalText.equals(CHAT_NOW)) {
+                openChat(postDetailInfo, postInfo);
+            } else
+                model.askForFinalConfirmation(buttonProgressBar, finalButton);
+        });
 
         adapter = new AddedRecyclerViewAdapter(requireContext(), this);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
+    }
+
+    private void openChat(PostDetailInfo postDetailInfo, PostInfo postInfo) {
+        //Adding members first
+        List<UserStatus> usersAdded = postDetailInfo.getUsersAdded();
+        List<GroupMember> members = new ArrayList<>();
+
+        for(UserStatus userStatus:usersAdded){
+            String UID = userStatus.getUserID();
+
+            if(!UID.equals(postInfo.getOwnerID()))
+                members.add(new GroupMember(UID, CometChatConstants.SCOPE_PARTICIPANT));
+        }
+
+        String GUID = postInfo.getId();
+
+        CometChat.addMembersToGroup(GUID, members, null, new CometChat.CallbackListener<HashMap<String, String>>(){
+            @Override
+            public void onSuccess(HashMap<String, String> successMap) {
+                startActivity(new Intent(requireContext(),CometChatUI.class));
+            }
+
+            @Override
+            public void onError(CometChatException e) {
+                Toast.makeText(requireContext(), e.getMessage().toString(), Toast.LENGTH_SHORT).show();
+                startActivity(new Intent(requireContext(),CometChatUI.class));
+            }
+        });
     }
 
     @SuppressLint({"NotifyDataSetChanged", "SetTextI18n"})
@@ -104,7 +151,9 @@ public class AddedRecyclerView extends Fragment {
                     } else { // already asked
                         finalButton.setVisibility(View.VISIBLE);
                         if (areAllAccepted(postDetailInfo.getUsersAdded())) {
-                            finalButton.setText("Completed 🤩🥳");
+                            finalButton.setText(CHAT_NOW);
+                            this.postDetailInfo = postDetailInfo;
+                            this.postInfo = postInfo;
                         } else {
                             // To owner and if user has already accepted, show In Progress
                             if (model.isUserPostOwner() || getUserStatus().equals(ACCEPTED))
@@ -121,14 +170,15 @@ public class AddedRecyclerView extends Fragment {
     private String getUserStatus() {
         String userID = FirebaseAuth.getInstance().getUid();
 
-        for (PostFragmentViewModel.AddedUser user: Objects.requireNonNull(model.getUsersAdded().getValue())) {
+        for (PostFragmentViewModel.AddedUser user : Objects.requireNonNull(model.getUsersAdded().getValue())) {
             if (user.getProfile().getId().equals(userID))
                 return user.getStatus();
         }
         return ADDED;
     }
+
     private boolean areAllAccepted(List<UserStatus> users) {
-        for (UserStatus user: users) {
+        for (UserStatus user : users) {
             if (!user.getStatus().equals(ACCEPTED))
                 return false;
         }
@@ -136,7 +186,7 @@ public class AddedRecyclerView extends Fragment {
     }
 
     private void openUserFragment(int position) {
-        ((PostFragment)requireParentFragment()).openUserFragment(adapter.getUser(position));
+        ((PostFragment) requireParentFragment()).openUserFragment(adapter.getUser(position));
     }
 
     private static class AddedRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {

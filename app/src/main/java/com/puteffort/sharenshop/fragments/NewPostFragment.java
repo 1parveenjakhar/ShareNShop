@@ -27,6 +27,7 @@ import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentNewPostBinding;
 import com.puteffort.sharenshop.models.PostInfo;
+import com.puteffort.sharenshop.utils.Messenger;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -110,9 +111,15 @@ public class NewPostFragment extends Fragment {
                     handler.post(() -> onPostFailure());
                     return;
                 }
-                handler.post(() -> onPostSuccess());
+                handler.post(() -> onPostSuccess(postInfo));
             }
         });
+    }
+
+    private void onPostSuccess(PostInfo postInfo) {
+        Messenger.createGroup(postInfo);
+        showToast(requireContext(), getString(R.string.new_post_post_successful));
+        ((MainActivity)requireActivity()).changeFragment(R.id.homeMenuItem);
     }
 
     private void onPostSuccess() {
