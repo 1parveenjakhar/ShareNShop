@@ -99,30 +99,26 @@ public class NewPostFragment extends Fragment {
 
     private void editPost(View view) {
         String title, description, days, months, years, amount;
-        title = Objects.requireNonNull(binding.postTitle.getEditText()).getText().toString();
-        description = Objects.requireNonNull(binding.postDescription.getEditText()).getText().toString();
-        days = Objects.requireNonNull(binding.postDays.getEditText()).getText().toString();
-        months = Objects.requireNonNull(binding.postMonths.getEditText()).getText().toString();
-        years = Objects.requireNonNull(binding.postYears.getEditText()).getText().toString();
-        amount = Objects.requireNonNull(binding.postAmount.getEditText()).getText().toString();
+        title = Objects.requireNonNull(binding.postTitle.getEditText()).getText().toString().trim();
+        description = Objects.requireNonNull(binding.postDescription.getEditText()).getText().toString().trim();
+        days = Objects.requireNonNull(binding.postDays.getEditText()).getText().toString().trim();
+        months = Objects.requireNonNull(binding.postMonths.getEditText()).getText().toString().trim();
+        years = Objects.requireNonNull(binding.postYears.getEditText()).getText().toString().trim();
+        amount = Objects.requireNonNull(binding.postAmount.getEditText()).getText().toString().trim();
 
         if (TextUtils.isEmpty(title)) {
             showToast(requireContext(), getString(R.string.new_post_title_error));
-        } else if (TextUtils.isEmpty(days)) {
+        } else if (!(isValidTime(days) || isValidTime(months) || isValidTime(years))) {
             showToast(requireContext(), getString(R.string.new_post_days_error));
-        } else if (TextUtils.isEmpty(months)) {
-            showToast(requireContext(), getString(R.string.new_post_months_error));
-        } else if (TextUtils.isEmpty(years)) {
-            showToast(requireContext(), getString(R.string.new_post_years_error));
         } else if (TextUtils.isEmpty(amount)) {
             showToast(requireContext(), getString(R.string.new_post_amount_error));
         } else {
             binding.progressBar.setVisibility(View.VISIBLE);
             postInfo.setTitle(title);
             postInfo.setAmount(Integer.parseInt(amount));
-            postInfo.setDays(Integer.parseInt(days));
-            postInfo.setMonths(Integer.parseInt(months));
-            postInfo.setYears(Integer.parseInt(years));
+            postInfo.setDays(days.isEmpty() ? 0 : Integer.parseInt(days));
+            postInfo.setMonths(months.isEmpty() ? 0 : Integer.parseInt(months));
+            postInfo.setYears(years.isEmpty() ? 0 : Integer.parseInt(years));
             postInfo.setDescription(description);
 
             if (db == null)
@@ -139,19 +135,25 @@ public class NewPostFragment extends Fragment {
         }
     }
 
+    private boolean isValidTime(String time) {
+        time = time.trim();
+        if (TextUtils.isEmpty(time)) return false;
+        return Integer.parseInt(time) > 0;
+    }
+
     private void handlePostListener(View view) {
         String title, description, days, months, years, people, amount;
-        title = Objects.requireNonNull(binding.postTitle.getEditText()).getText().toString();
-        description = Objects.requireNonNull(binding.postDescription.getEditText()).getText().toString();
-        days = Objects.requireNonNull(binding.postDays.getEditText()).getText().toString();
-        months = Objects.requireNonNull(binding.postMonths.getEditText()).getText().toString();
-        years = Objects.requireNonNull(binding.postYears.getEditText()).getText().toString();
-        amount = Objects.requireNonNull(binding.postAmount.getEditText()).getText().toString();
-        people = Objects.requireNonNull(binding.postPeopleRequirement.getEditText()).getText().toString();
+        title = Objects.requireNonNull(binding.postTitle.getEditText()).getText().toString().trim();
+        description = Objects.requireNonNull(binding.postDescription.getEditText()).getText().toString().trim();
+        days = Objects.requireNonNull(binding.postDays.getEditText()).getText().toString().trim();
+        months = Objects.requireNonNull(binding.postMonths.getEditText()).getText().toString().trim();
+        years = Objects.requireNonNull(binding.postYears.getEditText()).getText().toString().trim();
+        amount = Objects.requireNonNull(binding.postAmount.getEditText()).getText().toString().trim();
+        people = Objects.requireNonNull(binding.postPeopleRequirement.getEditText()).getText().toString().trim();
 
         if (TextUtils.isEmpty(title)) {
             showToast(requireContext(), getString(R.string.new_post_title_error));
-        } else if (TextUtils.isEmpty(days) && TextUtils.isEmpty(months) && TextUtils.isEmpty(years)) {
+        } else if (!(isValidTime(days) || isValidTime(months) || isValidTime(years))) {
             showToast(requireContext(), getString(R.string.new_post_days_error));
         } else if (TextUtils.isEmpty(amount)) {
             showToast(requireContext(), getString(R.string.new_post_amount_error));
