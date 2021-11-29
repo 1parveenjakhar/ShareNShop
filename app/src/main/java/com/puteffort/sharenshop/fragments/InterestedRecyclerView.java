@@ -117,8 +117,8 @@ public class InterestedRecyclerView extends Fragment {
                 userHolder.cross.setVisibility(View.VISIBLE);
                 userHolder.tick.setVisibility(View.VISIBLE);
 
-                userHolder.cross.setOnClickListener(view -> parentFragment.addUser(false, position, userHolder.crossPB));
-                userHolder.tick.setOnClickListener(view -> parentFragment.addUser(true, position, userHolder.tickPB));
+                userHolder.cross.setOnClickListener(view -> parentFragment.addUser(false, holder.getAdapterPosition(), userHolder.crossPB));
+                userHolder.tick.setOnClickListener(view -> parentFragment.addUser(true, holder.getAdapterPosition(), userHolder.tickPB));
             }
 
             userHolder.userName.setText(user.getName());
