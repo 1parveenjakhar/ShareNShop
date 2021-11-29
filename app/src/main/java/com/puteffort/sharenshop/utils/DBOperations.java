@@ -39,6 +39,7 @@ public class DBOperations {
     private static ListenerRegistration profileListener = null, activityListener = null;
 
     public final static Map<String, String> statusMap;
+    private static String token = null;
 
     static {
         statusMap = new HashMap<>();
@@ -76,6 +77,7 @@ public class DBOperations {
             if (task.isSuccessful()) {
                 String token = task.getResult();
                 if (token != null) {
+                    DBOperations.token = token;
                     db.collection(DBOperations.TOKEN).document(userID)
                             .update(Collections.singletonMap("tokens", FieldValue.arrayUnion(token)));
                 }
@@ -84,15 +86,10 @@ public class DBOperations {
     }
 
     public static void removeToken(String userID) {
-        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                String token = task.getResult();
-                if (token != null) {
-                    db.collection(DBOperations.TOKEN).document(userID)
-                            .update(Collections.singletonMap("tokens", FieldValue.arrayRemove(token)));
-                }
-            }
-        });
+        if (token != null) {
+            db.collection(DBOperations.TOKEN).document(userID)
+                    .update(Collections.singletonMap("tokens", FieldValue.arrayRemove(token)));
+        }
     }
 
     public static LiveData<UserProfile> getUserProfile() {
