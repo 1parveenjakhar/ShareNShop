@@ -307,13 +307,17 @@ public class PostFragmentViewModel extends AndroidViewModel {
     // Functions related to InterestedRecyclerView
     public void addUser(int position, ProgressBar progressBar) {
         try {
+            if (position >= usersInterested.size()) {
+                return;
+            }
+            String userID = usersInterested.get(position).getId();
             String json = new JSONObject()
                     .put("postID", postInfo.getId())
-                    .put("userID", usersInterested.get(position).getId())
+                    .put("userID", userID)
                     .put("postTitle", postInfo.getTitle())
                     .put("requirement", postInfo.getPeopleRequired())
                     .toString();
-            String userID = usersInterested.get(position).getId();
+            progressBar.setVisibility(View.VISIBLE);
             client.newCall(getRequest(json, SERVER_URL + "acceptUser")).enqueue(new Callback() {
                 @Override
                 public void onFailure(@NonNull Call call, @NonNull IOException e) {
@@ -326,7 +330,10 @@ public class PostFragmentViewModel extends AndroidViewModel {
                         handler.post(() -> interestedUserChangeFailure(progressBar));
                         return;
                     }
-                    handler.post(() -> addUserToGroupChat(postInfo, userID));
+                    handler.post(() -> {
+                        addUserToGroupChat(postInfo, userID);
+                        progressBar.setVisibility(View.INVISIBLE);
+                    });
                 }
             });
         } catch (JSONException e) {
@@ -361,6 +368,7 @@ public class PostFragmentViewModel extends AndroidViewModel {
                     .put("userID", usersInterested.get(position).getId())
                     .put("postTitle", postInfo.getTitle())
                     .toString();
+            progressBar.setVisibility(View.VISIBLE);
             client.newCall(getRequest(json, SERVER_URL + "rejectUser")).enqueue(new Callback() {
                 @Override
                 public void onFailure(@NonNull Call call, @NonNull IOException e) {
@@ -372,6 +380,7 @@ public class PostFragmentViewModel extends AndroidViewModel {
                     if (response.code() != SUCCESS_CODE) {
                         handler.post(() -> interestedUserChangeFailure(progressBar));
                     }
+                    handler.post(() -> progressBar.setVisibility(View.INVISIBLE));
                 }
             });
         } catch (JSONException e) {

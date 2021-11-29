@@ -70,7 +70,6 @@ public class InterestedRecyclerView extends Fragment {
     }
 
     void addUser(boolean isUserAdded, int position, ProgressBar progressBar) {
-        progressBar.setVisibility(View.VISIBLE);
         if (isUserAdded) model.addUser(position, progressBar);
         else model.removeUser(position, progressBar);
     }
