@@ -1,5 +1,7 @@
 package com.puteffort.sharenshop.fragments;
 
+import static com.puteffort.sharenshop.utils.DBOperations.TOKEN;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -9,7 +11,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.RadioButton;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -17,11 +18,15 @@ import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.LoginActivity;
 import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentAccountBinding;
+import com.puteffort.sharenshop.services.NotificationRepository;
 import com.puteffort.sharenshop.utils.Messenger;
+
+import java.util.Objects;
 
 public class AccountFragment extends Fragment {
     private FragmentAccountBinding binding;
@@ -65,6 +70,9 @@ public class AccountFragment extends Fragment {
     @SuppressLint("NonConstantResourceId")
     private void addListeners() {
         binding.logoutButton.setOnClickListener(view -> {
+            NotificationRepository.getInstance(requireContext()).deleteAllNotifications();
+            FirebaseFirestore.getInstance().collection(TOKEN)
+                    .document(Objects.requireNonNull(mAuth.getUid())).delete();
             mAuth.signOut();
             Messenger.logout();
             startActivity(new Intent(requireContext(), LoginActivity.class));

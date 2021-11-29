@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -23,12 +24,12 @@ import com.puteffort.sharenshop.viewmodels.NotificationFragmentViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class NotificationFragment extends Fragment {
     private RecyclerView recyclerView;
     private NotificationFragmentViewModel model;
     private ProgressBar progressBar;
+    private Button markAllAsRead;
     private NotificationRecyclerViewAdapter adapter;
 
     public NotificationFragment() {
@@ -43,6 +44,7 @@ public class NotificationFragment extends Fragment {
 
         recyclerView = view.findViewById(R.id.notificationsRecyclerView);
         progressBar = view.findViewById(R.id.progressBar);
+        markAllAsRead = view.findViewById(R.id.markAllAsRead);
 
         progressBar.setVisibility(View.GONE);
 
@@ -58,6 +60,7 @@ public class NotificationFragment extends Fragment {
         adapter = new NotificationRecyclerViewAdapter(requireContext(), this);
         recyclerView.setAdapter(adapter);
 
+        markAllAsRead.setOnClickListener(view -> model.markAllAsRead());
     }
 
     private void addObservers() {
@@ -72,7 +75,7 @@ public class NotificationFragment extends Fragment {
     }
 
     private void openPostFragment(int position) {
-        Notification notification = Objects.requireNonNull(model.getNotifications().getValue()).get(position);
+        Notification notification = adapter.getNotification(position);
         if (!notification.markedAsRead) {
             model.markNotificationAsRead(position);
         }
@@ -95,6 +98,10 @@ public class NotificationFragment extends Fragment {
             notifications.clear();
             notifications.addAll(newNotifications);
             diffResult.dispatchUpdatesTo(this);
+        }
+
+        Notification getNotification(int index) {
+            return notifications.get(index);
         }
 
         @NonNull

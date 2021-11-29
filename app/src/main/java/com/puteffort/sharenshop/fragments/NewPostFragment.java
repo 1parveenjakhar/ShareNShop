@@ -1,5 +1,7 @@
 package com.puteffort.sharenshop.fragments;
 
+import static android.view.View.GONE;
+import static com.puteffort.sharenshop.utils.DBOperations.POST_DETAIL_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.getUniqueID;
 import static com.puteffort.sharenshop.utils.UtilFunctions.SERVER_URL;
@@ -9,6 +11,7 @@ import static com.puteffort.sharenshop.utils.UtilFunctions.getRequest;
 import static com.puteffort.sharenshop.utils.UtilFunctions.gson;
 import static com.puteffort.sharenshop.utils.UtilFunctions.showToast;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -33,7 +36,10 @@ import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentNewPostBinding;
 import com.puteffort.sharenshop.models.PostInfo;
+import com.puteffort.sharenshop.models.UserStatus;
 import com.puteffort.sharenshop.utils.Messenger;
+
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -49,21 +55,88 @@ public class NewPostFragment extends Fragment {
     private FirebaseFirestore db;
     private FirebaseAuth auth;
     private final Handler handler = new Handler(Looper.getMainLooper());
+    private PostInfo postInfo;
 
     public NewPostFragment() {
         // Required empty public constructor
     }
 
+    public NewPostFragment(PostInfo postInfo) {
+        this.postInfo = postInfo;
+    }
+
+    @SuppressLint("SetTextI18n")
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_new_post, container, false);
-        binding.postButton.setOnClickListener(this::handlePostListener);
 
-        binding.progressBar.setVisibility(View.GONE);
+        if (postInfo != null) {
+            binding.postButton.setText("Edit Post");
+            setPostInfo();
+            binding.postButton.setOnClickListener(this::editPost);
+        } else {
+            binding.postButton.setOnClickListener(this::handlePostListener);
+        }
+        binding.progressBar.setVisibility(GONE);
 
         return binding.getRoot();
+    }
+
+    private void setPostInfo() {
+        Objects.requireNonNull(binding.postTitle.getEditText()).setText(postInfo.getTitle());
+        Objects.requireNonNull(binding.postAmount.getEditText()).setText(String.valueOf(postInfo.getAmount()));
+        Objects.requireNonNull(binding.postDescription.getEditText()).setText(postInfo.getDescription());
+        Objects.requireNonNull(binding.postPeopleRequirement.getEditText()).setText(String.valueOf(postInfo.getPeopleRequired()));
+        Objects.requireNonNull(binding.postDays.getEditText()).setText(String.valueOf(postInfo.getDays()));
+        Objects.requireNonNull(binding.postMonths.getEditText()).setText(String.valueOf(postInfo.getMonths()));
+        Objects.requireNonNull(binding.postYears.getEditText()).setText(String.valueOf(postInfo.getYears()));
+
+        binding.postPeopleRequirement.getEditText().setEnabled(false);
+        binding.includeMe.setVisibility(GONE);
+    }
+
+    private void editPost(View view) {
+        String title, description, days, months, years, amount;
+        title = Objects.requireNonNull(binding.postTitle.getEditText()).getText().toString();
+        description = Objects.requireNonNull(binding.postDescription.getEditText()).getText().toString();
+        days = Objects.requireNonNull(binding.postDays.getEditText()).getText().toString();
+        months = Objects.requireNonNull(binding.postMonths.getEditText()).getText().toString();
+        years = Objects.requireNonNull(binding.postYears.getEditText()).getText().toString();
+        amount = Objects.requireNonNull(binding.postAmount.getEditText()).getText().toString();
+
+        if (TextUtils.isEmpty(title)) {
+            showToast(requireContext(), getString(R.string.new_post_title_error));
+        } else if (TextUtils.isEmpty(days)) {
+            showToast(requireContext(), getString(R.string.new_post_days_error));
+        } else if (TextUtils.isEmpty(months)) {
+            showToast(requireContext(), getString(R.string.new_post_months_error));
+        } else if (TextUtils.isEmpty(years)) {
+            showToast(requireContext(), getString(R.string.new_post_years_error));
+        } else if (TextUtils.isEmpty(amount)) {
+            showToast(requireContext(), getString(R.string.new_post_amount_error));
+        } else {
+            binding.progressBar.setVisibility(View.VISIBLE);
+            postInfo.setTitle(title);
+            postInfo.setAmount(Integer.parseInt(amount));
+            postInfo.setDays(Integer.parseInt(days));
+            postInfo.setMonths(Integer.parseInt(months));
+            postInfo.setYears(Integer.parseInt(years));
+            postInfo.setDescription(description);
+
+            if (db == null)
+                db = FirebaseFirestore.getInstance();
+            db.collection(POST_INFO).document(postInfo.getId()).set(postInfo)
+                    .addOnSuccessListener(unused -> {
+                        binding.progressBar.setVisibility(View.INVISIBLE);
+                        requireActivity().getSupportFragmentManager().popBackStack();
+                    })
+                    .addOnFailureListener(error -> {
+                        binding.progressBar.setVisibility(View.INVISIBLE);
+                        showToast(requireContext(), "Unable to update your post! Try Again!");
+                    });
+        }
     }
 
     private void handlePostListener(View view) {
@@ -88,13 +161,18 @@ public class NewPostFragment extends Fragment {
             showToast(requireContext(), getString(R.string.new_post_amount_error));
         } else if (TextUtils.isEmpty(people)) {
             showToast(requireContext(), getString(R.string.new_post_people_error));
+        } else if (binding.includeMe.isChecked() && Integer.parseInt(people) < 2) {
+            showToast(requireContext(), "Add someone else apart from you!");
+        } else if (Integer.parseInt(people) < 1) {
+            showToast(requireContext(), "People can't be ZERO!");
         } else {
             String userID = Objects.requireNonNull(FirebaseAuth.getInstance()).getUid();
-            createNewPost(new PostInfo(title, description, userID, days, months, years, people, amount));
+            createNewPost(new PostInfo(title, description, userID, days, months, years, people, amount),
+                    binding.includeMe.isChecked());
         }
     }
 
-    private void createNewPost(PostInfo postInfo) {
+    private void createNewPost(PostInfo postInfo, boolean isIncluded) {
         binding.progressBar.setVisibility(View.VISIBLE);
 
         if (db == null)
@@ -103,24 +181,33 @@ public class NewPostFragment extends Fragment {
             auth = FirebaseAuth.getInstance();
         }
 
-        String id = getUniqueID(POST_INFO);
-        postInfo.setId(id);
+        try {
+            String id = getUniqueID(POST_INFO);
+            postInfo.setId(id);
 
-        client.newCall(getRequest(gson.toJson(postInfo), SERVER_URL + "createNewPost")).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                handler.post(() -> onPostFailure());
-            }
+            String json = new JSONObject()
+                    .put("post", gson.toJson(postInfo))
+                    .put("isIncluded", isIncluded)
+                    .toString();
 
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) {
-                if (response.code() != SUCCESS_CODE) {
+            client.newCall(getRequest(json, SERVER_URL + "createNewPost")).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
                     handler.post(() -> onPostFailure());
-                    return;
                 }
-                handler.post(() -> onPostSuccess(postInfo));
-            }
-        });
+
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) {
+                    if (response.code() != SUCCESS_CODE) {
+                        handler.post(() -> onPostFailure());
+                        return;
+                    }
+                    handler.post(() -> onPostSuccess(postInfo));
+                }
+            });
+        } catch (Exception e) {
+            onPostFailure();
+        }
     }
 
     private void onPostSuccess(PostInfo postInfo) {
@@ -151,11 +238,6 @@ public class NewPostFragment extends Fragment {
                 Log.d("GroupCreated", "Group creation failed with exception: " + e.getMessage());
             }
         });
-    }
-
-    private void onPostSuccess() {
-        showToast(requireContext(), getString(R.string.new_post_post_successful));
-        ((MainActivity) requireActivity()).changeFragment(R.id.homeMenuItem);
     }
 
     private void onPostFailure() {

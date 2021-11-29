@@ -20,4 +20,7 @@ public interface NotificationDao {
 
     @Update
     void updateNotification(Notification notification);
+
+    @Query("DELETE from " + NotificationDatabase.NOTIFICATION_DB_NAME)
+    void deleteAll();
 }

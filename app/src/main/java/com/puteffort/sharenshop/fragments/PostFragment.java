@@ -58,6 +58,7 @@ public class PostFragment extends Fragment {
         else if (postID != null) model.setPostInfo(postID);
 
         binding.tabLayout.setTabGravity(TabLayout.GRAVITY_FILL);
+        binding.editButton.setVisibility(View.GONE);
 
         setListeners();
         setObservers();
@@ -77,6 +78,10 @@ public class PostFragment extends Fragment {
         } else {
             binding.postDescription.setVisibility(View.VISIBLE);
             binding.postDescription.setText(postInfo.getDescription());
+        }
+        if (model.isUserPostOwner()) {
+            binding.editButton.setVisibility(View.VISIBLE);
+            binding.editButton.setOnClickListener(view -> ((MainActivity)requireActivity()).changeFragment(new NewPostFragment(postInfo)));
         }
     }
 

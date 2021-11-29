@@ -129,4 +129,8 @@
     <string name="reset_link_mailed">Reset Link mailed !</string>
 
     <string name="want_to_accept">Want to Accept ?</string>
+    <string name="include_me">Include Me</string>
+    <string name="mark_all_as_read">Mark All As Read</string>
+    <string name="please_select_a_post_from_the_left">Please select a Post from the left !</string>
+    <string name="button_to_edit_the_post">Button to edit the post</string>
 </resources>

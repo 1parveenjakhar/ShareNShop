@@ -33,6 +33,7 @@ public class DBOperations {
     public final static String FINAL_CONFIRMATION = "Final Confirmation ?";
     public final static String ACCEPTED = "Accepted !";
     public final static String ADDED = "Added";
+    public final static String OWNER = "Owner";
 
     private static ListenerRegistration profileListener = null, activityListener = null;
 

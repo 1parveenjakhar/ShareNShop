@@ -3,13 +3,12 @@ package com.puteffort.sharenshop.fragments;
 import static android.view.View.GONE;
 import static com.puteffort.sharenshop.utils.DBOperations.ACCEPTED;
 import static com.puteffort.sharenshop.utils.DBOperations.ADDED;
-import static com.puteffort.sharenshop.utils.DBOperations.FINAL_CONFIRMATION;
+import static com.puteffort.sharenshop.utils.DBOperations.OWNER;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,7 +16,6 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
@@ -27,25 +25,15 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.cometchat.pro.constants.CometChatConstants;
-import com.cometchat.pro.core.CometChat;
-import com.cometchat.pro.exceptions.CometChatException;
-import com.cometchat.pro.models.Group;
-import com.cometchat.pro.models.GroupMember;
 import com.cometchat.pro.uikit.ui_components.cometchat_ui.CometChatUI;
 import com.google.firebase.auth.FirebaseAuth;
 import com.puteffort.sharenshop.R;
-import com.puteffort.sharenshop.models.PostDetailInfo;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.models.UserProfile;
-import com.puteffort.sharenshop.models.UserStatus;
-import com.puteffort.sharenshop.utils.Messenger;
 import com.puteffort.sharenshop.viewmodels.PostFragmentViewModel;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 
 public class AddedRecyclerView extends Fragment {
     private RecyclerView recyclerView;
@@ -54,9 +42,7 @@ public class AddedRecyclerView extends Fragment {
     private ProgressBar progressBar, buttonProgressBar;
     private Button finalButton;
 
-    private String CHAT_NOW = "Chat \uD83D\uDCAC";
-    private PostDetailInfo postDetailInfo;
-    private PostInfo postInfo;
+    private final String CHAT_NOW = "Chat \uD83D\uDCAC";
 
     public AddedRecyclerView() {
         // Required empty public constructor
@@ -107,58 +93,52 @@ public class AddedRecyclerView extends Fragment {
 
     @SuppressLint({"NotifyDataSetChanged", "SetTextI18n"})
     private void addObservers() {
-        model.getUsersAdded().observe(getViewLifecycleOwner(), users -> {
-            if (users == null) {
+        model.getUsersAdded().observe(getViewLifecycleOwner(), usersAdded -> {
+            if (usersAdded == null) {
                 progressBar.setVisibility(View.VISIBLE);
                 return;
             }
-            adapter.setUsers(users);
+            adapter.setUsers(usersAdded);
             progressBar.setVisibility(GONE);
-        });
 
-        model.getPostDetailInfo().observe(getViewLifecycleOwner(), postDetailInfo -> {
-            if (postDetailInfo != null) {
-                PostInfo postInfo = model.getPostInfo().getValue();
-                if (postInfo == null) return;
-                if (postDetailInfo.getUsersAdded().size() == postInfo.getPeopleRequired()) { // if requirement is complete
-                    if (!postInfo.getAsked()) { // owner has not asked for final confirmation
-                        if (model.isUserPostOwner()) {
-                            finalButton.setVisibility(View.VISIBLE);
-                            finalButton.setText(R.string.ask_for_final_confirmation);
-                        } else
-                            finalButton.setVisibility(GONE);
-                    } else { // already asked
+            PostInfo postInfo = model.getPostInfo().getValue();
+            if (postInfo == null) return;
+            if (usersAdded.size() == postInfo.getPeopleRequired()) { // if requirement is complete
+                if (!postInfo.getAsked()) { // owner has not asked for final confirmation
+                    if (model.isUserPostOwner()) {
                         finalButton.setVisibility(View.VISIBLE);
-                        if (areAllAccepted(postDetailInfo.getUsersAdded())) {
-                            finalButton.setText(CHAT_NOW);
-                            this.postDetailInfo = postDetailInfo;
-                            this.postInfo = postInfo;
-                        } else {
-                            // To owner and if user has already accepted, show In Progress
-                            if (model.isUserPostOwner() || getUserStatus().equals(ACCEPTED))
-                                finalButton.setText(R.string.in_progress);
-                            else // to normal user show confirm button
-                                finalButton.setText(R.string.want_to_accept);
-                        }
+                        finalButton.setText(R.string.ask_for_final_confirmation);
+                    } else
+                        finalButton.setVisibility(GONE);
+                } else { // already asked
+                    finalButton.setVisibility(View.VISIBLE);
+                    if (areAllAccepted(usersAdded)) {
+                        finalButton.setText(CHAT_NOW);
+                    } else {
+                        // To owner and if user has already accepted, show In Progress
+                        if (model.isUserPostOwner() || getUserStatus(usersAdded).equals(ACCEPTED))
+                            finalButton.setText(R.string.in_progress);
+                        else // to normal user show confirm button
+                            finalButton.setText(R.string.want_to_accept);
                     }
                 }
             }
         });
     }
 
-    private String getUserStatus() {
+    private String getUserStatus(List<PostFragmentViewModel.AddedUser> users) {
         String userID = FirebaseAuth.getInstance().getUid();
 
-        for (PostFragmentViewModel.AddedUser user : Objects.requireNonNull(model.getUsersAdded().getValue())) {
+        for (PostFragmentViewModel.AddedUser user: users) {
             if (user.getProfile().getId().equals(userID))
                 return user.getStatus();
         }
         return ADDED;
     }
 
-    private boolean areAllAccepted(List<UserStatus> users) {
-        for (UserStatus user : users) {
-            if (!user.getStatus().equals(ACCEPTED))
+    private boolean areAllAccepted(List<PostFragmentViewModel.AddedUser> users) {
+        for (PostFragmentViewModel.AddedUser user : users) {
+            if (!user.getStatus().equals(ACCEPTED) && !user.getStatus().equals(OWNER))
                 return false;
         }
         return true;
@@ -180,7 +160,6 @@ public class AddedRecyclerView extends Fragment {
         }
 
         void setUsers(List<PostFragmentViewModel.AddedUser> users) {
-            System.out.println("New users = " + users);
             DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(new UserDiffCallback(usersAdded, users));
             usersAdded.clear();
             usersAdded.addAll(users);
@@ -204,7 +183,7 @@ public class AddedRecyclerView extends Fragment {
             UserHolder userHolder = (UserHolder) holder;
 
             userHolder.tick.setVisibility(
-                    user.getStatus().equals(ACCEPTED) ? View.VISIBLE : GONE);
+                    (user.getStatus().equals(ACCEPTED) || user.getStatus().equals(OWNER)) ? View.VISIBLE : GONE);
 
             userHolder.userName.setText(user.getProfile().getName());
             Glide.with(context).load(user.getProfile().getImageURL())

@@ -9,7 +9,7 @@ import androidx.room.RoomDatabase;
 import com.puteffort.sharenshop.interfaces.NotificationDao;
 import com.puteffort.sharenshop.models.Notification;
 
-@Database(entities = {Notification.class}, version = 1)
+@Database(entities = {Notification.class}, exportSchema = false, version = 1)
 public abstract class NotificationDatabase extends RoomDatabase {
     public abstract NotificationDao notificationDao();
 

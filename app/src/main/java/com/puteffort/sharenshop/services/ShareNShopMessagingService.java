@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import com.puteffort.sharenshop.MainActivity;
@@ -36,6 +37,9 @@ public class ShareNShopMessagingService extends FirebaseMessagingService {
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         String sender = remoteMessage.getFrom();
         if (sender != null) {
+
+            if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
+
             String topic = sender.substring("/topics/".length());
             Map<String, String> data = remoteMessage.getData();
 

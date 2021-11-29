@@ -1,6 +1,8 @@
 package com.puteffort.sharenshop.fragments;
 
 import static android.view.View.GONE;
+import static com.puteffort.sharenshop.utils.DBOperations.INTERESTED;
+import static com.puteffort.sharenshop.utils.DBOperations.OWNER;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
 import static com.puteffort.sharenshop.utils.UtilFunctions.getFormattedTime;
 
@@ -159,6 +161,12 @@ public class HomeFragment extends Fragment {
             postHolder.people.setText(String.format("%d\nPeople", post.getPeopleRequired()));
             postHolder.time.setText(getFormattedTime(post.getYears(), post.getMonths(), post.getDays()));
 
+            if (post.getAccomplished() && recyclerViewPost.getStatus().equals(INTERESTED)) {
+                postHolder.postStatus.setVisibility(GONE);
+            } else {
+                postHolder.postStatus.setText(recyclerViewPost.getStatus());
+            }
+
             db.collection(USER_PROFILE).document(post.getOwnerID()).get()
                     .addOnSuccessListener(docSnap -> {
                         if (docSnap != null) {
@@ -173,9 +181,6 @@ public class HomeFragment extends Fragment {
             int icon = recyclerViewPost.isFavourite() ? R.drawable.filled_star_icon : R.drawable.unfilled_star_icon;
             postHolder.favorite.setImageResource(icon);
             postHolder.isFavourite = recyclerViewPost.isFavourite();
-
-            // Change button accordingly, as per status of the user towards the post
-            postHolder.postStatus.setText(recyclerViewPost.getStatus());
         }
 
         @Override

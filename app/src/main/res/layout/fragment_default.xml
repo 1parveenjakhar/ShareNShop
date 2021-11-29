@@ -6,12 +6,14 @@
     tools:context=".fragments.DefaultFragment">
 
     <TextView
+        android:id="@+id/rightPaneMessage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:textStyle="bold"
         android:textSize="30sp"
         android:gravity="center"
-        android:text="Please select a post from left !" />
+        android:layout_marginHorizontal="20dp"
+        android:text="@string/please_select_a_post_from_the_left" />
 
 </FrameLayout>

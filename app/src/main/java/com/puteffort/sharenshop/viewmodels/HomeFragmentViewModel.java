@@ -4,6 +4,7 @@ import static android.view.View.GONE;
 import static com.puteffort.sharenshop.utils.DBOperations.INTERESTED;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_ACTIVITY;
+import static com.puteffort.sharenshop.utils.DBOperations.statusMap;
 import static com.puteffort.sharenshop.utils.UtilFunctions.SERVER_URL;
 import static com.puteffort.sharenshop.utils.UtilFunctions.SUCCESS_CODE;
 import static com.puteffort.sharenshop.utils.UtilFunctions.client;
@@ -25,10 +26,9 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.models.PostStatus;
@@ -65,7 +65,6 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
 
     private final MutableLiveData<Boolean> dataUpdating = new MutableLiveData<>(true);
 
-    private final Map<String, String> statusMap;
     private final Map<Integer, Integer> lastActivityTimeMap;
     private final Map<Integer, String> sortMap;
     private Set<Integer> lastActivityChips;
@@ -74,7 +73,6 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
 
     private final Handler handler;
     private String previousSearch = "";
-    private ListenerRegistration listener = null;
 
     private final ReentrantLock LOCK = new ReentrantLock();
 
@@ -83,8 +81,6 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
         posts = new ArrayList<>();
         searchedPosts = new ArrayList<>();
         postsLiveData = new MutableLiveData<>();
-
-        statusMap = DBOperations.statusMap;
 
         db = FirebaseFirestore.getInstance();
         userID = FirebaseAuth.getInstance().getUid();
@@ -123,33 +119,20 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
         });
     }
     private void fetchPosts(Set<String> wishListedPosts, Map<String, String> postsStatus) {
-        originalPosts.clear();
-
-        if (listener != null) listener.remove();
-        listener = db.collection(POST_INFO)
-                .addSnapshotListener((value, error) -> {
-                    if (error == null && value != null) {
+        db.collection(POST_INFO).get()
+                .addOnSuccessListener(querySnaps -> {
+                    if (querySnaps != null) {
                         LOCK.lock();
-                        for (DocumentChange docChange: value.getDocumentChanges()) {
-                            DocumentChange.Type type = docChange.getType();
-                            PostInfo postInfo = docChange.getDocument().toObject(PostInfo.class);
+                        originalPosts.clear();
+                        for (QueryDocumentSnapshot querySnap : querySnaps) {
+                            PostInfo postInfo = querySnap.toObject(PostInfo.class);
                             RecyclerViewPost post = new RecyclerViewPost(postInfo);
-
-                            if (type == DocumentChange.Type.ADDED) {
-                                post.setStatus(postsStatus.get(postInfo.getId()));
-                                post.setFavourite(wishListedPosts.contains(postInfo.getId()));
-                                originalPosts.add(post);
-                            } else if (type == DocumentChange.Type.MODIFIED) {
-                                originalPosts.set(originalPosts.indexOf(post), post);
-                            } else if (type == DocumentChange.Type.REMOVED) {
-                                originalPosts.remove(post);
-                            }
+                            post.setStatus(postsStatus.get(postInfo.getId()));
+                            post.setFavourite(wishListedPosts.contains(postInfo.getId()));
+                            originalPosts.add(post);
                         }
                         onQueryTextChange(previousSearch);
                         LOCK.unlock();
-                    } else {
-                        // Database Error
-                        handler.post(() -> dataUpdating.setValue(false));
                     }
                 });
     }

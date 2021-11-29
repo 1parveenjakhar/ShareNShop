@@ -1,5 +1,6 @@
 package com.puteffort.sharenshop.models;
 
+import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.Ignore;
@@ -11,7 +12,6 @@ import java.io.Serializable;
 
 @Entity(tableName = NotificationDatabase.NOTIFICATION_DB_NAME)
 public class Notification implements Serializable {
-
     @PrimaryKey(autoGenerate = true)
     public long id;
 
@@ -39,6 +39,15 @@ public class Notification implements Serializable {
         this.markedAsRead = false;
     }
 
+    @Ignore
+    public Notification(Notification that) {
+        this.id = that.id;
+        this.title = that.title;
+        this.message = that.message;
+        this.markedAsRead = that.markedAsRead;
+        this.postID = that.postID;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -46,5 +55,14 @@ public class Notification implements Serializable {
 
         Notification that = (Notification) o;
         return id == that.id;
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "{" +
+                ", title='" + title + '\'' +
+                ", markedAsRead=" + markedAsRead +
+                '}';
     }
 }

@@ -26,7 +26,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -53,7 +52,6 @@ import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.models.UserStatus;
 import com.puteffort.sharenshop.utils.DBOperations;
-import com.puteffort.sharenshop.utils.Messenger;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -64,6 +62,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.locks.ReentrantLock;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -73,6 +72,7 @@ public class PostFragmentViewModel extends AndroidViewModel {
     private final FirebaseFirestore db;
     private final FirebaseAuth auth;
     private PostInfo postInfo;
+    private PostDetailInfo postDetailInfo;
 
     private final MutableLiveData<Drawable> ownerImage = new MutableLiveData<>();
     private final MutableLiveData<String> ownerImageURL = new MutableLiveData<>();
@@ -82,26 +82,28 @@ public class PostFragmentViewModel extends AndroidViewModel {
     private final AddedRecyclerView addedRecyclerView;
 
     private final MutableLiveData<PostInfo> postInfoLiveData;
-    private final MutableLiveData<PostDetailInfo> postDetailInfoLiveData;
 
-    private final List<AddedUser> usersAdded;
+    private List<AddedUser> usersAdded;
     private final MutableLiveData<List<AddedUser>> usersAddedLiveData = new MutableLiveData<>();
-    private final List<UserProfile> usersInterested;
+    private List<UserProfile> usersInterested;
     private final MutableLiveData<List<UserProfile>> usersInterestedLiveData = new MutableLiveData<>();
-    private final List<RecyclerViewComment> comments;
+    private List<RecyclerViewComment> comments;
     private final MutableLiveData<List<RecyclerViewComment>> commentsLiveData = new MutableLiveData<>();
-    private final Map<String, String> statusMap;
+    private Map<String, String> statusMap;
 
     private boolean isUserPostOwner;
     private final Handler handler;
     private int previousTab = 1;
+
+    private final ReentrantLock ADDED_LOCK = new ReentrantLock();
+    private final ReentrantLock COMMENT_LOCK = new ReentrantLock();
+    private final ReentrantLock INTERESTED_LOCK = new ReentrantLock();
 
     public PostFragmentViewModel(@NonNull Application application) {
         super(application);
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
         postInfoLiveData = new MutableLiveData<>(postInfo);
-        postDetailInfoLiveData = new MutableLiveData<>();
 
         interestedRecyclerView = new InterestedRecyclerView();
         commentRecyclerView = new CommentRecyclerView();
@@ -120,7 +122,7 @@ public class PostFragmentViewModel extends AndroidViewModel {
         this.ownerImage.setValue(ownerImage);
         postInfoLiveData.setValue(postInfo);
         this.isUserPostOwner = postInfo.getOwnerID().equals(auth.getUid());
-        loadPostDetailInfo(postInfo.getId());
+        setPostInfo(postInfo.getId());
     }
 
     public void setPostInfo(String postID) {
@@ -129,17 +131,19 @@ public class PostFragmentViewModel extends AndroidViewModel {
     }
 
     public void loadPostInfo(String postID) {
-        db.collection(POST_INFO).document(postID).get()
-                .addOnSuccessListener(docSnap -> {
-                    this.postInfo = docSnap.toObject(PostInfo.class);
-                    postInfoLiveData.setValue(postInfo);
-                    this.isUserPostOwner = postInfo.getOwnerID().equals(auth.getUid());
+        db.collection(POST_INFO).document(postID)
+                .addSnapshotListener((docSnap, error) -> {
+                    if (error == null && docSnap != null) {
+                        this.postInfo = docSnap.toObject(PostInfo.class);
+                        postInfoLiveData.setValue(postInfo);
+                        this.isUserPostOwner = postInfo.getOwnerID().equals(auth.getUid());
 
-                    db.collection(USER_PROFILE).document(postInfo.getOwnerID()).get()
-                            .addOnSuccessListener(userSnap -> {
-                                String imageURL = userSnap.getString("imageURL");
-                                ownerImageURL.setValue(imageURL);
-                            });
+                        db.collection(USER_PROFILE).document(postInfo.getOwnerID()).get()
+                                .addOnSuccessListener(userSnap -> {
+                                    String imageURL = userSnap.getString("imageURL");
+                                    ownerImageURL.setValue(imageURL);
+                                });
+                    }
                 });
     }
 
@@ -149,36 +153,35 @@ public class PostFragmentViewModel extends AndroidViewModel {
             postID = postInfo.getId();
         }
 
-        comments.clear();
-        usersAdded.clear();
-        usersInterested.clear();
-        statusMap.clear();
-        // Notifying observers about data load
-        usersAddedLiveData.setValue(null);
-        usersInterestedLiveData.setValue(null);
-        commentsLiveData.setValue(null);
+        db.collection(POST_DETAIL_INFO).document(postID)
+                .addSnapshotListener((docSnap, error) -> {
+                    if (error == null && docSnap != null) {
+                        ADDED_LOCK.lock();
+                        COMMENT_LOCK.lock();
+                        INTERESTED_LOCK.lock();
 
-        String finalPostID = postID;
-        new Thread(() -> db.collection(POST_DETAIL_INFO).document(finalPostID).get()
-                .addOnSuccessListener(docSnap -> {
-                    PostDetailInfo postDetailInfo = docSnap.toObject(PostDetailInfo.class);
-                    if (postDetailInfo != null) {
-                        fetchUsersAdded(postDetailInfo.getUsersAdded());
-                        fetchUsersInterested(postDetailInfo.getUsersInterested());
-                        fetchComments(postDetailInfo.getComments());
-                        postDetailInfoLiveData.setValue(postDetailInfo);
+                        PostDetailInfo postDetailInfo = docSnap.toObject(PostDetailInfo.class);
+                        if (postDetailInfo != null) {
+                            this.postDetailInfo = postDetailInfo;
+                            fetchUsersAdded(postDetailInfo.getUsersAdded());
+                            fetchUsersInterested(postDetailInfo.getUsersInterested());
+                            fetchComments(postDetailInfo.getComments());
+                        }
                     }
-                })).start();
+                });
     }
 
     private void fetchUsersAdded(List<UserStatus> users) {
-        // -1 as a flag for empty list
+        List<AddedUser> tmpUsers = new ArrayList<>();
         if (users.isEmpty()) {
-            handler.post(() -> usersAddedLiveData.setValue(usersAdded));
+            handler.post(() -> usersAddedLiveData.setValue(tmpUsers));
+            usersAdded = tmpUsers;
+            ADDED_LOCK.unlock();
             return;
         }
 
         List<String> ids = new ArrayList<>();
+        statusMap = new HashMap<>();
         for (UserStatus user: users) {
             ids.add(user.getUserID());
             statusMap.put(user.getUserID(), user.getStatus());
@@ -187,31 +190,42 @@ public class PostFragmentViewModel extends AndroidViewModel {
                 .addOnSuccessListener(docSnaps -> {
                     for (QueryDocumentSnapshot docSnap: docSnaps) {
                         UserProfile profile = docSnap.toObject(UserProfile.class);
-                        usersAdded.add(new AddedUser(profile, statusMap.get(profile.getId())));
+                        tmpUsers.add(new AddedUser(profile, statusMap.get(profile.getId())));
                     }
-                    handler.post(() -> usersAddedLiveData.setValue(usersAdded));
-                });
+                    usersAdded = tmpUsers;
+                    handler.post(() -> usersAddedLiveData.setValue(tmpUsers));
+                    ADDED_LOCK.unlock();
+                })
+                .addOnFailureListener(error -> ADDED_LOCK.unlock());
     }
 
     private void fetchUsersInterested(List<String> users) {
-        // -1 as a flag for empty list
+        List<UserProfile> tmpUsers = new ArrayList<>();
         if (users.isEmpty()) {
-            handler.post(() -> usersInterestedLiveData.setValue(usersInterested));
+            handler.post(() -> usersInterestedLiveData.setValue(tmpUsers));
+            usersInterested = tmpUsers;
+            INTERESTED_LOCK.unlock();
             return;
         }
 
         db.collection(USER_PROFILE).whereIn("id", users).get()
                 .addOnSuccessListener(docSnaps -> {
                     for (QueryDocumentSnapshot docSnap: docSnaps) {
-                        usersInterested.add(docSnap.toObject(UserProfile.class));
+                        tmpUsers.add(docSnap.toObject(UserProfile.class));
                     }
-                    handler.post(() -> usersInterestedLiveData.setValue(usersInterested));
-                });
+                    handler.post(() -> usersInterestedLiveData.setValue(tmpUsers));
+                    usersInterested = tmpUsers;
+                    INTERESTED_LOCK.unlock();
+                })
+                .addOnFailureListener(error -> INTERESTED_LOCK.unlock());
     }
 
     private void fetchComments(List<String> commentIDs) {
+        List<RecyclerViewComment> tmpComments = new ArrayList<>();
         if (commentIDs.isEmpty()) {
-            handler.post(() -> commentsLiveData.setValue(comments));
+            handler.post(() -> commentsLiveData.setValue(tmpComments));
+            comments = tmpComments;
+            COMMENT_LOCK.unlock();
             return;
         }
 
@@ -222,7 +236,7 @@ public class PostFragmentViewModel extends AndroidViewModel {
 
                 for (QueryDocumentSnapshot commentSnap: commentSnaps) {
                     Comment comment = commentSnap.toObject(Comment.class);
-                    comments.add(new RecyclerViewComment(comment));
+                    tmpComments.add(new RecyclerViewComment(comment));
                     userIDs.add(comment.getUserID());
                 }
 
@@ -235,14 +249,19 @@ public class PostFragmentViewModel extends AndroidViewModel {
                                     userMapping.put(user.getId(), user);
                                 }
 
-                                for (RecyclerViewComment comment: comments) {
+                                for (RecyclerViewComment comment: tmpComments) {
                                     comment.setUserProfile(userMapping.get(comment.getComment().getUserID()));
                                 }
 
-                                handler.post(() -> commentsLiveData.setValue(comments));
-                            });
+                                handler.post(() -> commentsLiveData.setValue(tmpComments));
+                                comments = tmpComments;
+                                COMMENT_LOCK.unlock();
+                            }).addOnFailureListener(error -> COMMENT_LOCK.unlock());
+                } else {
+                    comments = tmpComments;
+                    COMMENT_LOCK.unlock();
                 }
-        });
+        }).addOnFailureListener(error -> COMMENT_LOCK.unlock());
 
     }
 
@@ -272,8 +291,6 @@ public class PostFragmentViewModel extends AndroidViewModel {
                     }
                     handler.post(() -> {
                         alertDialog.dismiss();
-                        comments.add(new RecyclerViewComment(comment));
-                        commentsLiveData.setValue(comments);
                         showToast(context, "Commented successfully :)");
                     });
                 }
@@ -294,7 +311,9 @@ public class PostFragmentViewModel extends AndroidViewModel {
                     .put("postID", postInfo.getId())
                     .put("userID", usersInterested.get(position).getId())
                     .put("postTitle", postInfo.getTitle())
+                    .put("requirement", postInfo.getPeopleRequired())
                     .toString();
+            String userID = usersInterested.get(position).getId();
             client.newCall(getRequest(json, SERVER_URL + "acceptUser")).enqueue(new Callback() {
                 @Override
                 public void onFailure(@NonNull Call call, @NonNull IOException e) {
@@ -307,14 +326,7 @@ public class PostFragmentViewModel extends AndroidViewModel {
                         handler.post(() -> interestedUserChangeFailure(progressBar));
                         return;
                     }
-                    handler.post(() -> {
-                        UserProfile profile = usersInterested.remove(position);
-                        AddedUser addedUser = new AddedUser(profile, statusMap.get(profile.getId()));
-                        usersAdded.add(addedUser);
-                        addUserToGroupChat(postInfo,addedUser.getProfile().getId());
-                        usersInterestedLiveData.setValue(usersInterested);
-                        usersAddedLiveData.setValue(usersAdded);
-                    });
+                    handler.post(() -> addUserToGroupChat(postInfo, userID));
                 }
             });
         } catch (JSONException e) {
@@ -359,12 +371,7 @@ public class PostFragmentViewModel extends AndroidViewModel {
                 public void onResponse(@NonNull Call call, @NonNull Response response) {
                     if (response.code() != SUCCESS_CODE) {
                         handler.post(() -> interestedUserChangeFailure(progressBar));
-                        return;
                     }
-                    handler.post(() -> {
-                        usersInterested.remove(position);
-                        usersInterestedLiveData.setValue(usersInterested);
-                    });
                 }
             });
         } catch (JSONException e) {
@@ -438,8 +445,8 @@ public class PostFragmentViewModel extends AndroidViewModel {
     }
 
     public boolean areAllRequiredAdded() {
-        if (postDetailInfoLiveData.getValue() == null) return true; // This way we are not showing accept/reject buttons
-        return postInfo.getPeopleRequired() == postDetailInfoLiveData.getValue().getUsersAdded().size();
+        if (postDetailInfo == null) return true; // This way we are not showing accept/reject buttons
+        return postInfo.getPeopleRequired() == postDetailInfo.getUsersAdded().size();
     }
 
     public LiveData<List<UserProfile>> getUsersInterested() {
@@ -460,10 +467,6 @@ public class PostFragmentViewModel extends AndroidViewModel {
     }
     public LiveData<String> getOwnerImageURL() {
         return ownerImageURL;
-    }
-
-    public LiveData<PostDetailInfo> getPostDetailInfo() {
-        return postDetailInfoLiveData;
     }
 
     public int getPreviousTab() {

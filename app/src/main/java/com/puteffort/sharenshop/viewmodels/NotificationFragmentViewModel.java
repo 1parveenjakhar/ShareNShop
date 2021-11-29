@@ -32,6 +32,10 @@ public class NotificationFragmentViewModel extends AndroidViewModel {
         notificationRepository.markNotificationAsRead(index);
     }
 
+    public void markAllAsRead() {
+        notificationRepository.markAllAsRead();
+    }
+
     public LiveData<List<Notification>> getNotifications() {
         return notifications;
     }
