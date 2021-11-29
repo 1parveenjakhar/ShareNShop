@@ -29,7 +29,8 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true" >
+            android:exported="true"
+            android:windowSoftInputMode="adjustPan">
             <intent-filter
                 android:autoVerify="true"
                 tools:targetApi="m">

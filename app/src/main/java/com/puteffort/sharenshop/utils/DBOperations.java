@@ -6,13 +6,14 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.puteffort.sharenshop.models.UserActivity;
-import com.puteffort.sharenshop.models.UserDeviceToken;
 import com.puteffort.sharenshop.models.UserProfile;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -76,7 +77,7 @@ public class DBOperations {
                 String token = task.getResult();
                 if (token != null) {
                     db.collection(DBOperations.TOKEN).document(userID)
-                            .set(new UserDeviceToken(token));
+                            .update(Collections.singletonMap("tokens", FieldValue.arrayUnion(token)));
                 }
             }
         });
