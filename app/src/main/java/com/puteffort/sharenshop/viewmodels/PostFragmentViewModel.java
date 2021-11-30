@@ -38,10 +38,11 @@ import com.cometchat.pro.constants.CometChatConstants;
 import com.cometchat.pro.core.CometChat;
 import com.cometchat.pro.exceptions.CometChatException;
 import com.cometchat.pro.models.GroupMember;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.fragments.AddedRecyclerView;
 import com.puteffort.sharenshop.fragments.CommentRecyclerView;
@@ -58,6 +59,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,7 +89,6 @@ public class PostFragmentViewModel extends AndroidViewModel {
     private final MutableLiveData<List<AddedUser>> usersAddedLiveData = new MutableLiveData<>();
     private List<UserProfile> usersInterested;
     private final MutableLiveData<List<UserProfile>> usersInterestedLiveData = new MutableLiveData<>();
-    private List<RecyclerViewComment> comments;
     private final MutableLiveData<List<RecyclerViewComment>> commentsLiveData = new MutableLiveData<>();
     private Map<String, String> statusMap;
 
@@ -111,7 +112,6 @@ public class PostFragmentViewModel extends AndroidViewModel {
 
         usersAdded = new ArrayList<>();
         usersInterested = new ArrayList<>();
-        comments = new ArrayList<>();
         statusMap = new HashMap<>();
 
         handler = new Handler(Looper.getMainLooper());
@@ -186,17 +186,20 @@ public class PostFragmentViewModel extends AndroidViewModel {
             ids.add(user.getUserID());
             statusMap.put(user.getUserID(), user.getStatus());
         }
-        db.collection(USER_PROFILE).whereIn("id", ids).get()
-                .addOnSuccessListener(docSnaps -> {
-                    for (QueryDocumentSnapshot docSnap: docSnaps) {
-                        UserProfile profile = docSnap.toObject(UserProfile.class);
-                        tmpUsers.add(new AddedUser(profile, statusMap.get(profile.getId())));
+
+        List<Task<DocumentSnapshot>> tasks = new ArrayList<>();
+        for (String id: ids)
+            tasks.add(db.collection(USER_PROFILE).document(id).get());
+        Tasks.whenAllSuccess(tasks).addOnSuccessListener(docSnaps -> {
+                    for (Object docSnap: docSnaps) {
+                        UserProfile profile = ((DocumentSnapshot)docSnap).toObject(UserProfile.class);
+                        if (profile != null)
+                            tmpUsers.add(new AddedUser(profile, statusMap.get(profile.getId())));
                     }
                     usersAdded = tmpUsers;
                     handler.post(() -> usersAddedLiveData.setValue(tmpUsers));
                     ADDED_LOCK.unlock();
-                })
-                .addOnFailureListener(error -> ADDED_LOCK.unlock());
+                }).addOnFailureListener(error -> ADDED_LOCK.unlock());
     }
 
     private void fetchUsersInterested(List<String> users) {
@@ -208,61 +211,62 @@ public class PostFragmentViewModel extends AndroidViewModel {
             return;
         }
 
-        db.collection(USER_PROFILE).whereIn("id", users).get()
-                .addOnSuccessListener(docSnaps -> {
-                    for (QueryDocumentSnapshot docSnap: docSnaps) {
-                        tmpUsers.add(docSnap.toObject(UserProfile.class));
-                    }
-                    handler.post(() -> usersInterestedLiveData.setValue(tmpUsers));
-                    usersInterested = tmpUsers;
-                    INTERESTED_LOCK.unlock();
-                })
-                .addOnFailureListener(error -> INTERESTED_LOCK.unlock());
+        List<Task<DocumentSnapshot>> tasks = new ArrayList<>();
+        for (String id: users)
+            tasks.add(db.collection(USER_PROFILE).document(id).get());
+        Tasks.whenAllSuccess(tasks).addOnSuccessListener(docSnaps -> {
+            for (Object docSnap: docSnaps) {
+                UserProfile profile = ((DocumentSnapshot)docSnap).toObject(UserProfile.class);
+                if (profile != null)
+                    tmpUsers.add(profile);
+            }
+            handler.post(() -> usersInterestedLiveData.setValue(tmpUsers));
+            usersInterested = tmpUsers;
+            INTERESTED_LOCK.unlock();
+        }).addOnFailureListener(error -> INTERESTED_LOCK.unlock());
     }
 
     private void fetchComments(List<String> commentIDs) {
         List<RecyclerViewComment> tmpComments = new ArrayList<>();
         if (commentIDs.isEmpty()) {
             handler.post(() -> commentsLiveData.setValue(tmpComments));
-            comments = tmpComments;
             COMMENT_LOCK.unlock();
             return;
         }
 
-        db.collection(COMMENT).whereIn("id", commentIDs).orderBy("postedTime", Query.Direction.ASCENDING)
-            .get().addOnSuccessListener(commentSnaps -> {
-                List<String> userIDs = new ArrayList<>();
-                Map<String, UserProfile> userMapping = new HashMap<>();
+        List<Task<DocumentSnapshot>> tasks = new ArrayList<>();
+        for (String id: commentIDs)
+            tasks.add(db.collection(COMMENT).document(id).get());
+        Tasks.whenAllSuccess(tasks).addOnSuccessListener(commentSnaps -> {
+            Map<String, UserProfile> userMapping = new HashMap<>();
 
-                for (QueryDocumentSnapshot commentSnap: commentSnaps) {
-                    Comment comment = commentSnap.toObject(Comment.class);
+            for (Object commentSnap: commentSnaps) {
+                Comment comment = ((DocumentSnapshot)commentSnap).toObject(Comment.class);
+                if (comment != null)
                     tmpComments.add(new RecyclerViewComment(comment));
-                    userIDs.add(comment.getUserID());
-                }
+            }
 
-                // Even though this check is not necessary, but still
-                if (!userIDs.isEmpty()) {
-                    db.collection(USER_PROFILE).whereIn("id", userIDs).get()
-                            .addOnSuccessListener(userSnaps -> {
-                                for (QueryDocumentSnapshot userSnap: userSnaps) {
-                                    UserProfile user = userSnap.toObject(UserProfile.class);
-                                    userMapping.put(user.getId(), user);
-                                }
+            Collections.sort(tmpComments,
+                    (c1, c2) -> (int) (c1.getComment().getPostedTime() - c2.getComment().getPostedTime()));
+            List<Task<DocumentSnapshot>> userTasks = new ArrayList<>();
+            for (RecyclerViewComment comment: tmpComments)
+                userTasks.add(db.collection(USER_PROFILE).document(comment.getComment().getUserID()).get());
 
-                                for (RecyclerViewComment comment: tmpComments) {
-                                    comment.setUserProfile(userMapping.get(comment.getComment().getUserID()));
-                                }
+            Tasks.whenAllSuccess(userTasks)
+                    .addOnSuccessListener(userSnaps -> {
+                        for (Object userSnap: userSnaps) {
+                            UserProfile user = ((DocumentSnapshot)userSnap).toObject(UserProfile.class);
+                            if (user != null)
+                                userMapping.put(user.getId(), user);
+                        }
+                        for (RecyclerViewComment comment: tmpComments) {
+                            comment.setUserProfile(userMapping.get(comment.getComment().getUserID()));
+                        }
 
-                                handler.post(() -> commentsLiveData.setValue(tmpComments));
-                                comments = tmpComments;
-                                COMMENT_LOCK.unlock();
-                            }).addOnFailureListener(error -> COMMENT_LOCK.unlock());
-                } else {
-                    comments = tmpComments;
-                    COMMENT_LOCK.unlock();
-                }
+                        handler.post(() -> commentsLiveData.setValue(tmpComments));
+                        COMMENT_LOCK.unlock();
+                    }).addOnFailureListener(error -> COMMENT_LOCK.unlock());
         }).addOnFailureListener(error -> COMMENT_LOCK.unlock());
-
     }
 
     // Functions related to CommentRecyclerView

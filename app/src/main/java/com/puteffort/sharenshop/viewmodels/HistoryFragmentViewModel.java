@@ -14,10 +14,12 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.models.PostStatus;
 import com.puteffort.sharenshop.utils.DBOperations;
@@ -93,15 +95,18 @@ public class HistoryFragmentViewModel extends ViewModel {
             setUpPosts();
             return;
         }
-        db.collection(POST_INFO).whereIn("id", new ArrayList<>(allPosts)).get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                   for (QueryDocumentSnapshot docSnap: queryDocumentSnapshots) {
-                       PostInfo postInfo = docSnap.toObject(PostInfo.class);
-                       idToPostMapping.put(postInfo.getId(), postInfo);
-                   }
-                   setUpPosts();
-                })
-                .addOnFailureListener(error -> Lock.unlock());
+
+        List<Task<DocumentSnapshot>> tasks = new ArrayList<>();
+        for (String id: allPosts)
+            tasks.add(db.collection(POST_INFO).document(id).get());
+        Tasks.whenAllSuccess(tasks).addOnSuccessListener(docSnaps -> {
+            for (Object docSnap: docSnaps) {
+                PostInfo postInfo = ((DocumentSnapshot)docSnap).toObject(PostInfo.class);
+                if (postInfo != null)
+                    idToPostMapping.put(postInfo.getId(), postInfo);
+            }
+            setUpPosts();
+        }).addOnFailureListener(error -> Lock.unlock());
     }
 
     private void setUpPosts() {
