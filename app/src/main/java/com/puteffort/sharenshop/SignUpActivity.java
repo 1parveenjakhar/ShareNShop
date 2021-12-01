@@ -60,7 +60,7 @@ public class SignUpActivity extends AppCompatActivity {
         binding.progressBar.setVisibility(View.INVISIBLE);
 
         boolean listenerSetAlready = false;
-        Toast.makeText(this,"Sign up activity called",Toast.LENGTH_LONG).show();
+        //Toast.makeText(this,"Sign up activity called",Toast.LENGTH_LONG).show();
 
         Intent intent = getIntent();
 
@@ -148,8 +148,8 @@ public class SignUpActivity extends AppCompatActivity {
                             updateUI(user);
                         } else {
                             Log.i(TAG, "linkWithCredential:failure", task.getException());
-                            Toast.makeText(SignUpActivity.this, "Authentication failed.",
-                                    Toast.LENGTH_SHORT).show();
+//                            Toast.makeText(SignUpActivity.this, "Authentication failed.",
+//                                    Toast.LENGTH_SHORT).show();
                             updateUI(null);
                         }
                     }
@@ -294,8 +294,8 @@ public class SignUpActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         // Sign in success, update UI with the signed-in user's information
 
-                        Toast.makeText(SignUpActivity.this, "Authentication successful!.",
-                                Toast.LENGTH_LONG).show();
+//                        Toast.makeText(SignUpActivity.this, "Authentication successful!.",
+//                                Toast.LENGTH_LONG).show();
 
                         updateUserName(userName);
                     } else {

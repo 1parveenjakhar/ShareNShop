@@ -12,11 +12,14 @@ import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.databinding.DataBindingUtil;
@@ -31,6 +34,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.textfield.TextInputLayout;
@@ -69,6 +73,7 @@ public class LoginActivity extends AppCompatActivity {
     private TextInputLayout editEmailAddress;
     private FirebaseUser currentUser;
     private Activity activity;
+    ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +86,9 @@ public class LoginActivity extends AppCompatActivity {
         Messenger.init(this);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_login);
         editEmailAddress = Objects.requireNonNull(binding.emailAddress);
+        progressBar = Objects.requireNonNull(binding.progressBar);
+
+        progressBar.setVisibility(View.GONE);
 
         mAuth = FirebaseAuth.getInstance();
         if (mAuth.getCurrentUser() != null) {
@@ -149,8 +157,11 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         //Google-button
-        binding.googleSignUpButton.setOnClickListener(view -> googleAuthLauncher.launch(mSignInClient.getSignInIntent()));
+        binding.googleSignUpButton.setOnClickListener(view -> {
+            googleAuthLauncher.launch(mSignInClient.getSignInIntent());
+        });
 
+        Context context = this;
         binding.forgotPasswordButton.setOnClickListener(v -> {
             EditText editTextEmail = Objects.requireNonNull(binding.emailAddress).getEditText();
             String emailAddress = editTextEmail.getText().toString();
@@ -159,10 +170,11 @@ public class LoginActivity extends AppCompatActivity {
                 editTextEmail.setError("Invalid email!");
             } else {
                 editTextEmail.setError(null);
-
+                progressBar.setVisibility(View.VISIBLE);
                 FirebaseAuth auth = FirebaseAuth.getInstance();
                 auth.sendPasswordResetEmail(emailAddress)
                         .addOnCompleteListener(task -> {
+                            progressBar.setVisibility(View.GONE);
                             if (task.isSuccessful()) {
                                 binding.forgotPasswordButton.setText(R.string.reset_link_mailed);
                                 binding.forgotPasswordButton.setClickable(false);
@@ -173,7 +185,12 @@ public class LoginActivity extends AppCompatActivity {
                                 String msg = task.getException().getMessage();
                                 binding.emailAddress.setError(msg);
                             }
-                        });
+                        }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        showToast(context,e.getMessage().toString());
+                    }
+                });
             }
         });
     }
@@ -200,9 +217,11 @@ public class LoginActivity extends AppCompatActivity {
     );
 
     private void authUsingEmailPassword(String email, String password) {
+        progressBar.setVisibility(View.VISIBLE);
         //Authenticate given email and password on signIn button click
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
+                    progressBar.setVisibility(View.GONE);
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
                         if (user != null) {
@@ -224,10 +243,14 @@ public class LoginActivity extends AppCompatActivity {
                         showToast(this, Objects.requireNonNull(task.getException()).getMessage());
                     }
                 })
-                .addOnFailureListener(e -> showToast(this, e.getMessage()));
+                .addOnFailureListener(e -> {
+                    progressBar.setVisibility(View.GONE);
+                    showToast(this, e.getMessage());
+                });
     }
 
     private void handleSuccessfulAuthentication(int signInMethod) {
+        progressBar.setVisibility(View.VISIBLE);
         Log.i(TAG, "Handling successful authentication...");
 
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -239,12 +262,14 @@ public class LoginActivity extends AppCompatActivity {
         docRef.get().addOnSuccessListener(documentSnapshot -> {
             if (documentSnapshot.exists()) {
                 Log.i(TAG, "User already added. Not adding new one!");
+                progressBar.setVisibility(View.GONE);
                 handleSuccessfulAuthentication();
             } else {
                 Tasks.whenAllSuccess(addNewUserToFireStore(db, docRef))
                         .addOnSuccessListener(results -> {
                             // Sync Login methods only if new user added successfully
                             // Else can give error
+                            progressBar.setVisibility(View.VISIBLE);
                             syncLoginMethods(signInMethod);
                         });
             }
@@ -288,9 +313,11 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void syncLoginMethods(int signInMethod) {
+        progressBar.setVisibility(View.VISIBLE);
         //Check if auth providers are already linked
         MutableLiveData<Boolean> authLinkedLiveData = new MutableLiveData<>();
         getAuthLinkedStatus(currentUser, authLinkedLiveData);
+        progressBar.setVisibility(View.VISIBLE);
 
         authLinkedLiveData.observe(this, isAuthLinked -> {
             // If live data has not been given a value
@@ -298,7 +325,8 @@ public class LoginActivity extends AppCompatActivity {
 
             if (isAuthLinked) {
                 Log.i(TAG, "Auth already linked!");
-                Toast.makeText(this, "isAuthLinked = true!", Toast.LENGTH_LONG).show();
+                //Toast.makeText(this, "isAuthLinked = true!", Toast.LENGTH_LONG).show();
+                progressBar.setVisibility(View.GONE);
                 handleSuccessfulAuthentication();
                 return;
             }
@@ -323,12 +351,14 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void getAuthLinkedStatus(FirebaseUser currentUser, MutableLiveData<Boolean> authLinked) {
+        progressBar.setVisibility(View.VISIBLE);
         //Fetching data from the fireStore
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         DocumentReference userProfileRef = db.collection(USER_PROFILE).document(currentUser.getUid());
 
         userProfileRef.get().addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
+                progressBar.setVisibility(View.GONE);
                 DocumentSnapshot document = task.getResult();
                 if (document.exists()) {
                     UserProfile userProfile = document.toObject(UserProfile.class);
@@ -344,7 +374,9 @@ public class LoginActivity extends AppCompatActivity {
 
         //Initiate messenger
         //Messenger.init(this);
+        progressBar.setVisibility(View.VISIBLE);
         Messenger.login(mAuth.getCurrentUser().getUid(),this);
+        progressBar.setVisibility(View.GONE);
         //startMessenger(this);
 
         startActivity(new Intent(getApplicationContext(), MainActivity.class));

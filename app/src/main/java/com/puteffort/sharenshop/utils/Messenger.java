@@ -110,13 +110,13 @@ public class Messenger {
         CometChat.login(UID, Constants.authKey, new CometChat.CallbackListener<User>() {
             @Override
             public void onSuccess(User user) {
-                showToast(activity, "Chat login succesful: "+user.getName());
+//                showToast(activity, "Chat login succesful: "+user.getName());
                 //Log.d(TAG, "Login Successful : " + user.toString());
             }
 
             @Override
             public void onError(CometChatException e) {
-                showToast(activity, "Chat login failed: "+e.getMessage());
+                //showToast(activity, "Chat login failed: "+e.getMessage());
             }
         });
     }

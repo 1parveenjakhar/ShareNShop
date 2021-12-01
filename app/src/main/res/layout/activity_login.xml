@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/ConstraintLayout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context=".LoginActivity">
@@ -115,6 +116,15 @@
             app:layout_constraintBottom_toBottomOf="parent"
             android:background="@drawable/gradient_long_button_bg"
             app:backgroundTint="@null"/>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="@id/ConstraintLayout"
+            app:layout_constraintBottom_toBottomOf="@id/ConstraintLayout"
+            app:layout_constraintEnd_toEndOf="@id/ConstraintLayout"
+            app:layout_constraintStart_toStartOf="@id/ConstraintLayout"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
