@@ -19,6 +19,8 @@
             identifier="notifications"/>
         <entity name="My Profile"
             identifier="my profile"/>
+        <entity name="Profile"
+            identifier="profile" />
         <entity name="History"
             identifier="history"/>
     </entity-set>

@@ -47,7 +47,7 @@ public class SignUpActivity extends AppCompatActivity {
 
     //Cloud Firestore
     private final String USER_PROFILE = "UserProfile"; //collection type
-    private final String isAuthLinkedField = "isAuthLinked"; // field
+    private final String isAuthLinkedField = "authLinked"; // field
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

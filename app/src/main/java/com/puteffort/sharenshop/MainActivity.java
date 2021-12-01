@@ -1,7 +1,9 @@
 package com.puteffort.sharenshop;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.net.Uri;
@@ -10,6 +12,7 @@ import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -18,6 +21,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.badge.BadgeDrawable;
 import com.google.android.material.navigation.NavigationBarView;
+import com.google.firebase.auth.FirebaseAuth;
 import com.puteffort.sharenshop.databinding.ActivityMainBinding;
 import com.puteffort.sharenshop.fragments.HistoryContainerFragment;
 import com.puteffort.sharenshop.fragments.HomeContainerFragment;
@@ -35,6 +39,16 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // For intents like Google Assistant
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            // not logged in
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+            return;
+        }
+
+        setTheme();
         Thread.setDefaultUncaughtExceptionHandler((t, e) -> UtilFunctions.showToast(this, "Exception: " + e.getMessage()));
         if (setOrientation()) return;
 
@@ -48,6 +62,15 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
         onNewIntent(getIntent());
     }
 
+    private void setTheme() {
+        SharedPreferences sharedPrefs = getSharedPreferences(getString(R.string.app_name), Context.MODE_PRIVATE);
+
+        // Theme change
+        int themeVal = sharedPrefs.getInt(getString(R.string.shared_pref_theme), AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
+        if (themeVal != AppCompatDelegate.getDefaultNightMode()) {
+            AppCompatDelegate.setDefaultNightMode(themeVal);
+        }
+    }
 
     @Override
     protected void onResume() {
@@ -60,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
         super.onNewIntent(intent);
         if(intent == null)
             return;
+
         if (intent.getSerializableExtra("notification") != null) {
             // A notification has been clicked
             Notification notification = (Notification) intent.getSerializableExtra("notification");
@@ -77,7 +101,6 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
             if(featureType == null) {
                 featureType = "";
             }
-
             navigateToActivity(featureType);
         }
     }
@@ -93,10 +116,13 @@ public class MainActivity extends AppCompatActivity implements NavigationBarView
             case "notifications":
                 changeFragment(R.id.notificationItem);
                 break;
+            case "profile":
             case "my profile":
+                changeFragment(R.id.accountMenuItem);
                 changeFragment(new MyProfileFragment());
                 break;
             case "history":
+                changeFragment(R.id.accountMenuItem);
                 changeFragment(new HistoryContainerFragment());
                 break;
             default:

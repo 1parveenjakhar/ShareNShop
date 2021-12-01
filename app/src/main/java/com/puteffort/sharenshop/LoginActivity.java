@@ -1,10 +1,10 @@
 package com.puteffort.sharenshop;
 
+import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
 import static com.puteffort.sharenshop.utils.UtilFunctions.isEmailValid;
 import static com.puteffort.sharenshop.utils.UtilFunctions.showToast;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -15,7 +15,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -42,7 +41,9 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
-import com.google.firebase.firestore.*;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.databinding.ActivityLoginBinding;
 import com.puteffort.sharenshop.models.UserActivity;
 import com.puteffort.sharenshop.models.UserProfile;
@@ -66,21 +67,14 @@ public class LoginActivity extends AppCompatActivity {
 
     private final String IS_LINKING = "IS_LINKING";
 
-    //Cloud fireStore constants
-    private final String USER_PROFILE = "UserProfile"; //collection type
-    // field
-
     private TextInputLayout editEmailAddress;
     private FirebaseUser currentUser;
-    private Activity activity;
     ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (setOrientation()) return;
-
-        this.activity = this;
 
         setTheme();
         Messenger.init(this);
@@ -157,13 +151,13 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         //Google-button
-        binding.googleSignUpButton.setOnClickListener(view -> {
-            googleAuthLauncher.launch(mSignInClient.getSignInIntent());
-        });
+        binding.googleSignUpButton.setOnClickListener(view ->
+                googleAuthLauncher.launch(mSignInClient.getSignInIntent()));
 
         Context context = this;
         binding.forgotPasswordButton.setOnClickListener(v -> {
             EditText editTextEmail = Objects.requireNonNull(binding.emailAddress).getEditText();
+            if (editTextEmail == null) return;
             String emailAddress = editTextEmail.getText().toString();
 
             if (!UtilFunctions.isEmailValid(emailAddress)) {
@@ -185,12 +179,7 @@ public class LoginActivity extends AppCompatActivity {
                                 String msg = task.getException().getMessage();
                                 binding.emailAddress.setError(msg);
                             }
-                        }).addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        showToast(context,e.getMessage().toString());
-                    }
-                });
+                        }).addOnFailureListener(e -> showToast(context, e.getMessage()));
             }
         });
     }
@@ -371,7 +360,6 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void handleSuccessfulAuthentication() {
-
         //Initiate messenger
         //Messenger.init(this);
         progressBar.setVisibility(View.VISIBLE);
