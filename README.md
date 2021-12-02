@@ -21,5 +21,5 @@ ShareNShop is a platform to connect people to buy & sell — things or services 
 ## Contributors:
 1.  Anirudh Agrawal (anirudhagrawal2212@gmail.com)
 2.  Parveen Jakhar (1parveenjakhar@gmail.com)
-3.  Sri Lekha Mondreti (f20190783@hyderabad.bits-pilani.ac.in)
+3.  Sri Lekha Mondreti (mondretisrilekha@gmail.com)
 4.  Vikas Sheoran (kkviks@gmail.com)
