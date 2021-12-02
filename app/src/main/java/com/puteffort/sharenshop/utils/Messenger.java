@@ -111,12 +111,13 @@ public class Messenger {
             @Override
             public void onSuccess(User user) {
 //                showToast(activity, "Chat login succesful: "+user.getName());
-                //Log.d(TAG, "Login Successful : " + user.toString());
+                Log.d("chat", "Login Successful : " + user.toString());
             }
 
             @Override
             public void onError(CometChatException e) {
                 //showToast(activity, "Chat login failed: "+e.getMessage());
+                Log.d("chat", "exception = " + e.getMessage());
             }
         });
     }

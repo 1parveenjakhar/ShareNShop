@@ -383,6 +383,7 @@ public class PostFragmentViewModel extends AndroidViewModel {
                 public void onResponse(@NonNull Call call, @NonNull Response response) {
                     if (response.code() != SUCCESS_CODE) {
                         handler.post(() -> interestedUserChangeFailure(progressBar));
+                        return;
                     }
                     handler.post(() -> progressBar.setVisibility(View.INVISIBLE));
                 }

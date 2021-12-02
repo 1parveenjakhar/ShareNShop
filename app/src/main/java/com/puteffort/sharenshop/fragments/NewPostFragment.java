@@ -228,7 +228,9 @@ public class NewPostFragment extends Fragment {
 
         Group new_group = new Group(GUID, groupName, groupType, password);
         new_group.setOwner(postInfo.getOwnerID());
-        new_group.setDescription(postInfo.getDescription());
+        String description = (postInfo.getDescription() == null || postInfo.getDescription().isEmpty())
+                ? "No description" : postInfo.getDescription();
+        new_group.setDescription(description);
         new_group.setScope(CometChatConstants.SCOPE_PARTICIPANT);
 
         CometChat.createGroup(new_group, new CometChat.CallbackListener<Group>() {

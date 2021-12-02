@@ -1,6 +1,7 @@
 package com.puteffort.sharenshop.utils;
 
 import android.annotation.SuppressLint;
+import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
@@ -13,8 +14,10 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.puteffort.sharenshop.models.UserActivity;
 import com.puteffort.sharenshop.models.UserProfile;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -78,8 +81,17 @@ public class DBOperations {
                 String token = task.getResult();
                 if (token != null) {
                     DBOperations.token = token;
-                    db.collection(DBOperations.TOKEN).document(userID)
-                            .update(Collections.singletonMap("tokens", FieldValue.arrayUnion(token)));
+                    db.collection(DBOperations.TOKEN).document(userID).get()
+                            .addOnSuccessListener(doc -> {
+                                if (doc.exists()) {
+                                    db.collection(TOKEN).document(userID)
+                                            .update(Collections.singletonMap("tokens", FieldValue.arrayUnion(token)));
+                                } else {
+                                    Map<String, List<String>> tokens = new HashMap<>();
+                                    tokens.put("tokens", Collections.singletonList(token));
+                                    db.collection(TOKEN).document(userID).set(tokens);
+                                }
+                            });
                 }
             }
         });
