@@ -18,4 +18,6 @@
 <!--    only for dark mode-->
     <color name="skin_color">#ECDBBA</color>
     <color name="lavender">#bb86fc</color>
+
+    <color name="search_view">#eef2fb</color>
 </resources>

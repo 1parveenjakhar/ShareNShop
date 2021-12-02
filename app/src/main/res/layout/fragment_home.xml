@@ -33,7 +33,7 @@
             app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/appNameHeading"
-            android:background="@drawable/account_fragment_button"
+            android:background="@drawable/search_button"
             android:backgroundTint="@null"
             android:searchIcon="@drawable/ic_baseline_search_24"/>
 

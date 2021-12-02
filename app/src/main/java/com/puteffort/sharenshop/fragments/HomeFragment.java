@@ -2,7 +2,6 @@ package com.puteffort.sharenshop.fragments;
 
 import static android.view.View.GONE;
 import static com.puteffort.sharenshop.utils.DBOperations.INTERESTED;
-import static com.puteffort.sharenshop.utils.DBOperations.OWNER;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
 import static com.puteffort.sharenshop.utils.UtilFunctions.getFormattedTime;
 
@@ -67,6 +66,11 @@ public class HomeFragment extends Fragment {
 
     private void setUpComponents() {
         binding.searchView.setOnQueryTextListener(model);
+        binding.searchView.setOnSearchClickListener(v -> binding.appNameHeading.setVisibility(View.INVISIBLE));
+        binding.searchView.setOnCloseListener(() -> {
+            binding.appNameHeading.setVisibility(View.VISIBLE);
+            return false;
+        });
 
         binding.postsRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.postsRecyclerView.setHasFixedSize(true);
