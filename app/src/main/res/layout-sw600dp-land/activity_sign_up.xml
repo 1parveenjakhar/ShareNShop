@@ -1,26 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/appNameTextView"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/rightViews"
             android:background="@drawable/gradient_app_bg_large"
             android:gravity="center"
-            android:layout_weight="1"
             android:paddingVertical="60dp"
             android:text="@string/app_name"
             android:textColor="@color/white"
             android:textSize="60sp"
-            android:textStyle="bold"/>
+            android:textStyle="bold"
+            android:fontFamily="@font/kaushan_script_regular"/>
+
         <LinearLayout
-            android:layout_width="match_parent"
+            android:id="@+id/rightViews"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/appNameTextView"
             android:orientation="vertical"
-            android:layout_weight="1"
             android:gravity="center_vertical">
 
             <com.google.android.material.textfield.TextInputLayout
@@ -105,12 +111,16 @@
                 android:background="@drawable/gradient_long_button_bg"
                 app:backgroundTint="@null"/>
 
-            <ProgressBar
-                android:id="@+id/progressBar"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"/>
-
         </LinearLayout>
-    </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toStartOf="@id/rightViews"
+            app:layout_constraintEnd_toEndOf="@id/rightViews"
+            app:layout_constraintTop_toTopOf="@id/rightViews"
+            app:layout_constraintBottom_toBottomOf="@id/rightViews"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

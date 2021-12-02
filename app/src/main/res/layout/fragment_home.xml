@@ -10,17 +10,19 @@
 
         <TextView
             android:id="@+id/appNameHeading"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="25dp"
+            android:layout_marginHorizontal="25dp"
             android:layout_marginTop="10dp"
             android:text="@string/app_name"
             android:textSize="35sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:fontFamily="@font/kaushan_script_regular"/>
 
-        <androidx.appcompat.widget.SearchView
+        <SearchView
             android:id="@+id/searchView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -31,8 +33,9 @@
             app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/appNameHeading"
-            android:background="@drawable/search_button"
-            android:backgroundTint="@null"/>
+            android:background="@drawable/account_fragment_button"
+            android:backgroundTint="@null"
+            android:searchIcon="@drawable/ic_baseline_search_24"/>
 
         <Button
             android:id="@+id/filter_button"
@@ -42,7 +45,8 @@
             android:text="@string/filter_button"
             app:layout_constraintEnd_toStartOf="@id/sort_button"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/appNameHeading" />
+            app:layout_constraintTop_toBottomOf="@id/appNameHeading"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
         <Button
             android:id="@+id/sort_button"
@@ -52,7 +56,8 @@
             android:text="@string/sort_button"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@id/filter_button"
-            app:layout_constraintTop_toBottomOf="@id/appNameHeading" />
+            app:layout_constraintTop_toBottomOf="@id/appNameHeading"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/swipeRefreshPostList"

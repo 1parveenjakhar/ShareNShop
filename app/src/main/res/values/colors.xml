@@ -14,4 +14,8 @@
     <color name="pink">#C850C0</color>
     <color name="yellow">#FFCC70</color>
     <color name="colorOnSecondary">@color/black</color>
+
+<!--    only for dark mode-->
+    <color name="skin_color">#ECDBBA</color>
+    <color name="lavender">#bb86fc</color>
 </resources>
