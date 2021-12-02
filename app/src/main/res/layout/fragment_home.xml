@@ -22,7 +22,7 @@
             app:layout_constraintTop_toTopOf="parent"
             android:fontFamily="@font/kaushan_script_regular"/>
 
-        <SearchView
+        <androidx.appcompat.widget.SearchView
             android:id="@+id/searchView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
