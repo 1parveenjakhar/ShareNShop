@@ -13,6 +13,8 @@ android {
         versionCode 1
         versionName "1.0"
 
+        manifestPlaceholders = [file_provider: "com.puteffort.sharenshop"]
+
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -30,6 +32,8 @@ android {
         viewBinding true
         dataBinding true
     }
+    compileSdkVersion 30
+    buildToolsVersion '30.0.2'
 }
 
 dependencies {
@@ -43,6 +47,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.4.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.1'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation 'androidx.preference:preference:1.1.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 
@@ -55,6 +60,22 @@ dependencies {
 
     //Cloud Firestore
     implementation 'com.google.firebase:firebase-firestore'
+    // FCM
+    implementation 'com.google.firebase:firebase-messaging'
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-functions'
+
+    implementation 'com.squareup.okhttp3:okhttp:4.9.0'
+
+    implementation 'com.google.code.gson:gson:2.8.9'
+
+
+    def room_version = "2.3.0"
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version"
+
+    implementation 'com.cometchat:pro-android-chat-sdk:3.0.1'
+    implementation project(path: ':uikit')
 }
 
 apply plugin: 'com.google.gms.google-services'

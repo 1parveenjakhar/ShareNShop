@@ -1,5 +1,6 @@
 package com.puteffort.sharenshop;
 
+import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
 import static com.puteffort.sharenshop.utils.UtilFunctions.isEmailValid;
 import static com.puteffort.sharenshop.utils.UtilFunctions.showToast;
 
@@ -11,20 +12,28 @@ import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.Toast;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.ProgressBar;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.databinding.DataBindingUtil;
 import androidx.lifecycle.MutableLiveData;
 
+import com.cometchat.pro.core.CometChat;
+import com.cometchat.pro.exceptions.CometChatException;
+import com.cometchat.pro.models.User;
+import com.cometchat.pro.uikit.ui_components.cometchat_ui.CometChatUI;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.textfield.TextInputLayout;
@@ -32,11 +41,16 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
-import com.google.firebase.firestore.*;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.puteffort.sharenshop.databinding.ActivityLoginBinding;
 import com.puteffort.sharenshop.models.UserActivity;
 import com.puteffort.sharenshop.models.UserProfile;
+import com.puteffort.sharenshop.utils.Constants;
 import com.puteffort.sharenshop.utils.DBOperations;
+import com.puteffort.sharenshop.utils.Messenger;
+import com.puteffort.sharenshop.utils.UtilFunctions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,12 +67,9 @@ public class LoginActivity extends AppCompatActivity {
 
     private final String IS_LINKING = "IS_LINKING";
 
-    //Cloud fireStore constants
-    private final String USER_PROFILE = "UserProfile"; //collection type
-    // field
-
     private TextInputLayout editEmailAddress;
     private FirebaseUser currentUser;
+    ProgressBar progressBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,15 +77,19 @@ public class LoginActivity extends AppCompatActivity {
         if (setOrientation()) return;
 
         setTheme();
+        Messenger.init(this);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_login);
         editEmailAddress = Objects.requireNonNull(binding.emailAddress);
+        progressBar = Objects.requireNonNull(binding.progressBar);
+
+        progressBar.setVisibility(View.GONE);
 
         mAuth = FirebaseAuth.getInstance();
         if (mAuth.getCurrentUser() != null) {
-            Log.i(TAG,"User already logged-in. Starting Dashboard...");
+            Log.i(TAG, "User already logged-in. Starting Dashboard...");
             handleSuccessfulAuthentication();
         } else {
-            Log.i(TAG,"User NOT logged-in. Starting Authentication...");
+            Log.i(TAG, "User NOT logged-in. Starting Authentication...");
             GoogleSignInOptions gso = new GoogleSignInOptions
                     .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                     .requestIdToken(getString(R.string.default_web_client_id))
@@ -113,7 +128,7 @@ public class LoginActivity extends AppCompatActivity {
     private void addListeners() {
         //Sign-in button
         binding.signInButton.setOnClickListener(view -> {
-            Log.i(TAG,"Sign-in button clicked!");
+            Log.i(TAG, "Sign-in button clicked!");
             //Read email & password
             String emailId = Objects.requireNonNull(editEmailAddress.getEditText()).getText().toString();
             String password = Objects.requireNonNull(binding.password.getEditText()).getText().toString();
@@ -136,7 +151,37 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         //Google-button
-        binding.googleSignUpButton.setOnClickListener(view -> googleAuthLauncher.launch(mSignInClient.getSignInIntent()));
+        binding.googleSignUpButton.setOnClickListener(view ->
+                googleAuthLauncher.launch(mSignInClient.getSignInIntent()));
+
+        Context context = this;
+        binding.forgotPasswordButton.setOnClickListener(v -> {
+            EditText editTextEmail = Objects.requireNonNull(binding.emailAddress).getEditText();
+            if (editTextEmail == null) return;
+            String emailAddress = editTextEmail.getText().toString();
+
+            if (!UtilFunctions.isEmailValid(emailAddress)) {
+                editTextEmail.setError("Invalid email!");
+            } else {
+                editTextEmail.setError(null);
+                progressBar.setVisibility(View.VISIBLE);
+                FirebaseAuth auth = FirebaseAuth.getInstance();
+                auth.sendPasswordResetEmail(emailAddress)
+                        .addOnCompleteListener(task -> {
+                            progressBar.setVisibility(View.GONE);
+                            if (task.isSuccessful()) {
+                                binding.forgotPasswordButton.setText(R.string.reset_link_mailed);
+                                binding.forgotPasswordButton.setClickable(false);
+                                binding.forgotPasswordButton.setAlpha(0.5F);
+                                binding.emailAddress.setError(null);
+                                Log.d(TAG, "Password reset email sent!");
+                            } else {
+                                String msg = task.getException().getMessage();
+                                binding.emailAddress.setError(msg);
+                            }
+                        }).addOnFailureListener(e -> showToast(context, e.getMessage()));
+            }
+        });
     }
 
     private final ActivityResultLauncher<Intent> googleAuthLauncher = registerForActivityResult(
@@ -149,7 +194,10 @@ public class LoginActivity extends AppCompatActivity {
                     // Authenticating Google user with firebase
                     AuthCredential credential = GoogleAuthProvider.getCredential(account.getIdToken(), null);
                     mAuth.signInWithCredential(credential)
-                            .addOnSuccessListener(this, authResult -> handleSuccessfulAuthentication(SIGN_IN_USING_GOOGLE))
+                            .addOnSuccessListener(this, authResult -> {
+                                createMessengerUser();
+                                handleSuccessfulAuthentication(SIGN_IN_USING_GOOGLE);
+                            })
                             .addOnFailureListener(this, this::handleFailedAuthentication);
                 } catch (ApiException apiException) {
                     handleFailedAuthentication(apiException);
@@ -158,9 +206,11 @@ public class LoginActivity extends AppCompatActivity {
     );
 
     private void authUsingEmailPassword(String email, String password) {
+        progressBar.setVisibility(View.VISIBLE);
         //Authenticate given email and password on signIn button click
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
+                    progressBar.setVisibility(View.GONE);
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
                         if (user != null) {
@@ -182,72 +232,105 @@ public class LoginActivity extends AppCompatActivity {
                         showToast(this, Objects.requireNonNull(task.getException()).getMessage());
                     }
                 })
-                .addOnFailureListener(e -> showToast(this, e.getMessage()));
+                .addOnFailureListener(e -> {
+                    progressBar.setVisibility(View.GONE);
+                    showToast(this, e.getMessage());
+                });
     }
 
     private void handleSuccessfulAuthentication(int signInMethod) {
-        Log.i(TAG,"Handling successful authentication...");
+        progressBar.setVisibility(View.VISIBLE);
+        Log.i(TAG, "Handling successful authentication...");
 
-        // Checking if current user exists in DB
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        Messenger.login(currentUser.getUid(),this);
+        // Checking if current user exists in DB
         DocumentReference docRef = db.collection(USER_PROFILE).document(currentUser.getUid());
         docRef.get().addOnSuccessListener(documentSnapshot -> {
-                if (documentSnapshot.exists()) {
-                    Log.i(TAG,"User already added. Not adding new one!");
-                    handleSuccessfulAuthentication();
-                } else {
-                    Tasks.whenAllSuccess(addNewUserToFireStore(db, docRef))
-                            .addOnSuccessListener(results -> {
-                                // Sync Login methods only if new user added successfully
-                                // Else can give error
-                                syncLoginMethods(signInMethod);
-                            });
-                }
-            });
+            if (documentSnapshot.exists()) {
+                Log.i(TAG, "User already added. Not adding new one!");
+                progressBar.setVisibility(View.GONE);
+                handleSuccessfulAuthentication();
+            } else {
+                Tasks.whenAllSuccess(addNewUserToFireStore(db, docRef))
+                        .addOnSuccessListener(results -> {
+                            // Sync Login methods only if new user added successfully
+                            // Else can give error
+                            progressBar.setVisibility(View.VISIBLE);
+                            syncLoginMethods(signInMethod);
+                        });
+            }
+        });
+    }
+
+    private void createMessengerUser() {
+        FirebaseUser firebaseUser = mAuth.getCurrentUser();
+        User user = new User();
+        user.setUid(firebaseUser.getUid());
+        user.setName(firebaseUser.getDisplayName());
+
+        CometChat.createUser(user, Constants.authKey, new CometChat.CallbackListener<User>() {
+            @Override
+            public void onSuccess(User user) {
+                Log.d("createUser", user.toString());
+            }
+
+            @Override
+            public void onError(CometChatException e) {
+                Log.e("createUser", e.getMessage());
+            }
+        });
     }
 
     private List<Task<Void>> addNewUserToFireStore(FirebaseFirestore db, DocumentReference docRef) {
         String email = currentUser.getEmail();
         String name = currentUser.getDisplayName();
         String Uid = currentUser.getUid();
-        UserProfile userProfile = new UserProfile(name,email,"",Uid);
+
+        String imgURL = currentUser.getPhotoUrl() == null ? "" : currentUser.getPhotoUrl().toString();
+        UserProfile userProfile = new UserProfile(name, email, imgURL, Uid);
 
         List<Task<Void>> tasks = new ArrayList<>();
         tasks.add(docRef.set(userProfile));
         tasks.add(
-            // Adding UserActivity for new user
-            db.collection(DBOperations.USER_ACTIVITY).document(Uid).set(new UserActivity(Uid))
-                    .addOnSuccessListener(unused -> Log.i(TAG,"New User info added in profile...")));
+                // Adding UserActivity for new user
+                db.collection(DBOperations.USER_ACTIVITY).document(Uid).set(new UserActivity(Uid))
+                        .addOnSuccessListener(unused -> Log.i(TAG, "New User info added in profile...")));
         return tasks;
     }
 
     private void syncLoginMethods(int signInMethod) {
+        progressBar.setVisibility(View.VISIBLE);
         //Check if auth providers are already linked
         MutableLiveData<Boolean> authLinkedLiveData = new MutableLiveData<>();
         getAuthLinkedStatus(currentUser, authLinkedLiveData);
+        progressBar.setVisibility(View.VISIBLE);
 
         authLinkedLiveData.observe(this, isAuthLinked -> {
             // If live data has not been given a value
             if (isAuthLinked == null) return;
 
             if (isAuthLinked) {
-                Log.i(TAG,"Auth already linked!");
-                Toast.makeText(this,"isAuthLinked = true!", Toast.LENGTH_LONG).show();
+                Log.i(TAG, "Auth already linked!");
+                //Toast.makeText(this, "isAuthLinked = true!", Toast.LENGTH_LONG).show();
+                progressBar.setVisibility(View.GONE);
                 handleSuccessfulAuthentication();
                 return;
             }
 
             //Both auth providers are not linked
-            Log.i(TAG,"Auth NOT linked!");
+            Log.i(TAG, "Auth NOT linked!");
             if (signInMethod == SIGN_IN_USING_EMAIL) {
                 //ask for google sign-in
             } else if (signInMethod == SIGN_IN_USING_GOOGLE) {
                 //ask for email sign-in
                 Intent intent = new Intent(LoginActivity.this, SignUpActivity.class);
                 final Boolean LINKING = true;
-                intent.putExtra(IS_LINKING,LINKING);
-                Log.i(TAG,"Logged using Google. Asking for Email & Password to sync....");
+                intent.putExtra(IS_LINKING, LINKING);
+                Log.i(TAG, "Logged using Google. Asking for Email & Password to sync....");
+
                 startActivity(intent);
                 finish();
             }
@@ -257,14 +340,16 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void getAuthLinkedStatus(FirebaseUser currentUser, MutableLiveData<Boolean> authLinked) {
+        progressBar.setVisibility(View.VISIBLE);
         //Fetching data from the fireStore
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         DocumentReference userProfileRef = db.collection(USER_PROFILE).document(currentUser.getUid());
 
         userProfileRef.get().addOnCompleteListener(task -> {
-            if(task.isSuccessful()){
+            if (task.isSuccessful()) {
+                progressBar.setVisibility(View.GONE);
                 DocumentSnapshot document = task.getResult();
-                if(document.exists()){
+                if (document.exists()) {
                     UserProfile userProfile = document.toObject(UserProfile.class);
 
                     // DB operations are async functions, hence using live data to notify observer
@@ -275,11 +360,23 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void handleSuccessfulAuthentication() {
-        startActivity(new Intent(this, MainActivity.class));
+        //Initiate messenger
+        //Messenger.init(this);
+        progressBar.setVisibility(View.VISIBLE);
+        Messenger.login(mAuth.getCurrentUser().getUid(),this);
+        progressBar.setVisibility(View.GONE);
+        //startMessenger(this);
+
+        startActivity(new Intent(getApplicationContext(), MainActivity.class));
         finish();
+    }
+
+    private void startMessenger(LoginActivity loginActivity) {
+        startActivity(new Intent(this, CometChatUI.class));
     }
 
     private void handleFailedAuthentication(Exception exception) {
         showToast(this, exception.getMessage());
     }
+
 }

@@ -1,34 +1,44 @@
 package com.puteffort.sharenshop.viewmodels;
 
-import static com.puteffort.sharenshop.utils.DBOperations.POST_DETAIL_INFO;
+import static android.view.View.GONE;
+import static com.puteffort.sharenshop.utils.DBOperations.INTERESTED;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_ACTIVITY;
+import static com.puteffort.sharenshop.utils.DBOperations.statusMap;
+import static com.puteffort.sharenshop.utils.UtilFunctions.SERVER_URL;
+import static com.puteffort.sharenshop.utils.UtilFunctions.SUCCESS_CODE;
+import static com.puteffort.sharenshop.utils.UtilFunctions.client;
+import static com.puteffort.sharenshop.utils.UtilFunctions.getRequest;
+import static com.puteffort.sharenshop.utils.UtilFunctions.gson;
 
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.widget.SearchView;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentChange;
-import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.models.PostInfo;
 import com.puteffort.sharenshop.models.PostStatus;
-import com.puteffort.sharenshop.models.UserActivity;
-import com.puteffort.sharenshop.models.UserStatus;
 import com.puteffort.sharenshop.utils.DBOperations;
+import com.puteffort.sharenshop.utils.UtilFunctions;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,25 +48,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQueryTextListener {
     // For filtering the list
-    private final MutableLiveData<List<PostInfo>> postsLiveData;
-    private final List<PostInfo> originalPosts;
-    private final List<PostInfo> posts, searchedPosts;
-
-    private final MutableLiveData<Boolean> userDetailsChanged;
-    private final Set<String> wishListedPosts;
-    private final Map<String, String> postsStatus;
+    private final MutableLiveData<List<RecyclerViewPost>> postsLiveData;
+    private final List<RecyclerViewPost> originalPosts;
+    private final List<RecyclerViewPost> posts, searchedPosts;
 
     private final FirebaseFirestore db;
     private final String userID;
-    private final MutableLiveData<Integer> toastMessage = new MutableLiveData<>();
 
     private final MutableLiveData<Boolean> dataUpdating = new MutableLiveData<>(true);
-    private final MutableLiveData<Integer> dataChanged, dataAdded, dataRemoved;
 
-    private final Map<String, String> statusMap;
     private final Map<Integer, Integer> lastActivityTimeMap;
     private final Map<Integer, String> sortMap;
     private Set<Integer> lastActivityChips;
@@ -64,22 +72,15 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
     private int sortSelected;
 
     private final Handler handler;
+    private String previousSearch = "";
+
+    private final ReentrantLock LOCK = new ReentrantLock();
 
     public HomeFragmentViewModel() {
         originalPosts = new ArrayList<>();
         posts = new ArrayList<>();
         searchedPosts = new ArrayList<>();
-        postsLiveData = new MutableLiveData<>(posts);
-
-        userDetailsChanged = new MutableLiveData<>(false);
-        wishListedPosts = new HashSet<>();
-        postsStatus = new HashMap<>();
-
-        dataAdded = new MutableLiveData<>();
-        dataRemoved = new MutableLiveData<>();
-        dataChanged = new MutableLiveData<>();
-
-        statusMap = DBOperations.statusMap;
+        postsLiveData = new MutableLiveData<>();
 
         db = FirebaseFirestore.getInstance();
         userID = FirebaseAuth.getInstance().getUid();
@@ -89,7 +90,7 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
         lastActivityTimeMap.put(R.id.oneMonthTo6Months, 1);
         lastActivityTimeMap.put(R.id.sixMonthsTo1Year, 2);
         lastActivityTimeMap.put(R.id.greaterThan1Year, 3);
-        lastActivityChips = new HashSet<>(Arrays.asList(R.id.lessThan1Month, R.id.oneMonthTo6Months, R.id.sixMonthsTo1Year, R.id.greaterThan1Year));
+        lastActivityChips = UtilFunctions.getDefaultLastActivityChips();
         fromAndTos = Arrays.asList("0", "", "0", "");
 
         sortSelected = 2;
@@ -99,158 +100,135 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
         sortMap.put(2, "Last Activity");
         handler = new Handler(Looper.getMainLooper());
 
-        fetchPosts();
+        observeUserDetails();
     }
 
-    private void fetchPosts() {
-        db.collection(POST_INFO).orderBy("lastActivity", Query.Direction.DESCENDING)
-                .addSnapshotListener((value, error) -> {
-                    if (error == null && value != null) {
-                        for (DocumentChange docChange: value.getDocumentChanges()) {
-                            DocumentChange.Type type = docChange.getType();
-                            PostInfo post = docChange.getDocument().toObject(PostInfo.class);
-                            if (type == DocumentChange.Type.ADDED) {
-                                originalPosts.add(post);
-                                posts.add(post);
-                                searchedPosts.add(post);
+    private void observeUserDetails() {
+        DBOperations.getUserActivity().observeForever(userActivity -> {
+            if (userActivity == null) return;
 
-                                dataAdded.setValue(posts.size()-1);
-                            } else if (type == DocumentChange.Type.MODIFIED) {
-                                int index = originalPosts.indexOf(post);
-                                originalPosts.set(index, post);
+            AsyncTask.execute(() -> {
+                Set<String> wishListedPosts = new HashSet<>(userActivity.getPostsWishListed());
+                Map<String, String> postsStatus = new HashMap<>();
+                for (PostStatus postStatus: userActivity.getPostsInvolved()) {
+                    postsStatus.put(postStatus.getPostID(), postStatus.getStatus());
+                }
 
-                                index = posts.indexOf(post);
-                                posts.set(index, post);
-
-                                index = searchedPosts.indexOf(post);
-                                posts.set(index, post);
-
-                                dataChanged.setValue(index);
-                            } else if (type == DocumentChange.Type.REMOVED) {
-                                originalPosts.remove(post);
-                                searchedPosts.remove(post);
-
-                                int index = posts.indexOf(post);
-                                posts.remove(index);
-
-                                dataRemoved.setValue(index);
-                            }
-                            dataUpdating.setValue(false);
+                fetchPosts(wishListedPosts, postsStatus);
+            });
+        });
+    }
+    private void fetchPosts(Set<String> wishListedPosts, Map<String, String> postsStatus) {
+        db.collection(POST_INFO).get()
+                .addOnSuccessListener(querySnaps -> {
+                    if (querySnaps != null) {
+                        LOCK.lock();
+                        originalPosts.clear();
+                        for (QueryDocumentSnapshot querySnap : querySnaps) {
+                            PostInfo postInfo = querySnap.toObject(PostInfo.class);
+                            RecyclerViewPost post = new RecyclerViewPost(postInfo);
+                            post.setStatus(postsStatus.get(postInfo.getId()));
+                            post.setFavourite(wishListedPosts.contains(postInfo.getId()));
+                            originalPosts.add(post);
                         }
-                    } else {
-                        // Database Error
-                        toastMessage.setValue(R.string.db_fetch_error);
-                        dataUpdating.setValue(false);
+                        onQueryTextChange(previousSearch);
+                        LOCK.unlock();
                     }
                 });
     }
 
-    public void changeUserDetails(UserActivity userActivity) {
-        if (userActivity == null) return;
-        wishListedPosts.clear();
-        wishListedPosts.addAll(userActivity.getPostsWishListed());
-        postsStatus.clear();
-        for (PostStatus postStatus: userActivity.getPostsInvolved())
-            postsStatus.put(postStatus.getPostID(), postStatus.getStatus());
+    public void changeStatus(int position, Button statusButton, ProgressBar progressBar) {
+        progressBar.setVisibility(View.VISIBLE);
+        String status = statusButton.getText().toString();
+        statusButton.setText("");
 
-        userDetailsChanged.setValue(true);
-    }
-
-    public void changeStatus(int position, String status) {
-        PostInfo post = posts.get(position);
+        PostInfo post = posts.get(position).getPostInfo();
         String newStatus = statusMap.get(status);
-        List<Task<Void>> taskList = new ArrayList<>();
 
-        if (status.equals("Interested ?")) {
-            // Adding this user to userInterested in Post
-            taskList.add(db.collection(POST_DETAIL_INFO).document(post.getId())
-                    .update(Collections.singletonMap("usersInterested", FieldValue.arrayUnion(userID))));
-        } else {
-            // Deleting old status from post
-            taskList.add(db.collection(POST_DETAIL_INFO).document(post.getId())
-                    .update(Collections.singletonMap("usersAdded", FieldValue.arrayRemove(new UserStatus(userID, status)))));
-            // Deleting old status from user
-            taskList.add(db.collection(USER_ACTIVITY).document(userID)
-                    .update(Collections.singletonMap("postsInvolved", FieldValue.arrayRemove(new PostStatus(post.getId(), status)))));
+        try {
+            String name = DBOperations.getUserProfile().getValue() == null
+                    ? "User" : DBOperations.getUserProfile().getValue().getName();
+            String json = new JSONObject()
+                    .put("post", gson.toJson(post))
+                    .put("oldStatus", status)
+                    .put("newStatus", statusMap.get(status))
+                    .put("userID", userID)
+                    .put("userName", name)
+                    .toString();
 
-            // Adding new status to post
-            taskList.add(db.collection(POST_DETAIL_INFO).document(post.getId())
-                    .update(Collections.singletonMap("usersAdded", FieldValue.arrayUnion(new UserStatus(userID, newStatus)))));
-        }
-
-        // Adding new status to user
-        taskList.add(db.collection(USER_ACTIVITY).document(userID)
-                .update(Collections.singletonMap("postsInvolved", FieldValue.arrayUnion(new PostStatus(post.getId(), newStatus)))));
-
-        Tasks.whenAllSuccess(taskList)
-            .addOnSuccessListener(objects -> {
-                postsStatus.put(post.getId(), newStatus);
-                dataChanged.setValue(position);
+            client.newCall(getRequest(json, SERVER_URL + "changeStatus")).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    onStatusChangeFailure(progressBar, statusButton, status);
+                }
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) {
+                    if (response.code() != SUCCESS_CODE) {
+                        onStatusChangeFailure(progressBar, statusButton, status);
+                        return;
+                    }
+                    handler.post(() -> {
+                        progressBar.setVisibility(GONE);
+                        statusButton.setText(newStatus);
+                        posts.get(position).setStatus(newStatus);
+                    });
+                }
             });
+        } catch (JSONException e) {
+            onStatusChangeFailure(progressBar, statusButton, status);
+        }
+    }
+    private void onStatusChangeFailure(ProgressBar progressBar, Button postStatus, String status) {
+        handler.post(() -> {
+            progressBar.setVisibility(GONE);
+            postStatus.setText(status);
+        });
     }
 
-    public void changePostFavourite(int position, boolean isFavourite) {
-        DocumentReference doc = db.collection(USER_ACTIVITY).document(userID);
-        String postID = posts.get(position).getId();
-        if (isFavourite) {
-            doc.update(Collections.singletonMap("postsWishListed", FieldValue.arrayUnion(postID)))
-                    .addOnSuccessListener(unused -> {
-                        wishListedPosts.add(postID);
-                        dataChanged.setValue(position);
-                    });
-        } else {
-            doc.update(Collections.singletonMap("postsWishListed", FieldValue.arrayRemove(postID)))
-                    .addOnSuccessListener(unused -> {
-                        wishListedPosts.remove(postID);
-                        dataChanged.setValue(position);
-                    });
-        }
+    public void changePostFavourite(int position, ImageView favorite, boolean isFavourite, ProgressBar progressBar) {
+        progressBar.setVisibility(View.VISIBLE);
+        favorite.setVisibility(View.INVISIBLE);
+        String postID = posts.get(position).getPostInfo().getId();
+
+        db.collection(USER_ACTIVITY).document(userID)
+                .update(Collections.singletonMap("postsWishListed",
+                isFavourite ? FieldValue.arrayUnion(postID) : FieldValue.arrayRemove(postID)))
+                .addOnSuccessListener(unused -> {
+                    posts.get(position).setFavourite(isFavourite);
+                    favorite.setImageResource(isFavourite ? R.drawable.filled_star_icon : R.drawable.unfilled_star_icon);
+                    progressBar.setVisibility(GONE);
+                    favorite.setVisibility(View.VISIBLE);
+                })
+                .addOnFailureListener(error -> onFavouriteChangeFailure(favorite, progressBar));
+    }
+    private void onFavouriteChangeFailure(ImageView icon, ProgressBar progressBar) {
+        icon.setVisibility(View.VISIBLE);
+        progressBar.setVisibility(GONE);
     }
 
     @Override
     public boolean onQueryTextSubmit(String query) {
         return false;
     }
-
     @Override
     public synchronized boolean onQueryTextChange(String newText) {
         dataUpdating.setValue(true);
         searchedPosts.clear();
+
         String query = newText.trim().toLowerCase();
+        previousSearch = query;
+
         if (query.isEmpty()) {
             searchedPosts.addAll(originalPosts);
         } else {
-            for (PostInfo post : originalPosts) {
-                if (post.getTitle().toLowerCase().contains(query))
+            for (RecyclerViewPost post : originalPosts) {
+                if (post.getPostInfo().getTitle().toLowerCase().contains(query))
                     searchedPosts.add(post);
             }
         }
-        Log.d("a", "Queried = " + Arrays.toString(searchedPosts.toArray()));
         filterPosts(lastActivityChips, fromAndTos);
         return true;
     }
-
-    public LiveData<Integer> getDataChanged() {
-        return dataChanged;
-    }
-
-    public LiveData<Integer> getDataAdded() {
-        return dataAdded;
-    }
-
-    public LiveData<Integer> getDataRemoved() {
-        return dataRemoved;
-    }
-
-    public LiveData<List<PostInfo>> getPosts() {
-        return postsLiveData;
-    }
-
-    public Set<Integer> getLastActivityChips() { return lastActivityChips; }
-    public List<String> getEditTexts() {
-        return fromAndTos;
-    }
-    public int getCheckedSort() { return sortSelected; }
 
     public void filterPosts(Set<Integer> lastActivityChips, List<String> fromAndTos) {
         dataUpdating.setValue(true);
@@ -266,24 +244,20 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
             int peopleFrom = fromAndTos.get(2).trim().isEmpty() ? 0 : Integer.parseInt(fromAndTos.get(2));
             int peopleTo = fromAndTos.get(3).trim().isEmpty() ? Integer.MAX_VALUE : Integer.parseInt(fromAndTos.get(3));
 
-            List<PostInfo> tmpList = new ArrayList<>(searchedPosts);
+            List<RecyclerViewPost> tmpList = new ArrayList<>(searchedPosts);
             posts.clear();
 
-            Log.d("a", "Ranges = " + Arrays.toString(new int[]{amountFrom, amountTo, peopleFrom, peopleTo}));
-            Log.d("a", "Time categories = " + allowedCategories + ", " + lastActivityChips);
-
-            for (PostInfo postInfo: tmpList) {
+            for (RecyclerViewPost recyclerViewPost: tmpList) {
+                PostInfo postInfo = recyclerViewPost.getPostInfo();
                 if (amountFrom <= postInfo.getAmount() && postInfo.getAmount() <= amountTo &&
                         peopleFrom <= postInfo.getPeopleRequired() && postInfo.getPeopleRequired() <= peopleTo &&
                         allowedCategories.contains(getTimeCategory(postInfo.getLastActivity()))) {
-                    posts.add(postInfo);
+                    posts.add(recyclerViewPost);
                 }
             }
-            Log.d("a", "Filtered = " + Arrays.toString(posts.toArray()));
-            sortPosts(Objects.requireNonNull(sortMap.get(sortSelected)), true);
+            sortPosts(Objects.requireNonNull(sortMap.get(sortSelected)));
         });
     }
-
     private int getTimeCategory(long lastActivity) {
         long timeDiff = System.currentTimeMillis() - lastActivity;
         int years = (int)(timeDiff / 31556952000L);
@@ -297,47 +271,94 @@ public class HomeFragmentViewModel extends ViewModel implements SearchView.OnQue
         return category;
     }
 
-    public LiveData<Boolean> areUserDetailsChanged() {
-        return userDetailsChanged;
-    }
-    public LiveData<Boolean> isDataUpdating() {
-        return dataUpdating;
-    }
-    public LiveData<Integer> getToastMessage() {
-        return toastMessage;
-    }
-    public Set<String> getWishListedPosts() {
-        return wishListedPosts;
-    }
-    public Map<String, String> getPostsStatus() {
-        return postsStatus;
-    }
+    public void sortPosts(String sortBy) {
+        handler.post(() -> dataUpdating.setValue(true));
 
-    public void sortPosts(String sortBy, boolean needHandler) {
-        if (!needHandler)
-            dataUpdating.setValue(true);
         switch (sortBy) {
             case "Amount":
                 sortSelected = 0;
-                Collections.sort(posts, (p1, p2) -> p1.getAmount() - p2.getAmount());
+                Collections.sort(posts, (p1, p2) ->
+                        p2.getPostInfo().getAmount() - p1.getPostInfo().getAmount());
                 break;
             case "People Required":
-                Log.d("a", "Sorting on base of people required");
                 sortSelected = 1;
-                Collections.sort(posts, (p1, p2) -> p1.getPeopleRequired() - p2.getPeopleRequired());
+                Collections.sort(posts, (p1, p2) ->
+                        p2.getPostInfo().getPeopleRequired() - p1.getPostInfo().getPeopleRequired());
                 break;
             case "Last Activity":
                 sortSelected = 2;
-                Collections.sort(posts, (p1, p2) -> (int)(p1.getLastActivity() - p2.getLastActivity()));
+                Collections.sort(posts, (p1, p2) ->
+                        (int)(p2.getPostInfo().getLastActivity() - p1.getPostInfo().getLastActivity()));
                 break;
             case "DEFAULTS":
                 sortSelected = -1;
                 break;
         }
-        Log.d("a", "Sorted = " + Arrays.toString(posts.toArray()));
         handler.post(() -> {
             dataUpdating.setValue(false);
             postsLiveData.setValue(posts);
         });
+    }
+
+
+    public LiveData<Boolean> isDataUpdating() {
+        return dataUpdating;
+    }
+    public LiveData<List<RecyclerViewPost>> getPosts() {
+        return postsLiveData;
+    }
+
+    public Set<Integer> getLastActivityChips() { return lastActivityChips; }
+    public List<String> getEditTexts() {
+        return fromAndTos;
+    }
+    public int getCheckedSort() { return sortSelected; }
+
+    public static class RecyclerViewPost {
+        private final PostInfo postInfo;
+        private boolean isFavourite;
+        private String status;
+
+        public RecyclerViewPost(PostInfo postInfo) {
+            this.postInfo = postInfo;
+            this.status = INTERESTED;
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return postInfo.toString() + "->" + isFavourite;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            RecyclerViewPost that = (RecyclerViewPost) o;
+
+            return postInfo.equals(that.postInfo);
+        }
+
+        public PostInfo getPostInfo() {
+            return postInfo;
+        }
+
+        public boolean isFavourite() {
+            return isFavourite;
+        }
+
+        public void setFavourite(boolean favourite) {
+            isFavourite = favourite;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            if (status == null) return;
+            this.status = status;
+        }
     }
 }

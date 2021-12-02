@@ -16,7 +16,7 @@
     <!--    Strings related to NewPostFragment-->
     <string name="new_post_title_error">Please provide a title!</string>
     <string name="new_post_amount_error">Please add some amount!</string>
-    <string name="new_post_days_error">Please mention no of days!</string>
+    <string name="new_post_days_error">Please mention no of days/months/years!</string>
     <string name="new_post_months_error">Please mention no of months!</string>
     <string name="new_post_years_error">Please mention no of years!</string>
     <string name="new_post_people_error">Please mention people requirement!</string>
@@ -100,9 +100,36 @@
     <string name="last_activity_filter_greater_than_1_year">greater than 1 year</string>
     <string name="to">To</string>
     <string name="from">From</string>
+    <string name="ask_for_final_confirmation">Ask for Final Confirmation</string>
+    <string name="user_accepted_the_final_confirmation">User accepted the final confirmation</string>
+    <string name="button_to_approve_user">Button to approve user</string>
+    <string name="button_to_reject_user">Button to reject user</string>
+    <string name="in_progress">In Progress ..</string>
     <string-array name="sort_tags">
         <item>"Amount"</item>
         <item>"People Required"</item>
         <item>"Last Activity"</item>
     </string-array>
+
+    <string name="notifications">Notifications</string>
+    <string name="notification_title">Notification Title</string>
+    <string name="notification_message">Notification Message</string>
+    <string name="unread_notification">Unread notification</string>
+    <string name="example_gmail_com">example@gmail.com</string>
+    <string name="your_name">Your Name</string>
+    <string name="name_">Name:</string>
+    <string name="email_">Email:</string>
+    <string name="your_email_email_com">youremail@email.com</string>
+    <string name="new_password">New Password:</string>
+    <string name="current_password">Current Password:</string>
+    <string name="update_profile">Update Profile</string>
+    <string name="reset">Reset</string>
+    <string name="forgot_password">Forget Password?</string>
+    <string name="reset_link_mailed">Reset Link mailed !</string>
+
+    <string name="want_to_accept">Want to Accept ?</string>
+    <string name="include_me">Include Me</string>
+    <string name="mark_all_as_read">Mark All As Read</string>
+    <string name="please_select_a_post_from_the_left">Please select a Post from the left !</string>
+    <string name="button_to_edit_the_post">Button to edit the post</string>
 </resources>

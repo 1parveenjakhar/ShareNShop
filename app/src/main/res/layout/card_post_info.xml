@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    app:cardCornerRadius="25dp"
+    app:cardCornerRadius="20dp"
     android:layout_margin="10dp"
     android:elevation="8dp"
     app:cardElevation="8dp"
@@ -25,7 +25,9 @@
             app:layout_constraintTop_toTopOf="parent"
             app:circularflow_radiusInDP="12dp"
             android:contentDescription="@string/picture_of_post_owner"
-            android:src="@drawable/default_person_icon"/>
+            android:src="@drawable/default_person_icon"
+            android:focusable="true"
+            android:clickable="true"/>
 
         <TextView
             android:id="@+id/postTitle"
@@ -35,6 +37,7 @@
             android:textStyle="bold"
             android:textSize="20sp"
             android:layout_marginStart="20dp"
+            android:layout_marginEnd="5dp"
             app:layout_constraintStart_toEndOf="@id/imageView"
             app:layout_constraintEnd_toStartOf="@id/favouriteIcon"
             app:layout_constraintTop_toTopOf="@id/imageView"/>
@@ -59,10 +62,9 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@id/postTime"
             app:layout_constraintBottom_toBottomOf="@id/postTime"
-            android:textSize="15sp"
-            android:gravity="center">
-
-        </TextView>
+            android:textSize="17sp"
+            android:paddingVertical="10dp"
+            android:gravity="center"/>
 
         <TextView
             android:id="@+id/postTime"
@@ -73,10 +75,9 @@
             app:layout_constraintEnd_toStartOf="@id/postPeople"
             app:layout_constraintStart_toEndOf="@id/postAmount"
             app:layout_constraintTop_toBottomOf="@id/postTitle"
-            android:textSize="15sp"
-            android:gravity="center">
-
-        </TextView>
+            android:textSize="17sp"
+            android:paddingVertical="10dp"
+            android:gravity="center"/>
 
         <TextView
             android:id="@+id/postPeople"
@@ -87,10 +88,9 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/postTime"
             app:layout_constraintBottom_toBottomOf="@id/postTime"
-            android:textSize="15sp"
-            android:gravity="center">
-
-        </TextView>
+            android:textSize="17sp"
+            android:paddingVertical="10dp"
+            android:gravity="center"/>
 
         <Button
             android:id="@+id/postStatusButton"
@@ -114,8 +114,20 @@
             app:layout_constraintStart_toStartOf="@id/postStatusButton"
             app:layout_constraintEnd_toEndOf="@id/postStatusButton"
             android:translationZ="5dp"
+            android:visibility="gone"
             android:scaleX="0.7"
             android:scaleY="0.7"/>
+
+        <ProgressBar
+            android:id="@+id/favouriteProgressBar"
+            style="?android:attr/progressBarStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="visible"
+            app:layout_constraintEnd_toEndOf="@id/favouriteIcon"
+            app:layout_constraintTop_toTopOf="@id/favouriteIcon"
+            app:layout_constraintStart_toStartOf="@id/favouriteIcon"
+            app:layout_constraintBottom_toBottomOf="@id/favouriteIcon"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

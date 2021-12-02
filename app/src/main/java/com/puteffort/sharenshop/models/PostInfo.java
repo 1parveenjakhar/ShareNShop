@@ -3,41 +3,64 @@ package com.puteffort.sharenshop.models;
 import androidx.annotation.NonNull;
 
 public class PostInfo {
-    private String title;
+    private String title, description;
     private String ownerID;
     private String id;
     private int days, months, years, peopleRequired;
     private int amount;
-    private boolean accomplished;
+    private boolean accomplished, asked;
     private long lastActivity;
 
     public PostInfo() {
         // Empty constructor required for Firestore
     }
 
-    public PostInfo(String title, String ownerID, String days, String months,
+    public PostInfo(String title, String description, String ownerID, String days, String months,
                     String years, String peopleRequired, String amount) {
         this.title = title;
+        this.description = description;
         this.ownerID = ownerID;
         this.days = Integer.parseInt(days);
         this.months = Integer.parseInt(months);
         this.years = Integer.parseInt(years);
         this.peopleRequired = Integer.parseInt(peopleRequired);
         this.amount = Integer.parseInt(amount);
-        this.accomplished = false;
+        this.accomplished = this.asked = false;
+
+        this.lastActivity = System.currentTimeMillis();
+    }
+
+    public boolean isContentSame(PostInfo other) {
+        return title.equals(other.getTitle())
+                && description.equals(other.getDescription())
+                && ownerID.equals(other.getOwnerID())
+                && days == other.getDays()
+                && months == other.getMonths()
+                && years == other.getYears()
+                && peopleRequired == other.getPeopleRequired()
+                && amount == other.getAmount()
+                && accomplished == other.getAccomplished()
+                && asked == other.getAsked();
     }
 
     @Override
     public boolean equals (Object post) {
+        if (post.getClass() != PostInfo.class) return false;
         return this.id.equals(((PostInfo)post).getId());
     }
 
     @NonNull
     @Override
     public String toString() {
-        return "PostInfo{" +
-                "title='" + title + '\'' +
-                '}';
+        return title + "->" + id + "->" + ownerID;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getTitle() {
@@ -96,13 +119,17 @@ public class PostInfo {
         this.amount = amount;
     }
 
-    public boolean isAccomplished() {
+    public boolean getAccomplished() {
         return accomplished;
     }
 
     public void setAccomplished(boolean accomplished) {
         this.accomplished = accomplished;
     }
+
+    public boolean getAsked() { return asked; }
+
+    public void setAsked(boolean asked) { this.asked = asked; }
 
     public String getId() {
         return id;

@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".fragments.AddedRecyclerView">
 
     <androidx.recyclerview.widget.RecyclerView
@@ -15,6 +16,28 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:visibility="visible"/>
+        android:visibility="gone"/>
+
+    <Button
+        android:id="@+id/finalButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginBottom="20dp"
+        android:textAllCaps="false"
+        android:background="@drawable/gradient_long_button_bg"
+        app:backgroundTint="@null"/>
+
+    <ProgressBar
+        android:id="@+id/buttonProgressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginHorizontal="10dp"
+        android:layout_marginBottom="20dp"
+        android:translationZ="5dp"
+        android:scaleX="0.7"
+        android:scaleY="0.7"/>
 
 </FrameLayout>

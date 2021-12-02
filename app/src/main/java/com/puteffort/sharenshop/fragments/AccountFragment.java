@@ -1,5 +1,7 @@
 package com.puteffort.sharenshop.fragments;
 
+import static com.puteffort.sharenshop.utils.DBOperations.removeToken;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -20,6 +22,8 @@ import com.puteffort.sharenshop.LoginActivity;
 import com.puteffort.sharenshop.MainActivity;
 import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.databinding.FragmentAccountBinding;
+import com.puteffort.sharenshop.services.NotificationRepository;
+import com.puteffort.sharenshop.utils.Messenger;
 
 public class AccountFragment extends Fragment {
     private FragmentAccountBinding binding;
@@ -63,7 +67,10 @@ public class AccountFragment extends Fragment {
     @SuppressLint("NonConstantResourceId")
     private void addListeners() {
         binding.logoutButton.setOnClickListener(view -> {
+            NotificationRepository.getInstance(requireContext()).deleteAllNotifications();
+            removeToken(mAuth.getUid());
             mAuth.signOut();
+            Messenger.logout();
             startActivity(new Intent(requireContext(), LoginActivity.class));
             requireActivity().finish();
         });
@@ -81,5 +88,8 @@ public class AccountFragment extends Fragment {
 
         binding.postsHistoryButton.setOnClickListener(view ->
                 ((MainActivity)requireActivity()).changeFragment(new HistoryContainerFragment()));
+
+        binding.profileButton.setOnClickListener(view ->
+                ((MainActivity)requireActivity()).changeFragment(new MyProfileFragment()));
     }
 }

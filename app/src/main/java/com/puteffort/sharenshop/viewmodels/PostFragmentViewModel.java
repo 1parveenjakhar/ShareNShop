@@ -1,70 +1,110 @@
 package com.puteffort.sharenshop.viewmodels;
 
+import static android.view.View.GONE;
+import static com.puteffort.sharenshop.utils.DBOperations.ACCEPTED;
+import static com.puteffort.sharenshop.utils.DBOperations.ADDED;
 import static com.puteffort.sharenshop.utils.DBOperations.COMMENT;
+import static com.puteffort.sharenshop.utils.DBOperations.FINAL_CONFIRMATION;
+import static com.puteffort.sharenshop.utils.DBOperations.INTERESTED;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_DETAIL_INFO;
 import static com.puteffort.sharenshop.utils.DBOperations.POST_INFO;
-import static com.puteffort.sharenshop.utils.DBOperations.USER_ACTIVITY;
 import static com.puteffort.sharenshop.utils.DBOperations.USER_PROFILE;
+import static com.puteffort.sharenshop.utils.DBOperations.getUserProfile;
+import static com.puteffort.sharenshop.utils.UtilFunctions.SERVER_URL;
+import static com.puteffort.sharenshop.utils.UtilFunctions.SUCCESS_CODE;
+import static com.puteffort.sharenshop.utils.UtilFunctions.client;
+import static com.puteffort.sharenshop.utils.UtilFunctions.getRequest;
+import static com.puteffort.sharenshop.utils.UtilFunctions.gson;
 import static com.puteffort.sharenshop.utils.UtilFunctions.showToast;
 
+import android.app.Application;
 import android.content.Context;
+import android.graphics.drawable.Drawable;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ProgressBar;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
+import com.cometchat.pro.constants.CometChatConstants;
+import com.cometchat.pro.core.CometChat;
+import com.cometchat.pro.exceptions.CometChatException;
+import com.cometchat.pro.models.GroupMember;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.puteffort.sharenshop.R;
 import com.puteffort.sharenshop.fragments.AddedRecyclerView;
 import com.puteffort.sharenshop.fragments.CommentRecyclerView;
 import com.puteffort.sharenshop.fragments.InterestedRecyclerView;
 import com.puteffort.sharenshop.models.Comment;
 import com.puteffort.sharenshop.models.PostDetailInfo;
 import com.puteffort.sharenshop.models.PostInfo;
-import com.puteffort.sharenshop.models.PostStatus;
 import com.puteffort.sharenshop.models.UserProfile;
 import com.puteffort.sharenshop.models.UserStatus;
 import com.puteffort.sharenshop.utils.DBOperations;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.locks.ReentrantLock;
 
-public class PostFragmentViewModel extends ViewModel {
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
+
+public class PostFragmentViewModel extends AndroidViewModel {
     private final FirebaseFirestore db;
     private final FirebaseAuth auth;
-    private final PostInfo postInfo;
+    private PostInfo postInfo;
+    private PostDetailInfo postDetailInfo;
+
+    private final MutableLiveData<Drawable> ownerImage = new MutableLiveData<>();
+    private final MutableLiveData<String> ownerImageURL = new MutableLiveData<>();
 
     private final InterestedRecyclerView interestedRecyclerView;
     private final CommentRecyclerView commentRecyclerView;
     private final AddedRecyclerView addedRecyclerView;
 
-    private final MutableLiveData<String> postDescription = new MutableLiveData<>();
     private final MutableLiveData<PostInfo> postInfoLiveData;
 
-    private final List<UserProfile> usersAdded, usersInterested;
-    private final List<RecyclerViewComment> comments;
+    private List<AddedUser> usersAdded;
+    private final MutableLiveData<List<AddedUser>> usersAddedLiveData = new MutableLiveData<>();
+    private List<UserProfile> usersInterested;
+    private final MutableLiveData<List<UserProfile>> usersInterestedLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<RecyclerViewComment>> commentsLiveData = new MutableLiveData<>();
+    private Map<String, String> statusMap;
 
-    private final MutableLiveData<Integer> addedIndex, interestedIndex, commentIndex, interestedRemoveIndex;
+    private boolean isUserPostOwner;
+    private final Handler handler;
+    private int previousTab = 1;
 
-    private final boolean isUserPostOwner;
+    private final ReentrantLock ADDED_LOCK = new ReentrantLock();
+    private final ReentrantLock COMMENT_LOCK = new ReentrantLock();
+    private final ReentrantLock INTERESTED_LOCK = new ReentrantLock();
 
-    public PostFragmentViewModel(PostInfo postInfo) {
-        Log.d("a", "ViewModel created!");
+    public PostFragmentViewModel(@NonNull Application application) {
+        super(application);
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
-        this.postInfo = postInfo;
         postInfoLiveData = new MutableLiveData<>(postInfo);
-
-        isUserPostOwner = postInfo.getOwnerID().equals(auth.getUid());
 
         interestedRecyclerView = new InterestedRecyclerView();
         commentRecyclerView = new CommentRecyclerView();
@@ -72,202 +112,383 @@ public class PostFragmentViewModel extends ViewModel {
 
         usersAdded = new ArrayList<>();
         usersInterested = new ArrayList<>();
-        comments = new ArrayList<>();
+        statusMap = new HashMap<>();
 
-        addedIndex = new MutableLiveData<>();
-        interestedIndex = new MutableLiveData<>();
-        commentIndex = new MutableLiveData<>();
-        interestedRemoveIndex = new MutableLiveData<>();
-
-        loadPostDetailInfo();
+        handler = new Handler(Looper.getMainLooper());
     }
 
-    public void loadPostInfo() {
-        db.collection(POST_INFO).document(postInfo.getId()).get()
-                .addOnSuccessListener(docSnap -> postInfoLiveData.setValue(docSnap.toObject(PostInfo.class)));
+    public void setPostInfo(PostInfo postInfo, Drawable ownerImage) {
+        this.postInfo = postInfo;
+        this.ownerImage.setValue(ownerImage);
+        postInfoLiveData.setValue(postInfo);
+        this.isUserPostOwner = postInfo.getOwnerID().equals(auth.getUid());
+        setPostInfo(postInfo.getId());
     }
 
-    public void loadPostDetailInfo() {
-        db.collection(POST_DETAIL_INFO).document(postInfo.getId()).get()
-                .addOnSuccessListener(docSnap -> {
-                    PostDetailInfo postDetailInfo = docSnap.toObject(PostDetailInfo.class);
-                    if (postDetailInfo != null) {
-                        postDescription.setValue(postDetailInfo.getDescription());
+    public void setPostInfo(String postID) {
+        loadPostInfo(postID);
+        loadPostDetailInfo(postID);
+    }
 
-                        fetchUsersAdded(postDetailInfo.getUsersAdded());
-                        fetchUsersInterested(postDetailInfo.getUsersInterested());
-                        fetchComments(postDetailInfo.getComments());
+    public void loadPostInfo(String postID) {
+        db.collection(POST_INFO).document(postID)
+                .addSnapshotListener((docSnap, error) -> {
+                    if (error == null && docSnap != null) {
+                        this.postInfo = docSnap.toObject(PostInfo.class);
+                        postInfoLiveData.setValue(postInfo);
+                        this.isUserPostOwner = postInfo.getOwnerID().equals(auth.getUid());
+
+                        db.collection(USER_PROFILE).document(postInfo.getOwnerID()).get()
+                                .addOnSuccessListener(userSnap -> {
+                                    String imageURL = userSnap.getString("imageURL");
+                                    ownerImageURL.setValue(imageURL);
+                                });
                     }
                 });
+    }
 
-        comments.clear();
-        usersAdded.clear();
-        usersInterested.clear();
-        // Notifying observers about data load
-        commentIndex.setValue(null);
-        addedIndex.setValue(null);
-        interestedIndex.setValue(null);
+    public void loadPostDetailInfo(String postID) {
+        if (postID == null) {
+            if (postInfo == null) return;
+            postID = postInfo.getId();
+        }
+
+        db.collection(POST_DETAIL_INFO).document(postID)
+                .addSnapshotListener((docSnap, error) -> {
+                    if (error == null && docSnap != null) {
+                        ADDED_LOCK.lock();
+                        COMMENT_LOCK.lock();
+                        INTERESTED_LOCK.lock();
+
+                        PostDetailInfo postDetailInfo = docSnap.toObject(PostDetailInfo.class);
+                        if (postDetailInfo != null) {
+                            this.postDetailInfo = postDetailInfo;
+                            fetchUsersAdded(postDetailInfo.getUsersAdded());
+                            fetchUsersInterested(postDetailInfo.getUsersInterested());
+                            fetchComments(postDetailInfo.getComments());
+                        }
+                    }
+                });
     }
 
     private void fetchUsersAdded(List<UserStatus> users) {
-        // -1 as a flag for empty list
-        if (users.isEmpty()) addedIndex.setValue(-1);
-
-        for (UserStatus user: users) {
-            db.collection(USER_PROFILE).document(user.getUserID()).get()
-                    .addOnSuccessListener(docSnap -> {
-                        if (docSnap != null) {
-                            usersAdded.add(docSnap.toObject(UserProfile.class));
-                            addedIndex.setValue(usersAdded.size() - 1);
-                        }
-                    });
+        List<AddedUser> tmpUsers = new ArrayList<>();
+        if (users.isEmpty()) {
+            handler.post(() -> usersAddedLiveData.setValue(tmpUsers));
+            usersAdded = tmpUsers;
+            ADDED_LOCK.unlock();
+            return;
         }
+
+        List<String> ids = new ArrayList<>();
+        statusMap = new HashMap<>();
+        for (UserStatus user: users) {
+            ids.add(user.getUserID());
+            statusMap.put(user.getUserID(), user.getStatus());
+        }
+
+        List<Task<DocumentSnapshot>> tasks = new ArrayList<>();
+        for (String id: ids)
+            tasks.add(db.collection(USER_PROFILE).document(id).get());
+        Tasks.whenAllSuccess(tasks).addOnSuccessListener(docSnaps -> {
+                    for (Object docSnap: docSnaps) {
+                        UserProfile profile = ((DocumentSnapshot)docSnap).toObject(UserProfile.class);
+                        if (profile != null)
+                            tmpUsers.add(new AddedUser(profile, statusMap.get(profile.getId())));
+                    }
+                    usersAdded = tmpUsers;
+                    handler.post(() -> usersAddedLiveData.setValue(tmpUsers));
+                    ADDED_LOCK.unlock();
+                }).addOnFailureListener(error -> ADDED_LOCK.unlock());
     }
 
     private void fetchUsersInterested(List<String> users) {
-        // -1 as a flag for empty list
-        if (users.isEmpty()) interestedIndex.setValue(-1);
-
-        for (String id: users) {
-            db.collection(USER_PROFILE).document(id).get()
-                    .addOnSuccessListener(docSnap -> {
-                        if (docSnap != null) {
-                            usersInterested.add(docSnap.toObject(UserProfile.class));
-                            interestedIndex.setValue(usersInterested.size() - 1);
-                        }
-                    });
+        List<UserProfile> tmpUsers = new ArrayList<>();
+        if (users.isEmpty()) {
+            handler.post(() -> usersInterestedLiveData.setValue(tmpUsers));
+            usersInterested = tmpUsers;
+            INTERESTED_LOCK.unlock();
+            return;
         }
+
+        List<Task<DocumentSnapshot>> tasks = new ArrayList<>();
+        for (String id: users)
+            tasks.add(db.collection(USER_PROFILE).document(id).get());
+        Tasks.whenAllSuccess(tasks).addOnSuccessListener(docSnaps -> {
+            for (Object docSnap: docSnaps) {
+                UserProfile profile = ((DocumentSnapshot)docSnap).toObject(UserProfile.class);
+                if (profile != null)
+                    tmpUsers.add(profile);
+            }
+            handler.post(() -> usersInterestedLiveData.setValue(tmpUsers));
+            usersInterested = tmpUsers;
+            INTERESTED_LOCK.unlock();
+        }).addOnFailureListener(error -> INTERESTED_LOCK.unlock());
     }
 
-    private void fetchComments(List<String> commentID) {
-        // -1 as a flag for empty list
-        if (commentID.isEmpty()) commentIndex.setValue(-1);
-
-        for (String id : commentID) {
-            db.collection(COMMENT).document(id).get()
-                    .addOnSuccessListener(commentSnap -> {
-                        if (commentSnap != null) {
-                            RecyclerViewComment recyclerViewComment = new RecyclerViewComment();
-                            Comment comment = commentSnap.toObject(Comment.class);
-                            if (comment != null) {
-                                db.collection(USER_PROFILE).document(comment.getUserID()).get()
-                                        .addOnSuccessListener(docSnap -> {
-                                            UserProfile user = docSnap.toObject(UserProfile.class);
-                                            if (user != null) {
-                                                recyclerViewComment.setName(user.getName());
-                                                recyclerViewComment.setImageURL(user.getImageURL());
-                                                comments.add(recyclerViewComment);
-                                                commentIndex.setValue(comments.size() - 1);
-                                            }
-                                        });
-                                recyclerViewComment.setMessage(comment.getMessage());
-                            }
-                        }
-                    });
+    private void fetchComments(List<String> commentIDs) {
+        List<RecyclerViewComment> tmpComments = new ArrayList<>();
+        if (commentIDs.isEmpty()) {
+            handler.post(() -> commentsLiveData.setValue(tmpComments));
+            COMMENT_LOCK.unlock();
+            return;
         }
+
+        List<Task<DocumentSnapshot>> tasks = new ArrayList<>();
+        for (String id: commentIDs)
+            tasks.add(db.collection(COMMENT).document(id).get());
+        Tasks.whenAllSuccess(tasks).addOnSuccessListener(commentSnaps -> {
+            Map<String, UserProfile> userMapping = new HashMap<>();
+
+            for (Object commentSnap: commentSnaps) {
+                Comment comment = ((DocumentSnapshot)commentSnap).toObject(Comment.class);
+                if (comment != null)
+                    tmpComments.add(new RecyclerViewComment(comment));
+            }
+
+            Collections.sort(tmpComments,
+                    (c1, c2) -> (int) (c1.getComment().getPostedTime() - c2.getComment().getPostedTime()));
+            List<Task<DocumentSnapshot>> userTasks = new ArrayList<>();
+            for (RecyclerViewComment comment: tmpComments)
+                userTasks.add(db.collection(USER_PROFILE).document(comment.getComment().getUserID()).get());
+
+            Tasks.whenAllSuccess(userTasks)
+                    .addOnSuccessListener(userSnaps -> {
+                        for (Object userSnap: userSnaps) {
+                            UserProfile user = ((DocumentSnapshot)userSnap).toObject(UserProfile.class);
+                            if (user != null)
+                                userMapping.put(user.getId(), user);
+                        }
+                        for (RecyclerViewComment comment: tmpComments) {
+                            comment.setUserProfile(userMapping.get(comment.getComment().getUserID()));
+                        }
+
+                        handler.post(() -> commentsLiveData.setValue(tmpComments));
+                        COMMENT_LOCK.unlock();
+                    }).addOnFailureListener(error -> COMMENT_LOCK.unlock());
+        }).addOnFailureListener(error -> COMMENT_LOCK.unlock());
     }
 
     // Functions related to CommentRecyclerView
-    public void addComment(Comment comment, AlertDialog alertDialog, Context context) {
-        String commentID = DBOperations.getUniqueID(COMMENT);
-        comment.setId(commentID);
-        comment.setPostID(postInfo.getId());
-        comment.setUserID(auth.getUid());
+    public void addComment(String message, AlertDialog alertDialog, Context context, ProgressBar progressBar) {
+        progressBar.setVisibility(View.VISIBLE);
 
-        db.collection(COMMENT).document(commentID).set(comment)
-                .addOnSuccessListener(unused -> db.collection(POST_DETAIL_INFO).document(postInfo.getId())
-                        .update(Collections.singletonMap("comments", FieldValue.arrayUnion(commentID)))
-                        .addOnSuccessListener(none -> {
-                            alertDialog.dismiss();
-                            comments.add(new RecyclerViewComment(comment.getMessage()));
-                            showToast(context, "Commented successfully :)");
-                        })
-                        .addOnFailureListener(error -> showToast(context, "Failed to comment :(")))
-                .addOnFailureListener(unused -> showToast(context, "Failed to comment :("));
+        String commentID = DBOperations.getUniqueID(COMMENT);
+        Comment comment = new Comment(commentID, message, auth.getUid());
+
+        try {
+            String json = new JSONObject()
+                    .put("postID", postInfo.getId())
+                    .put("comment", gson.toJson(comment)) // JSON itself in form of a string
+                    .toString();
+            client.newCall(getRequest(json, SERVER_URL + "addComment")).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    handler.post(() -> commentFailure(progressBar, context));
+                }
+
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) {
+                    if (response.code() != SUCCESS_CODE) {
+                        handler.post(() -> commentFailure(progressBar, context));
+                        return;
+                    }
+                    handler.post(() -> {
+                        alertDialog.dismiss();
+                        showToast(context, "Commented successfully :)");
+                    });
+                }
+            });
+        } catch (JSONException e) {
+            commentFailure(progressBar, context);
+        }
+    }
+    private void commentFailure(ProgressBar progressBar, Context context) {
+        progressBar.setVisibility(View.INVISIBLE);
+        showToast(context, "Failed to comment :(");
     }
 
     // Functions related to InterestedRecyclerView
     public void addUser(int position, ProgressBar progressBar) {
-        String userID = usersInterested.get(position).getId();
-        List<Task<Void>> tasks = new ArrayList<>();
+        try {
+            if (position >= usersInterested.size()) {
+                return;
+            }
+            String userID = usersInterested.get(position).getId();
+            String json = new JSONObject()
+                    .put("postID", postInfo.getId())
+                    .put("userID", userID)
+                    .put("postTitle", postInfo.getTitle())
+                    .put("requirement", postInfo.getPeopleRequired())
+                    .toString();
+            progressBar.setVisibility(View.VISIBLE);
+            client.newCall(getRequest(json, SERVER_URL + "acceptUser")).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    handler.post(() -> interestedUserChangeFailure(progressBar));
+                }
 
-        // Updating status to UserActivity
-        tasks.add(db.collection(USER_ACTIVITY).document(userID)
-                .update(Collections.singletonMap("postsInvolved", FieldValue.arrayRemove(new PostStatus(postInfo.getId(), "Requested !")))));
-        tasks.add(db.collection(USER_ACTIVITY).document(userID)
-                .update(Collections.singletonMap("postsInvolved", FieldValue.arrayUnion(new PostStatus(postInfo.getId())))));
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) {
+                    if (response.code() != SUCCESS_CODE) {
+                        handler.post(() -> interestedUserChangeFailure(progressBar));
+                        return;
+                    }
+                    handler.post(() -> {
+                        addUserToGroupChat(postInfo, userID);
+                        progressBar.setVisibility(View.INVISIBLE);
+                    });
+                }
+            });
+        } catch (JSONException e) {
+            interestedUserChangeFailure(progressBar);
+        }
+    }
 
-        // Updating status to PostDetailInfo
-        tasks.add(db.collection(POST_DETAIL_INFO).document(postInfo.getId())
-                .update(Collections.singletonMap("usersInterested", FieldValue.arrayRemove(userID))));
-        tasks.add(db.collection(POST_DETAIL_INFO).document(postInfo.getId())
-                .update(Collections.singletonMap("usersAdded", FieldValue.arrayUnion(new UserStatus(userID)))));
+    private void addUserToGroupChat(PostInfo postInfo, String userId) {
+        String GUID = postInfo.getId();
 
+        List<GroupMember> members = new ArrayList<>();
+        GroupMember groupMember = new GroupMember(userId, CometChatConstants.SCOPE_PARTICIPANT);
+        members.add(groupMember);
 
-        Tasks.whenAllSuccess(tasks).addOnSuccessListener(results -> {
-            usersAdded.add(usersInterested.remove(position));
-            addedIndex.setValue(usersAdded.size() - 1);
-            interestedRemoveIndex.setValue(position);
-            // Setting to null to avoid wrong delete request in InterestedRecyclerView on recreate
-            interestedRemoveIndex.setValue(null);
-        }).addOnFailureListener(unused -> interestedUserChangeFailure(progressBar));
+        CometChat.addMembersToGroup(GUID, members, null, new CometChat.CallbackListener<HashMap<String, String>>(){
+            @Override
+            public void onSuccess(HashMap<String, String> successMap) {
+                Log.d("AddUser","User added: " + groupMember.getName());
+            }
+
+            @Override
+            public void onError(CometChatException e) {
+                Log.e("AddUser","User add failed: " + e.getMessage().toString());
+            }
+        });
     }
 
     public void removeUser(int position, ProgressBar progressBar) {
-        String userID = usersInterested.get(position).getId();
-        List<Task<Void>> tasks = new ArrayList<>();
+        try {
+            String json = new JSONObject()
+                    .put("postID", postInfo.getId())
+                    .put("userID", usersInterested.get(position).getId())
+                    .put("postTitle", postInfo.getTitle())
+                    .toString();
+            progressBar.setVisibility(View.VISIBLE);
+            client.newCall(getRequest(json, SERVER_URL + "rejectUser")).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    handler.post(() -> interestedUserChangeFailure(progressBar));
+                }
 
-        // Updating status to UserActivity
-        tasks.add(db.collection(USER_ACTIVITY).document(userID)
-        .update(Collections.singletonMap("postsInvolved", FieldValue.arrayRemove(new PostStatus(postInfo.getId(), "Requested !")))));
-
-        // Updating status to PostDetailInfo
-        tasks.add(db.collection(POST_DETAIL_INFO).document(postInfo.getId())
-                .update(Collections.singletonMap("usersInterested", FieldValue.arrayRemove(userID))));
-
-        Tasks.whenAllSuccess(tasks).addOnSuccessListener(results -> {
-            usersInterested.remove(position);
-            interestedRemoveIndex.setValue(position);
-            // Setting to null to avoid wrong delete request in InterestedRecyclerView on recreate
-            interestedRemoveIndex.setValue(null);
-        }).addOnFailureListener(unused -> interestedUserChangeFailure(progressBar));
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) {
+                    if (response.code() != SUCCESS_CODE) {
+                        handler.post(() -> interestedUserChangeFailure(progressBar));
+                        return;
+                    }
+                    handler.post(() -> progressBar.setVisibility(View.INVISIBLE));
+                }
+            });
+        } catch (JSONException e) {
+            interestedUserChangeFailure(progressBar);
+        }
     }
-
     private void interestedUserChangeFailure(ProgressBar progressBar) {
         showToast(interestedRecyclerView.getContext(), "Unable to process your request :(");
         progressBar.setVisibility(View.INVISIBLE);
     }
 
-    public List<UserProfile> getUsersInterested() {
-        return usersInterested;
+    // Functions related to AddedRecyclerView
+    public void askForFinalConfirmation(ProgressBar progressBar, Button button) {
+        String originalText = button.getText().toString();
+        if (originalText.trim().isEmpty()) return;
+
+        System.out.println("Button text = " + originalText);
+
+        try {
+            String json = null, requestLink = null;
+            if (originalText.equals(getApplication().getString(R.string.ask_for_final_confirmation))) {
+                // Owner want to ask for final confirmation
+
+                List<String> addedIDs = new ArrayList<>();
+                for (AddedUser user : usersAdded) {
+                    if (user.getStatus().equals(ADDED)) // sending notifications to added users only
+                        addedIDs.add(user.getProfile().getId());
+                }
+                json = new JSONObject()
+                        .put("post", gson.toJson(postInfo))
+                        .put("users", gson.toJson(addedIDs))
+                        .toString();
+                requestLink = "askForFinalConfirmation";
+            } else if (originalText.equals(getApplication().getString(R.string.want_to_accept))) {
+                json = new JSONObject()
+                        .put("post", gson.toJson(postInfo))
+                        .put("oldStatus", FINAL_CONFIRMATION)
+                        .put("newStatus", ACCEPTED)
+                        .put("userID", auth.getUid())
+                        .put("userName", Objects.requireNonNull(getUserProfile().getValue()).getName())
+                        .toString();
+                requestLink = "changeStatus";
+            }
+
+            if (json == null) return;
+            button.setText("");
+            progressBar.setVisibility(View.VISIBLE);
+
+            client.newCall(getRequest(json, SERVER_URL + requestLink))
+                    .enqueue(new Callback() {
+                        @Override
+                        public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                            onAskRequestCompletion(progressBar, button, originalText);
+                        }
+
+                        @Override
+                        public void onResponse(@NonNull Call call, @NonNull Response response) {
+                            onAskRequestCompletion(progressBar, button,
+                                    response.code() == SUCCESS_CODE ? "In Progress .." : originalText);
+                        }
+                    });
+        } catch (Exception e) {
+            onAskRequestCompletion(progressBar, button, originalText);
+        }
     }
-    public List<RecyclerViewComment> getComments() {
-        return comments;
-    }
-    public List<UserProfile> getUsersAdded() {
-        return usersAdded;
+    private void onAskRequestCompletion(ProgressBar progressBar, Button button, String text) {
+        handler.post(() -> {
+            progressBar.setVisibility(GONE);
+            button.setText(text);
+        });
     }
 
-    public LiveData<String> getPostDescription() {
-        return postDescription;
+    public boolean areAllRequiredAdded() {
+        if (postDetailInfo == null) return true; // This way we are not showing accept/reject buttons
+        return postInfo.getPeopleRequired() == postDetailInfo.getUsersAdded().size();
     }
+
+    public LiveData<List<UserProfile>> getUsersInterested() {
+        return usersInterestedLiveData;
+    }
+    public LiveData<List<RecyclerViewComment>> getComments() {
+        return commentsLiveData;
+    }
+    public LiveData<List<AddedUser>> getUsersAdded() {
+        return usersAddedLiveData;
+    }
+
     public LiveData<PostInfo> getPostInfo() {
         return postInfoLiveData;
     }
-
-    public LiveData<Integer> getAddedIndex() {
-        return addedIndex;
+    public LiveData<Drawable> getOwnerImage() {
+        return ownerImage;
     }
-    public LiveData<Integer> getInterestedIndex() {
-        return interestedIndex;
-    }
-    public LiveData<Integer> getInterestedRemoveIndex() {
-        return interestedRemoveIndex;
-    }
-    public LiveData<Integer> getCommentIndex() {
-        return commentIndex;
+    public LiveData<String> getOwnerImageURL() {
+        return ownerImageURL;
     }
 
+    public int getPreviousTab() {
+        return previousTab;
+    }
+    public void setPreviousTab(int tab) {
+        previousTab = tab;
+    }
     public Fragment getFragment(int position) {
         switch (position) {
             case 0: return interestedRecyclerView;
@@ -290,40 +511,57 @@ public class PostFragmentViewModel extends ViewModel {
     }
 
     public static class RecyclerViewComment {
-        private String name, message, imageURL;
-        public RecyclerViewComment() {}
+        private final Comment comment;
+        private UserProfile userProfile;
 
-        public RecyclerViewComment(String message) {
-            this.message = message;
+        public RecyclerViewComment(Comment comment) {
+            this.comment = comment;
             UserProfile user = DBOperations.getUserProfile().getValue();
             if (user != null) {
-                name = user.getName();
-                imageURL = user.getImageURL();
+                this.userProfile = user;
             }
         }
 
-        public String getName() {
-            return name;
+        @NonNull
+        @Override
+        public String toString() {
+            return comment.getMessage() + "->" + userProfile.getName();
         }
 
-        public void setName(String name) {
-            this.name = name;
+        public Comment getComment() {
+            return comment;
         }
 
-        public String getMessage() {
-            return message;
+        public UserProfile getUserProfile() {
+            return userProfile;
         }
 
-        public void setMessage(String message) {
-            this.message = message;
+        public void setUserProfile(UserProfile userProfile) {
+            this.userProfile = userProfile;
+        }
+    }
+
+    public static class AddedUser {
+        private final String status;
+        private final UserProfile profile;
+
+        public AddedUser(UserProfile profile, String status) {
+            this.profile = profile;
+            this.status = (status == null) ? INTERESTED : status;
         }
 
-        public String getImageURL() {
-            return imageURL;
+        public UserProfile getProfile() {
+            return profile;
         }
 
-        public void setImageURL(String imageURL) {
-            this.imageURL = imageURL;
+        public String getStatus() {
+            return status;
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return profile.getName() + "->" + status;
         }
     }
 }

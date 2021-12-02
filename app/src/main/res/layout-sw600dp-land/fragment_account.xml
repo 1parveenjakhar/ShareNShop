@@ -42,6 +42,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="40dp"
+                    android:textSize="15sp"
                     android:text="@string/light_theme" />
 
                 <RadioButton
@@ -49,6 +50,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="40dp"
+                    android:textSize="15sp"
                     android:text="@string/dark_theme" />
 
                 <RadioButton
@@ -56,6 +58,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="40dp"
+                    android:textSize="15sp"
                     android:text="@string/system_default" />
 
             </RadioGroup>
@@ -69,7 +72,7 @@
                 app:layout_constraintStart_toStartOf="@id/postsHistoryButton"
                 app:layout_constraintEnd_toEndOf="@id/postsHistoryButton"
                 android:text="@string/my_profile"
-                android:background="@drawable/gradient_long_button_bg"
+                android:background="@drawable/account_fragment_button"
                 app:backgroundTint="@null" />
 
             <Button
@@ -82,21 +85,24 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@id/themeOptions"
-                android:background="@drawable/gradient_long_button_bg"
+                android:background="@drawable/account_fragment_button"
                 app:backgroundTint="@null" />
 
             <Button
                 android:id="@+id/logoutButton"
                 android:layout_width="300dp"
                 android:layout_height="wrap_content"
-                android:text="@string/logout"
                 android:textStyle="bold"
                 android:layout_marginTop="40dp"
-                android:textSize="25sp"
                 app:layout_constraintTop_toBottomOf="@id/postsHistoryButton"
                 app:layout_constraintStart_toStartOf="@id/postsHistoryButton"
                 app:layout_constraintEnd_toEndOf="@id/postsHistoryButton"
-                android:background="@drawable/gradient_long_button_bg"
+                android:background="#F36767"
+                android:stateListAnimator="@null"
+                android:text="@string/logout"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="25sp"
                 app:backgroundTint="@null" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
